@@ -1,0 +1,1611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fundamentals — AI Engineering</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    /* ── Sticky progress header ── */
+    .sticky-progress {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(15, 17, 23, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 32px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .progress-label {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .progress-count {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--accent-hover);
+      font-family: 'JetBrains Mono', monospace;
+      white-space: nowrap;
+    }
+    .progress-bar-track { flex: 1; }
+
+    /* ── Topic card ── */
+    .topic-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      margin-bottom: 24px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+    }
+    .topic-card.read {
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+    .topic-card-header {
+      padding: 24px 28px 0;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .topic-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+    .topic-number {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .mark-read-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 14px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-tertiary);
+      color: var(--text-muted);
+      font-family: inherit;
+      transition: all var(--transition);
+      flex-shrink: 0;
+    }
+    .mark-read-btn:hover {
+      border-color: var(--green);
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.08);
+    }
+    .topic-card.read .mark-read-btn {
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.1);
+    }
+    .topic-card-body {
+      padding: 16px 28px 24px;
+    }
+    .topic-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      color: var(--text-primary);
+    }
+    .topic-summary {
+      color: var(--text-secondary);
+      font-size: 14.5px;
+      line-height: 1.65;
+      margin-bottom: 20px;
+      max-width: 720px;
+    }
+
+    /* ── Visual areas ── */
+    .visual-area {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 20px;
+      margin-bottom: 16px;
+      overflow: hidden;
+    }
+
+    /* ── AI/ML hierarchy diagram ── */
+    .hierarchy-diagram {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+      padding: 8px 0;
+    }
+    .hier-level {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+    }
+    .hier-box {
+      padding: 10px 24px;
+      border-radius: var(--radius-md);
+      font-weight: 600;
+      font-size: 13.5px;
+      text-align: center;
+      position: relative;
+      min-width: 160px;
+      border: 2px solid;
+    }
+    .hier-box.ai {
+      background: rgba(99, 102, 241, 0.12);
+      border-color: rgba(99, 102, 241, 0.5);
+      color: #a5b4fc;
+      width: 70%;
+    }
+    .hier-box.ml {
+      background: rgba(59, 130, 246, 0.1);
+      border-color: rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+      width: 55%;
+    }
+    .hier-box.dl {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: #6ee7b7;
+      width: 40%;
+    }
+    .hier-box.genai {
+      background: rgba(245, 158, 11, 0.1);
+      border-color: rgba(245, 158, 11, 0.4);
+      color: #fcd34d;
+      width: 28%;
+    }
+    .hier-box .hier-desc {
+      display: block;
+      font-size: 11px;
+      font-weight: 400;
+      opacity: 0.8;
+      margin-top: 2px;
+    }
+    .hier-connector {
+      width: 2px;
+      height: 18px;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.15), rgba(255,255,255,0.05));
+      margin: 2px auto;
+    }
+    .hier-row-label {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+
+    /* ── Code block with syntax highlighting ── */
+    .code-block {
+      position: relative;
+    }
+    .code-block .code-lang {
+      position: absolute;
+      top: 10px;
+      right: 14px;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+    }
+    .kw  { color: #c084fc; }
+    .fn  { color: #60a5fa; }
+    .str { color: #86efac; }
+    .num { color: #fb923c; }
+    .cm  { color: #4b5563; font-style: italic; }
+    .op  { color: #e2e8f0; }
+    .var { color: #fde68a; }
+
+    /* ── Linear algebra grid ── */
+    .matrix-grid {
+      display: inline-grid;
+      gap: 2px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-sm);
+      padding: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+    .matrix-cell {
+      width: 36px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 4px;
+      color: var(--accent-hover);
+      font-weight: 500;
+    }
+    .matrix-cell.highlight {
+      background: rgba(99, 102, 241, 0.2);
+      color: #e0e7ff;
+    }
+    .linalg-row {
+      display: flex;
+      align-items: flex-start;
+      gap: 28px;
+      flex-wrap: wrap;
+    }
+    .linalg-section {
+      flex: 1;
+      min-width: 160px;
+    }
+    .linalg-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      margin-bottom: 8px;
+    }
+    .vector-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    .vector-cell {
+      width: 42px;
+      height: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(99, 102, 241, 0.1);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--accent-hover);
+    }
+    .dot-product-calc {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+      color: var(--text-secondary);
+      line-height: 2;
+    }
+    .dot-product-calc .result {
+      color: var(--green);
+      font-weight: 700;
+    }
+
+    /* ── Statistics visuals ── */
+    .stat-visual-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .stat-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+    .stat-box-label {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .formula-inline {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12.5px;
+      color: var(--accent-hover);
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-radius: 4px;
+      padding: 6px 10px;
+      display: block;
+      margin: 6px 0;
+    }
+
+    /* ── Gradient descent SVG ── */
+    .gd-container {
+      position: relative;
+    }
+    .gd-svg {
+      width: 100%;
+      max-width: 560px;
+      display: block;
+      margin: 0 auto;
+    }
+    .gd-controls {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .gd-btn {
+      padding: 6px 16px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+      font-family: inherit;
+      transition: all var(--transition);
+    }
+    .gd-btn:hover, .gd-btn.active {
+      border-color: var(--accent);
+      color: var(--accent-hover);
+      background: var(--accent-dim);
+    }
+    .gd-step-info {
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ── Data preprocessing visuals ── */
+    .preprocess-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+    }
+    .preprocess-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+    .preprocess-card h4 {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+    }
+    .data-bar {
+      height: 8px;
+      border-radius: 4px;
+      margin-bottom: 5px;
+      position: relative;
+    }
+    .data-bar-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-bottom: 3px;
+    }
+    .split-visual {
+      display: flex;
+      height: 24px;
+      border-radius: 6px;
+      overflow: hidden;
+      margin: 8px 0;
+    }
+    .split-train {
+      background: rgba(99, 102, 241, 0.4);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--accent-hover);
+      flex: 8;
+    }
+    .split-val {
+      background: rgba(245, 158, 11, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #fbbf24;
+      flex: 1;
+    }
+    .split-test {
+      background: rgba(16, 185, 129, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 600;
+      color: #34d399;
+      flex: 1;
+    }
+    .null-table {
+      width: 100%;
+      font-size: 12px;
+      border-collapse: collapse;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .null-table td {
+      padding: 4px 8px;
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .null-table td.null-cell {
+      background: rgba(239, 68, 68, 0.15);
+      color: #f87171;
+    }
+    .null-table td.ok-cell {
+      color: var(--text-secondary);
+    }
+
+    /* ── Key insight box ── */
+    .key-insight {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      background: rgba(99, 102, 241, 0.07);
+      border: 1px solid rgba(99, 102, 241, 0.2);
+      border-left: 3px solid var(--accent);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      margin: 16px 0;
+    }
+    .key-insight-icon {
+      font-size: 18px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .key-insight-text {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+    .key-insight-text strong {
+      color: #a5b4fc;
+      display: block;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 4px;
+    }
+
+    /* ── Deep dive accordion ── */
+    .deep-dive-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 0;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      border: none;
+      background: none;
+      font-family: inherit;
+      width: 100%;
+      text-align: left;
+      border-top: 1px solid var(--border);
+      transition: color var(--transition);
+      margin-top: 4px;
+    }
+    .deep-dive-toggle:hover { color: var(--accent-hover); }
+    .deep-dive-toggle .chevron {
+      margin-left: auto;
+      transition: transform var(--transition);
+      font-size: 10px;
+    }
+    .deep-dive-toggle.open .chevron {
+      transform: rotate(180deg);
+    }
+    .deep-dive-content {
+      display: none;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      margin-top: 0;
+    }
+    .deep-dive-content.open {
+      display: block;
+      animation: fadeUp 0.25s ease both;
+    }
+    .deep-dive-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+    .dd-item {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+    }
+    .dd-item h4 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 5px;
+    }
+    .dd-item p {
+      font-size: 12.5px;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+
+    /* ── Comparison table ── */
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+    .compare-table th {
+      background: var(--bg-tertiary);
+      padding: 9px 12px;
+      text-align: left;
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      color: var(--text-muted);
+      border: 1px solid var(--border);
+    }
+    .compare-table td {
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      color: var(--text-secondary);
+      vertical-align: top;
+    }
+    .compare-table tr:first-child td { border-top: none; }
+
+    /* ── Stats curve SVG label ── */
+    .curve-labels {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 4px;
+    }
+
+    @media (max-width: 640px) {
+      .hier-box.ai  { width: 92%; }
+      .hier-box.ml  { width: 78%; }
+      .hier-box.dl  { width: 62%; }
+      .hier-box.genai { width: 46%; }
+      .stat-visual-row { grid-template-columns: 1fr; }
+      .preprocess-row { grid-template-columns: 1fr; }
+      .linalg-row { flex-direction: column; }
+      .sticky-progress { padding: 10px 16px; }
+      .topic-card-header { padding: 18px 16px 0; }
+      .topic-card-body { padding: 14px 16px 20px; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- sticky progress bar (outside sidebar, inside main) -->
+  <div class="main-content">
+    <div class="sticky-progress" id="sticky-progress">
+      <span class="progress-label">Progress</span>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+      <span class="progress-count" id="prog-count">0 / 6</span>
+    </div>
+
+    <div class="page-container">
+
+      <!-- Hero -->
+      <div class="module-hero fade-up">
+        <div class="module-hero-meta">
+          <span class="badge badge-beginner">⬤ Beginner</span>
+          <span class="badge" style="background:rgba(99,102,241,.12);color:#a5b4fc;">Module 1</span>
+        </div>
+        <h1>Fundamentals</h1>
+        <p class="module-hero-desc">
+          The foundation every AI engineer needs — from understanding what AI actually is,
+          to the math and code that powers every model you'll ever build or deploy.
+        </p>
+        <div class="module-hero-stats">
+          <div class="stat-item">📚 <strong>6 topics</strong></div>
+          <div class="stat-item">⏱ <strong>~2 hours</strong></div>
+          <div class="stat-item">🧮 <strong>Math + Code</strong></div>
+        </div>
+      </div>
+
+      <!-- Cheat Sheet -->
+      <div class="fade-up" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <button class="cheat-sheet-toggle" onclick="toggleCheatSheet()" aria-expanded="false" aria-controls="cheat-sheet" id="cs-btn">
+          📋 Cheat Sheet
+        </button>
+        <span style="font-size:12px;color:var(--text-muted);">All key math terms on one screen</span>
+      </div>
+      <div class="cheat-sheet-panel" id="cheat-sheet" role="region" aria-label="Fundamentals Cheat Sheet">
+        <h2 style="font-size:1.1rem;margin-bottom:4px;">Fundamentals Quick Reference</h2>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">All key terms at a glance — print-friendly.</p>
+        <div class="cs-grid">
+          <div class="cs-section">
+            <h4>Linear Algebra</h4>
+            <div class="cs-term"><span class="cs-key">Vector</span><span class="cs-def">Ordered list of numbers; direction + magnitude</span></div>
+            <div class="cs-term"><span class="cs-key">Matrix multiply</span><span class="cs-def">A(m×k) × B(k×n) → C(m×n); each element = dot product</span></div>
+            <div class="cs-term"><span class="cs-key">Eigenvalue</span><span class="cs-def">Av = λv — scaling factor of eigenvector v</span></div>
+            <div class="cs-term"><span class="cs-key">SVD</span><span class="cs-def">M = UΣVᵀ — basis for PCA and dimensionality reduction</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Probability</h4>
+            <div class="cs-term"><span class="cs-key">Bayes' theorem</span><span class="cs-def">P(A|B) = P(B|A)·P(A) / P(B)</span></div>
+            <div class="cs-term"><span class="cs-key">Expectation</span><span class="cs-def">E[X] = Σ x·P(x) — probability-weighted average</span></div>
+            <div class="cs-term"><span class="cs-key">Variance</span><span class="cs-def">E[(X-μ)²] — spread around the mean</span></div>
+            <div class="cs-term"><span class="cs-key">MLE</span><span class="cs-def">Find θ that maximises P(data|θ)</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Calculus</h4>
+            <div class="cs-term"><span class="cs-key">Gradient</span><span class="cs-def">Vector of partial derivatives — direction of steepest ascent</span></div>
+            <div class="cs-term"><span class="cs-key">Chain rule</span><span class="cs-def">d/dx[f(g(x))] = f'(g(x))·g'(x) — foundation of backprop</span></div>
+            <div class="cs-term"><span class="cs-key">SGD</span><span class="cs-def">θ ← θ - α·∇L — move in direction of negative gradient</span></div>
+            <div class="cs-term"><span class="cs-key">Learning rate</span><span class="cs-def">α — step size; too large diverges, too small is slow</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Information Theory</h4>
+            <div class="cs-term"><span class="cs-key">Entropy</span><span class="cs-def">H(p) = -Σ p·log(p) — bits of surprise/uncertainty</span></div>
+            <div class="cs-term"><span class="cs-key">Cross-entropy</span><span class="cs-def">H(p,q) — standard NLP loss; p=true, q=predicted</span></div>
+            <div class="cs-term"><span class="cs-key">KL divergence</span><span class="cs-def">D_KL(p||q) — how different q is from true p</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────
+           CARD 1 · AI vs ML vs DL vs GenAI
+      ───────────────────────────────────────────── -->
+      <div class="topic-card fade-up fade-up-delay-1" id="card-1">
+        <div class="topic-card-header">
+          <div class="topic-card-meta">
+            <span class="topic-number">01</span>
+            <span class="badge badge-beginner">Beginner</span>
+          </div>
+          <button class="mark-read-btn" onclick="toggleRead('card-1','fundamentals','topic-1')">
+            <span class="read-icon">○</span> Mark as read
+          </button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">AI vs ML vs DL vs GenAI</h2>
+          <p class="topic-summary">
+            These four terms are often used interchangeably in the media — but they mean very different things.
+            Understanding the hierarchy helps you pick the right tool for any job and speak the language of the field fluently.
+          </p>
+
+          <!-- Hierarchy diagram -->
+          <div class="visual-area">
+            <div class="hierarchy-diagram">
+              <div class="hier-level">
+                <div class="hier-row-label">Broadest</div>
+                <div class="hier-box ai">
+                  🤖 Artificial Intelligence
+                  <span class="hier-desc">Any technique that lets machines act smart</span>
+                </div>
+              </div>
+              <div class="hier-connector"></div>
+              <div class="hier-level">
+                <div class="hier-box ml">
+                  📈 Machine Learning
+                  <span class="hier-desc">Systems that learn from data without explicit rules</span>
+                </div>
+              </div>
+              <div class="hier-connector"></div>
+              <div class="hier-level">
+                <div class="hier-box dl">
+                  🧠 Deep Learning
+                  <span class="hier-desc">ML using neural networks with many layers</span>
+                </div>
+              </div>
+              <div class="hier-connector"></div>
+              <div class="hier-level">
+                <div class="hier-box genai">
+                  ✨ GenAI
+                  <span class="hier-desc">DL that generates text, images, code</span>
+                </div>
+              </div>
+              <div style="height:4px"></div>
+              <div class="hier-row-label" style="margin-top:4px">Most specific</div>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Key Insight</strong>
+              Every GenAI model (like GPT-4) is a Deep Learning model. Every Deep Learning model is a Machine Learning model.
+              Every ML model is a form of AI. The circles nest perfectly — the inner ones just add more constraints.
+            </div>
+          </div>
+
+          <!-- Deep dive -->
+          <button class="deep-dive-toggle" onclick="toggleDeepDive(this)">
+            📖 Deep Dive — when to use each approach
+            <span class="chevron">▼</span>
+          </button>
+          <div class="deep-dive-content">
+            <table class="compare-table">
+              <thead>
+                <tr>
+                  <th>Term</th><th>When to use it</th><th>Real example</th><th>Limitation</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong style="color:#a5b4fc">AI</strong></td>
+                  <td>Any "smart" system — including rule-based ones</td>
+                  <td>Chess engine, spam filter, recommendation system</td>
+                  <td>Broad term — not useful for technical decisions</td>
+                </tr>
+                <tr>
+                  <td><strong style="color:#93c5fd">ML</strong></td>
+                  <td>Tabular data, structured predictions, small-medium datasets</td>
+                  <td>House price prediction, fraud detection, churn prediction</td>
+                  <td>Feature engineering is manual; needs structured data</td>
+                </tr>
+                <tr>
+                  <td><strong style="color:#6ee7b7">DL</strong></td>
+                  <td>Images, audio, video, sequences — large unstructured datasets</td>
+                  <td>Image classification, speech-to-text, object detection</td>
+                  <td>Needs lots of data & compute; black box</td>
+                </tr>
+                <tr>
+                  <td><strong style="color:#fcd34d">GenAI</strong></td>
+                  <td>Content creation, code generation, Q&A, summarisation</td>
+                  <td>GPT-4, Stable Diffusion, Claude, Midjourney</td>
+                  <td>Hallucinations, high inference cost, hard to control</td>
+                </tr>
+              </tbody>
+            </table>
+            <div class="info-box tip" style="margin-top:14px">
+              💡 <strong>Rule of thumb:</strong> Start with the simplest approach that could work.
+              A gradient-boosted tree beats a neural network on tabular data 80% of the time,
+              and it's 100× cheaper to run.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────
+           CARD 2 · Python for AI
+      ───────────────────────────────────────────── -->
+      <div class="topic-card fade-up fade-up-delay-2" id="card-2">
+        <div class="topic-card-header">
+          <div class="topic-card-meta">
+            <span class="topic-number">02</span>
+            <span class="badge badge-beginner">Beginner</span>
+          </div>
+          <button class="mark-read-btn" onclick="toggleRead('card-2','fundamentals','topic-2')">
+            <span class="read-icon">○</span> Mark as read
+          </button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Python for AI</h2>
+          <p class="topic-summary">
+            Python isn't the fastest language, but it became the universal language of AI for one reason:
+            its scientific libraries (NumPy, Pandas, PyTorch) are so good that everything else is built on top of them.
+            Mastering the core idioms saves hours every single week.
+          </p>
+
+          <!-- Code block: NumPy -->
+          <div style="margin-bottom:12px">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:6px">NumPy — The foundation of all numerical AI work</div>
+            <div class="code-block">
+              <span class="code-lang">python</span>
+<pre><span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+
+<span class="cm"># Create arrays (the #1 data structure in AI)</span>
+<span class="var">pixels</span> = <span class="fn">np.array</span>([<span class="num">255</span>, <span class="num">128</span>, <span class="num">0</span>, <span class="num">64</span>], dtype=<span class="var">np</span>.uint8)
+<span class="var">matrix</span> = <span class="fn">np.zeros</span>((<span class="num">3</span>, <span class="num">3</span>))            <span class="cm"># 3×3 matrix of zeros</span>
+<span class="var">rand</span>   = <span class="fn">np.random.randn</span>(<span class="num">100</span>, <span class="num">50</span>)    <span class="cm"># random data for 100 samples, 50 features</span>
+
+<span class="cm"># Vectorised operations (no Python loops → 100× faster)</span>
+<span class="var">normalised</span> = (<span class="var">pixels</span> - <span class="var">pixels</span>.<span class="fn">mean</span>()) / <span class="var">pixels</span>.<span class="fn">std</span>()
+<span class="var">dot</span>        = <span class="var">matrix</span> @ <span class="var">rand</span>[:, :<span class="num">3</span>]    <span class="cm"># matrix multiply</span>
+<span class="var">mask</span>       = <span class="var">pixels</span> > <span class="num">100</span>             <span class="cm"># boolean mask → [True, True, False, False]</span></pre>
+            </div>
+          </div>
+
+          <!-- Code block: Pandas -->
+          <div>
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:6px">Pandas — Load, inspect, and clean your dataset</div>
+            <div class="code-block">
+              <span class="code-lang">python</span>
+<pre><span class="kw">import</span> <span class="var">pandas</span> <span class="kw">as</span> <span class="var">pd</span>
+
+<span class="cm"># Load data from any source</span>
+<span class="var">df</span> = <span class="var">pd</span>.<span class="fn">read_csv</span>(<span class="str">"users.csv"</span>)        <span class="cm"># shape: (10000, 12)</span>
+
+<span class="cm"># Inspect instantly</span>
+<span class="var">df</span>.<span class="fn">head</span>()              <span class="cm"># first 5 rows</span>
+<span class="var">df</span>.<span class="fn">describe</span>()         <span class="cm"># count, mean, std, min/max per column</span>
+<span class="var">df</span>.<span class="fn">isnull</span>().<span class="fn">sum</span>()     <span class="cm"># count missing values per column</span>
+
+<span class="cm"># Filter + transform (no loops!)</span>
+<span class="var">active_users</span> = <span class="var">df</span>[<span class="var">df</span>[<span class="str">"last_login_days"</span>] &lt; <span class="num">30</span>]
+<span class="var">df</span>[<span class="str">"age_group"</span>] = <span class="var">pd</span>.<span class="fn">cut</span>(<span class="var">df</span>[<span class="str">"age"</span>], bins=[<span class="num">0</span>,<span class="num">18</span>,<span class="num">35</span>,<span class="num">65</span>,<span class="num">99</span>])
+<span class="var">stats</span> = <span class="var">df</span>.<span class="fn">groupby</span>(<span class="str">"age_group"</span>)[<span class="str">"revenue"</span>].<span class="fn">mean</span>()</pre>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Key Insight</strong>
+              The secret to fast Python AI code is <em>avoiding Python loops</em>.
+              NumPy and Pandas push computation into optimised C/Fortran kernels.
+              A vectorised operation over 1 million rows runs in milliseconds; a Python loop takes seconds.
+            </div>
+          </div>
+
+          <button class="deep-dive-toggle" onclick="toggleDeepDive(this)">
+            📖 Deep Dive — the full AI Python stack
+            <span class="chevron">▼</span>
+          </button>
+          <div class="deep-dive-content">
+            <div class="deep-dive-grid">
+              <div class="dd-item">
+                <h4>NumPy</h4>
+                <p>N-dimensional arrays, linear algebra, random number generation. The backbone everything else is built on.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Pandas</h4>
+                <p>DataFrames for tabular data. Load CSVs, filter rows, aggregate groups, handle missing values.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Matplotlib / Seaborn</h4>
+                <p>Plot loss curves, confusion matrices, data distributions. "Can't improve what you can't see."</p>
+              </div>
+              <div class="dd-item">
+                <h4>Scikit-learn</h4>
+                <p>Classical ML: linear regression, random forests, SVMs, preprocessing pipelines, cross-validation.</p>
+              </div>
+              <div class="dd-item">
+                <h4>PyTorch</h4>
+                <p>Deep learning framework. Define neural nets as Python classes, auto-differentiation, GPU support.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Jupyter</h4>
+                <p>Interactive notebooks. Explore data, prototype models, visualise results in one place.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────
+           CARD 3 · Linear Algebra
+      ───────────────────────────────────────────── -->
+      <div class="topic-card fade-up fade-up-delay-3" id="card-3">
+        <div class="topic-card-header">
+          <div class="topic-card-meta">
+            <span class="topic-number">03</span>
+            <span class="badge badge-intermediate">Intermediate</span>
+          </div>
+          <button class="mark-read-btn" onclick="toggleRead('card-3','fundamentals','topic-3')">
+            <span class="read-icon">○</span> Mark as read
+          </button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Linear Algebra Essentials</h2>
+          <p class="topic-summary">
+            Every neural network is just a long chain of matrix multiplications.
+            Understanding vectors and matrices is not optional — it's the grammar of deep learning,
+            and once it clicks, model architectures stop looking like magic.
+          </p>
+
+          <div class="visual-area">
+            <div class="linalg-row">
+              <!-- Vector -->
+              <div class="linalg-section">
+                <div class="linalg-label">Vector (1D array)</div>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div class="vector-list">
+                    <div class="vector-cell">2</div>
+                    <div class="vector-cell">5</div>
+                    <div class="vector-cell">1</div>
+                  </div>
+                  <div style="font-size:12px;color:var(--text-muted);line-height:1.5">
+                    ← one data point<br>with 3 features<br>(e.g. height, weight, age)
+                  </div>
+                </div>
+              </div>
+
+              <!-- Matrix -->
+              <div class="linalg-section">
+                <div class="linalg-label">Matrix (2D array)</div>
+                <table class="matrix-grid" style="grid-template-columns:repeat(3,1fr)">
+                  <tr>
+                    <td class="matrix-cell highlight">1</td>
+                    <td class="matrix-cell">2</td>
+                    <td class="matrix-cell">0</td>
+                  </tr>
+                  <tr>
+                    <td class="matrix-cell">3</td>
+                    <td class="matrix-cell highlight">1</td>
+                    <td class="matrix-cell">4</td>
+                  </tr>
+                  <tr>
+                    <td class="matrix-cell">0</td>
+                    <td class="matrix-cell">2</td>
+                    <td class="matrix-cell highlight">5</td>
+                  </tr>
+                </table>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:6px">3×3 weight matrix (diagonal highlighted)</div>
+              </div>
+
+              <!-- Dot product -->
+              <div class="linalg-section">
+                <div class="linalg-label">Dot Product</div>
+                <div class="dot-product-calc">
+                  <span style="color:var(--accent-hover)">[2, 5, 1]</span><br>
+                  · <span style="color:#93c5fd">[1, 0, 3]</span><br>
+                  = 2×1 + 5×0 + 1×3<br>
+                  = 2 + 0 + 3<br>
+                  = <span class="result">5</span>
+                </div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:6px">Measures similarity + used in every layer</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Key Insight</strong>
+              A neural network forward pass is literally:
+              <code style="font-family:'JetBrains Mono',monospace;color:#a5b4fc;font-size:12px">output = activation(W · x + b)</code> —
+              repeated hundreds of times. Weights <code style="font-family:monospace;color:#a5b4fc;font-size:12px">W</code> are matrices,
+              inputs <code style="font-family:monospace;color:#a5b4fc;font-size:12px">x</code> are vectors. That's the whole thing.
+            </div>
+          </div>
+
+          <button class="deep-dive-toggle" onclick="toggleDeepDive(this)">
+            📖 Deep Dive — matrix operations you'll see daily
+            <span class="chevron">▼</span>
+          </button>
+          <div class="deep-dive-content">
+            <div class="deep-dive-grid">
+              <div class="dd-item">
+                <h4>Matrix Multiply (A @ B)</h4>
+                <p>The backbone of every linear layer. Input (batch × features) × weights (features × hidden) → output (batch × hidden).</p>
+              </div>
+              <div class="dd-item">
+                <h4>Transpose (A.T)</h4>
+                <p>Flip rows ↔ columns. Used constantly to align shapes for multiplication.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Eigenvalues</h4>
+                <p>Directions that only scale (not rotate) under a transformation. PCA is literally just finding the top eigenvalues.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Cosine Similarity</h4>
+                <p>Dot product of unit vectors. The standard measure for "how similar are these two embeddings?" in RAG and search.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Broadcasting</h4>
+                <p>NumPy auto-expands smaller arrays to match larger ones. Allows batch operations without explicit loops.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Tensor (nD array)</h4>
+                <p>Generalisation of matrices to any number of dimensions. An image is a 3D tensor (H × W × C). A video batch is 5D.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────
+           CARD 4 · Statistics & Probability
+      ───────────────────────────────────────────── -->
+      <div class="topic-card fade-up fade-up-delay-4" id="card-4">
+        <div class="topic-card-header">
+          <div class="topic-card-meta">
+            <span class="topic-number">04</span>
+            <span class="badge badge-intermediate">Intermediate</span>
+          </div>
+          <button class="mark-read-btn" onclick="toggleRead('card-4','fundamentals','topic-4')">
+            <span class="read-icon">○</span> Mark as read
+          </button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Statistics &amp; Probability</h2>
+          <p class="topic-summary">
+            Every loss function is a probability statement, and every model output is a distribution — not a single number.
+            Stats gives you the tools to design experiments that actually prove something, and to know when your model is fooling you.
+          </p>
+
+          <!-- Bell curve SVG -->
+          <div class="visual-area">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px">Normal Distribution — the shape of random phenomena</div>
+            <svg viewBox="0 0 480 140" class="gd-svg" style="max-width:480px">
+              <defs>
+                <linearGradient id="bellGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#6366f1" stop-opacity="0.35"/>
+                  <stop offset="100%" stop-color="#6366f1" stop-opacity="0.03"/>
+                </linearGradient>
+              </defs>
+              <!-- Filled area -->
+              <path d="M 20,130 C 80,130 110,120 130,100 C 150,80 170,20 240,10 C 310,20 330,80 350,100 C 370,120 400,130 460,130 Z"
+                    fill="url(#bellGrad)" stroke="none"/>
+              <!-- Bell curve line -->
+              <path d="M 20,130 C 80,130 110,120 130,100 C 150,80 170,20 240,10 C 310,20 330,80 350,100 C 370,120 400,130 460,130"
+                    fill="none" stroke="#6366f1" stroke-width="2.5"/>
+              <!-- Std dev regions -->
+              <line x1="170" y1="18" x2="170" y2="130" stroke="#4b5563" stroke-width="1" stroke-dasharray="4,3"/>
+              <line x1="310" y1="18" x2="310" y2="130" stroke="#4b5563" stroke-width="1" stroke-dasharray="4,3"/>
+              <line x1="115" y1="97" x2="115" y2="130" stroke="#374151" stroke-width="1" stroke-dasharray="3,3"/>
+              <line x1="365" y1="97" x2="365" y2="130" stroke="#374151" stroke-width="1" stroke-dasharray="3,3"/>
+              <!-- Mean line -->
+              <line x1="240" y1="10" x2="240" y2="130" stroke="#818cf8" stroke-width="1.5" stroke-dasharray="5,3"/>
+              <!-- Labels -->
+              <text x="240" y="124" text-anchor="middle" font-size="10" fill="#818cf8" font-family="JetBrains Mono,monospace">μ</text>
+              <text x="170" y="124" text-anchor="middle" font-size="10" fill="#6b7280" font-family="JetBrains Mono,monospace">μ-σ</text>
+              <text x="310" y="124" text-anchor="middle" font-size="10" fill="#6b7280" font-family="JetBrains Mono,monospace">μ+σ</text>
+              <text x="115" y="124" text-anchor="middle" font-size="10" fill="#4b5563" font-family="JetBrains Mono,monospace">-2σ</text>
+              <text x="365" y="124" text-anchor="middle" font-size="10" fill="#4b5563" font-family="JetBrains Mono,monospace">+2σ</text>
+              <!-- Percentages -->
+              <text x="240" y="42" text-anchor="middle" font-size="10" fill="#a5b4fc" font-family="JetBrains Mono,monospace">68%</text>
+              <text x="240" y="66" text-anchor="middle" font-size="9" fill="#818cf8" font-family="JetBrains Mono,monospace">← 95% →</text>
+            </svg>
+
+            <!-- Stats boxes -->
+            <div class="stat-visual-row" style="margin-top:14px">
+              <div class="stat-box">
+                <div class="stat-box-label">Mean &amp; Variance</div>
+                <span class="formula-inline">μ = Σxᵢ / n</span>
+                <span class="formula-inline">σ² = Σ(xᵢ − μ)² / n</span>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:6px">
+                  Mean = centre of your data. Variance = how spread out it is.
+                  High variance in features → normalise before training.
+                </p>
+              </div>
+              <div class="stat-box">
+                <div class="stat-box-label">Bayes' Theorem</div>
+                <span class="formula-inline">P(A|B) = P(B|A) · P(A) / P(B)</span>
+                <p style="font-size:12px;color:var(--text-muted);margin-top:6px">
+                  Update your belief about A when you observe evidence B.
+                  Foundation of probabilistic ML, Naive Bayes, and Bayesian neural networks.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Key Insight</strong>
+              Cross-entropy loss — the most common loss function in AI — is literally
+              <em>−log(predicted probability of the correct answer)</em>.
+              When you minimise it, you're asking the model to assign high probability to the right answer.
+              Stats and ML are inseparable.
+            </div>
+          </div>
+
+          <button class="deep-dive-toggle" onclick="toggleDeepDive(this)">
+            📖 Deep Dive — statistical concepts in ML
+            <span class="chevron">▼</span>
+          </button>
+          <div class="deep-dive-content">
+            <div class="deep-dive-grid">
+              <div class="dd-item">
+                <h4>p-value</h4>
+                <p>Probability of seeing your result by chance alone. In A/B tests of models: p &lt; 0.05 means it's probably real.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Correlation vs Causation</h4>
+                <p>A model finding a pattern doesn't mean that pattern causes the outcome. Confounding variables are everywhere.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Central Limit Theorem</h4>
+                <p>Averages of any distribution approach a normal distribution as n grows. Explains why normality assumptions hold in practice.</p>
+              </div>
+              <div class="dd-item">
+                <h4>MLE vs MAP</h4>
+                <p>Maximum Likelihood Estimation finds the most likely params. MAP adds a prior (like L2 regularisation). Both are about probability.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Expected Value</h4>
+                <p>E[X] = Σ x · P(x). The weighted average of all possible outcomes. Loss functions are expected values over your data.</p>
+              </div>
+              <div class="dd-item">
+                <h4>KL Divergence</h4>
+                <p>Measures how different two probability distributions are. Used in VAEs, RL, and any time you compare model output distributions.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────
+           CARD 5 · Gradient Descent
+      ───────────────────────────────────────────── -->
+      <div class="topic-card fade-up" id="card-5" style="animation-delay:.25s">
+        <div class="topic-card-header">
+          <div class="topic-card-meta">
+            <span class="topic-number">05</span>
+            <span class="badge badge-intermediate">Intermediate</span>
+          </div>
+          <button class="mark-read-btn" onclick="toggleRead('card-5','fundamentals','topic-5')">
+            <span class="read-icon">○</span> Mark as read
+          </button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Gradient Descent</h2>
+          <p class="topic-summary">
+            Gradient descent is <em>how every neural network learns</em> — it's the algorithm that adjusts millions
+            of weights to minimise mistakes. Understanding it deeply is the difference between blindly tuning
+            hyperparameters and knowing exactly what's happening inside your model.
+          </p>
+
+          <!-- Animated gradient descent SVG -->
+          <div class="visual-area gd-container">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:8px">
+              Loss curve — watch the ball find the minimum
+            </div>
+            <svg id="gd-svg" viewBox="0 0 560 200" class="gd-svg">
+              <defs>
+                <linearGradient id="lossGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="#ef4444" stop-opacity="0.25"/>
+                  <stop offset="100%" stop-color="#ef4444" stop-opacity="0.0"/>
+                </linearGradient>
+                <filter id="ball-glow">
+                  <feGaussianBlur stdDeviation="2.5" result="blur"/>
+                  <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+                </filter>
+              </defs>
+              <!-- Axes -->
+              <line x1="40" y1="170" x2="530" y2="170" stroke="#374151" stroke-width="1.5"/>
+              <line x1="40" y1="20"  x2="40"  y2="170" stroke="#374151" stroke-width="1.5"/>
+              <!-- Axis labels -->
+              <text x="285" y="190" text-anchor="middle" font-size="11" fill="#6b7280" font-family="Inter,sans-serif">Weight value (θ)</text>
+              <text x="18" y="100" text-anchor="middle" font-size="11" fill="#6b7280" font-family="Inter,sans-serif" transform="rotate(-90,18,100)">Loss</text>
+              <!-- Loss curve fill -->
+              <path id="loss-fill" d="M 60,30 C 100,28 140,70 200,150 C 220,165 240,168 260,150 C 300,100 360,60 420,40 C 450,32 490,30 530,28 L 530,170 L 60,170 Z"
+                    fill="url(#lossGrad)"/>
+              <!-- Loss curve line -->
+              <path id="loss-curve" d="M 60,30 C 100,28 140,70 200,150 C 220,165 240,168 260,150 C 300,100 360,60 420,40 C 450,32 490,30 530,28"
+                    fill="none" stroke="#ef4444" stroke-width="2.5"/>
+              <!-- Minimum marker -->
+              <line x1="245" y1="30" x2="245" y2="170" stroke="#10b981" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>
+              <text x="245" y="26" text-anchor="middle" font-size="9" fill="#10b981" font-family="JetBrains Mono,monospace">minimum</text>
+              <!-- Gradient arrow (updates with animation) -->
+              <line id="grad-arrow" x1="60" y1="30" x2="60" y2="30" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3,2" opacity="0"/>
+              <!-- Ball -->
+              <circle id="gd-ball" cx="60" cy="30" r="8" fill="#6366f1" filter="url(#ball-glow)" opacity="0.9"/>
+              <circle id="gd-ball-inner" cx="60" cy="30" r="4" fill="#a5b4fc"/>
+              <!-- Step counter -->
+              <text id="gd-step-text" x="530" y="35" text-anchor="end" font-size="11" fill="#4b5563" font-family="JetBrains Mono,monospace">step: 0</text>
+              <text id="gd-loss-text" x="530" y="50" text-anchor="end" font-size="11" fill="#ef4444" font-family="JetBrains Mono,monospace">loss: —</text>
+            </svg>
+            <div class="gd-controls">
+              <button class="gd-btn" id="gd-play-btn" onclick="gdPlay()">▶ Animate</button>
+              <button class="gd-btn" onclick="gdStep()">→ Step</button>
+              <button class="gd-btn" onclick="gdReset()">↺ Reset</button>
+            </div>
+            <div class="gd-step-info" id="gd-step-info">Click Animate to watch gradient descent find the minimum</div>
+          </div>
+
+          <!-- LR comparison -->
+          <div class="stat-visual-row" style="margin-top:16px">
+            <div class="stat-box">
+              <div class="stat-box-label">Learning Rate Too High 🔴</div>
+              <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.6">
+                Steps are too large → overshoots the minimum → loss bounces up and down or diverges to infinity.
+                Classic symptom: loss goes <strong style="color:#f87171">NaN</strong> or spikes erratically.
+              </p>
+            </div>
+            <div class="stat-box">
+              <div class="stat-box-label">Learning Rate Too Low 🟡</div>
+              <p style="font-size:12.5px;color:var(--text-secondary);line-height:1.6">
+                Steps are tiny → training takes forever → may get stuck in a local minimum.
+                Symptom: loss decreases painfully slowly for the first 10+ epochs.
+              </p>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Key Insight</strong>
+              The gradient tells you <em>which direction</em> increases the loss. Gradient descent moves in the
+              <em>opposite</em> direction by a step size called the <strong>learning rate</strong>.
+              The formula is: <code style="font-family:'JetBrains Mono',monospace;color:#a5b4fc;font-size:12px">θ ← θ − α · ∇L(θ)</code>
+              — nothing more, nothing less.
+            </div>
+          </div>
+
+          <button class="deep-dive-toggle" onclick="toggleDeepDive(this)">
+            📖 Deep Dive — gradient descent variants you'll use
+            <span class="chevron">▼</span>
+          </button>
+          <div class="deep-dive-content">
+            <div class="deep-dive-grid">
+              <div class="dd-item">
+                <h4>Batch GD</h4>
+                <p>Compute gradient over the entire dataset per step. Accurate but slow and memory-heavy. Rarely used in practice.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Stochastic GD (SGD)</h4>
+                <p>One sample at a time. Noisy but fast. The noise actually helps escape local minima — used with momentum.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Mini-batch GD</h4>
+                <p>32–512 samples per step. The practical default. Balances accuracy and speed. This is what "batch_size" controls.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Adam Optimizer</h4>
+                <p>Adaptive learning rates per parameter. Combines momentum + RMSProp. Default choice for transformers and most DL.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Momentum</h4>
+                <p>Accumulates a velocity vector to smooth out noisy gradients. Like a ball rolling downhill — it accelerates in consistent directions.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Learning Rate Schedules</h4>
+                <p>Warm up LR slowly, then decay. Cosine annealing is popular. LLMs use "linear warmup + cosine decay" almost universally.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ─────────────────────────────────────────────
+           CARD 6 · Data Preprocessing
+      ───────────────────────────────────────────── -->
+      <div class="topic-card fade-up" id="card-6" style="animation-delay:.3s">
+        <div class="topic-card-header">
+          <div class="topic-card-meta">
+            <span class="topic-number">06</span>
+            <span class="badge badge-beginner">Beginner</span>
+          </div>
+          <button class="mark-read-btn" onclick="toggleRead('card-6','fundamentals','topic-6')">
+            <span class="read-icon">○</span> Mark as read
+          </button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Data Preprocessing</h2>
+          <p class="topic-summary">
+            "Garbage in, garbage out." No matter how advanced your model, it can't fix bad data.
+            Preprocessing is consistently where the most performance gains come from — even experienced
+            ML engineers spend 80% of project time here.
+          </p>
+
+          <div class="visual-area">
+            <div class="preprocess-row">
+              <!-- Normalisation -->
+              <div class="preprocess-card">
+                <h4>Normalisation</h4>
+                <div style="margin-bottom:6px">
+                  <div class="data-bar-label">Age (0–90)</div>
+                  <div class="data-bar" style="background:rgba(239,68,68,.2);width:100%;border:1px solid rgba(239,68,68,.3)">
+                    <div style="width:33%;height:100%;background:rgba(239,68,68,.5);border-radius:4px"></div>
+                  </div>
+                  <div class="data-bar-label" style="margin-top:8px">Age normalised (0–1)</div>
+                  <div class="data-bar" style="background:rgba(16,185,129,.1);width:100%;border:1px solid rgba(16,185,129,.3)">
+                    <div style="width:33%;height:100%;background:var(--green);border-radius:4px;opacity:.7"></div>
+                  </div>
+                </div>
+                <span class="formula-inline" style="font-size:11px">x' = (x − min) / (max − min)</span>
+                <p style="font-size:11.5px;color:var(--text-muted);margin-top:4px">All features on same scale → gradient descent converges faster</p>
+              </div>
+
+              <!-- Train/Test split -->
+              <div class="preprocess-card">
+                <h4>Train / Val / Test Split</h4>
+                <div class="split-visual">
+                  <div class="split-train">Train 80%</div>
+                  <div class="split-val">Val 10%</div>
+                  <div class="split-test">Test 10%</div>
+                </div>
+                <p style="font-size:11.5px;color:var(--text-muted);margin-top:8px;line-height:1.6">
+                  <strong style="color:#a5b4fc">Train:</strong> model learns from this<br>
+                  <strong style="color:#fbbf24">Val:</strong> tune hyperparameters<br>
+                  <strong style="color:#34d399">Test:</strong> final evaluation only — never peek during training
+                </p>
+              </div>
+
+              <!-- Handling nulls -->
+              <div class="preprocess-card">
+                <h4>Handling Missing Values</h4>
+                <table class="null-table">
+                  <tr>
+                    <td class="ok-cell">25</td>
+                    <td class="null-cell">NaN</td>
+                    <td class="ok-cell">72k</td>
+                  </tr>
+                  <tr>
+                    <td class="ok-cell">31</td>
+                    <td class="ok-cell">F</td>
+                    <td class="null-cell">NaN</td>
+                  </tr>
+                  <tr>
+                    <td class="null-cell">NaN</td>
+                    <td class="ok-cell">M</td>
+                    <td class="ok-cell">55k</td>
+                  </tr>
+                </table>
+                <p style="font-size:11.5px;color:var(--text-muted);margin-top:8px;line-height:1.6">
+                  Options: <strong style="color:#a5b4fc">drop</strong> rows/cols,
+                  <strong style="color:#fbbf24">impute</strong> with mean/median/mode,
+                  or <strong style="color:#34d399">flag</strong> with an "is_missing" column
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Code: sklearn pipeline -->
+          <div style="margin-top:16px">
+            <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:6px">Preprocessing in Python (scikit-learn)</div>
+            <div class="code-block">
+              <span class="code-lang">python</span>
+<pre><span class="kw">from</span> <span class="var">sklearn.preprocessing</span> <span class="kw">import</span> <span class="var">StandardScaler</span>, <span class="var">MinMaxScaler</span>
+<span class="kw">from</span> <span class="var">sklearn.model_selection</span> <span class="kw">import</span> <span class="var">train_test_split</span>
+<span class="kw">from</span> <span class="var">sklearn.impute</span> <span class="kw">import</span> <span class="var">SimpleImputer</span>
+<span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+
+<span class="cm"># 1. Split first (prevent data leakage!)</span>
+<span class="var">X_train</span>, <span class="var">X_test</span>, <span class="var">y_train</span>, <span class="var">y_test</span> = <span class="fn">train_test_split</span>(
+    <span class="var">X</span>, <span class="var">y</span>, test_size=<span class="num">0.2</span>, random_state=<span class="num">42</span>
+)
+
+<span class="cm"># 2. Fill missing values (fit on train only!)</span>
+<span class="var">imputer</span> = <span class="var">SimpleImputer</span>(strategy=<span class="str">"median"</span>)
+<span class="var">X_train</span> = <span class="var">imputer</span>.<span class="fn">fit_transform</span>(<span class="var">X_train</span>)
+<span class="var">X_test</span>  = <span class="var">imputer</span>.<span class="fn">transform</span>(<span class="var">X_test</span>)    <span class="cm"># same transform, no refit</span>
+
+<span class="cm"># 3. Normalise features</span>
+<span class="var">scaler</span> = <span class="var">StandardScaler</span>()               <span class="cm"># zero mean, unit variance</span>
+<span class="var">X_train</span> = <span class="var">scaler</span>.<span class="fn">fit_transform</span>(<span class="var">X_train</span>)
+<span class="var">X_test</span>  = <span class="var">scaler</span>.<span class="fn">transform</span>(<span class="var">X_test</span>)     <span class="cm"># use train stats on test!</span></pre>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Key Insight</strong>
+              Always fit your scaler/imputer on <em>training data only</em>, then apply the same transform to test data.
+              Fitting on the full dataset causes <strong>data leakage</strong> — your model cheats by "seeing" the test set
+              during training, giving artificially high accuracy that won't hold in production.
+            </div>
+          </div>
+
+          <button class="deep-dive-toggle" onclick="toggleDeepDive(this)">
+            📖 Deep Dive — advanced preprocessing techniques
+            <span class="chevron">▼</span>
+          </button>
+          <div class="deep-dive-content">
+            <div class="deep-dive-grid">
+              <div class="dd-item">
+                <h4>Feature Engineering</h4>
+                <p>Create new features from existing ones. E.g., "days_since_last_purchase" from a timestamp. Often more impactful than model choice.</p>
+              </div>
+              <div class="dd-item">
+                <h4>One-Hot Encoding</h4>
+                <p>Convert categorical columns (like "colour": red/green/blue) to binary columns. Required for most ML algorithms.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Log Transform</h4>
+                <p>Skewed distributions (like income) become more normal after log(x). Helps linear models and gradient descent.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Outlier Removal</h4>
+                <p>IQR method: remove points below Q1 − 1.5×IQR or above Q3 + 1.5×IQR. Or clip to percentiles instead of dropping.</p>
+              </div>
+              <div class="dd-item">
+                <h4>Cross-Validation</h4>
+                <p>k-fold CV: train on k-1 folds, validate on 1 fold, rotate. Gives a robust estimate of generalisation error on small datasets.</p>
+              </div>
+              <div class="dd-item">
+                <h4>sklearn Pipelines</h4>
+                <p>Chain preprocessing + model into a single object. Prevents leakage, makes deployment easier, one fit() call to rule them all.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bottom CTA -->
+      <div style="text-align:center;padding:24px 0 8px;border-top:1px solid var(--border);margin-top:8px">
+        <p style="color:var(--text-muted);font-size:13px;margin-bottom:14px">
+          Completed all 6 fundamentals? You're ready to dive into ML Core.
+        </p>
+        <a href="ml-core.html" class="btn btn-primary">Next: ML Core →</a>
+      </div>
+
+    </div><!-- /page-container -->
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<script src="../shared/nav.js"></script>
+<script>
+  // ── Gradient Descent Animation ──────────────────────────
+  const GD_CURVE_POINTS = [
+    // [svgX, svgY, labelLoss] — follows the SVG path
+    { x: 60,  y: 30,  loss: 9.8 },
+    { x: 90,  y: 29,  loss: 9.5 },
+    { x: 120, y: 38,  loss: 8.7 },
+    { x: 150, y: 64,  loss: 7.1 },
+    { x: 180, y: 110, loss: 5.0 },
+    { x: 210, y: 148, loss: 2.8 },
+    { x: 230, y: 162, loss: 1.4 },
+    { x: 245, y: 167, loss: 0.6 },
+    { x: 255, y: 163, loss: 0.5 },
+    { x: 260, y: 150, loss: 0.7 },
+  ];
+
+  let gdCurrentStep = 0;
+  let gdInterval = null;
+  let gdBounced = false;
+
+  function gdMoveBall(idx) {
+    const pt = GD_CURVE_POINTS[idx];
+    const ball = document.getElementById('gd-ball');
+    const inner = document.getElementById('gd-ball-inner');
+    const stepText = document.getElementById('gd-step-text');
+    const lossText = document.getElementById('gd-loss-text');
+    const info = document.getElementById('gd-step-info');
+
+    if (!ball) return;
+
+    ball.setAttribute('cx', pt.x);
+    ball.setAttribute('cy', pt.y);
+    inner.setAttribute('cx', pt.x);
+    inner.setAttribute('cy', pt.y);
+    stepText.textContent = `step: ${idx}`;
+    lossText.textContent = `loss: ${pt.loss.toFixed(2)}`;
+
+    if (idx === 0) {
+      info.textContent = 'Starting at a random weight — loss is high';
+    } else if (idx < 4) {
+      info.textContent = `Step ${idx}: following the gradient downhill ↓`;
+    } else if (idx === GD_CURVE_POINTS.length - 3) {
+      info.textContent = 'Getting close to the minimum…';
+    } else if (idx >= GD_CURVE_POINTS.length - 2) {
+      info.textContent = '✓ Converged! Loss is minimised — training stops here';
+    } else {
+      info.textContent = `Step ${idx}: loss = ${pt.loss.toFixed(2)} — still descending`;
+    }
+  }
+
+  function gdPlay() {
+    const btn = document.getElementById('gd-play-btn');
+    if (gdInterval) {
+      clearInterval(gdInterval);
+      gdInterval = null;
+      btn.textContent = '▶ Animate';
+      btn.classList.remove('active');
+      return;
+    }
+    btn.textContent = '⏸ Pause';
+    btn.classList.add('active');
+    gdInterval = setInterval(() => {
+      if (gdCurrentStep >= GD_CURVE_POINTS.length - 1) {
+        clearInterval(gdInterval);
+        gdInterval = null;
+        btn.textContent = '▶ Animate';
+        btn.classList.remove('active');
+        return;
+      }
+      gdCurrentStep++;
+      gdMoveBall(gdCurrentStep);
+    }, 480);
+  }
+
+  function gdStep() {
+    if (gdCurrentStep < GD_CURVE_POINTS.length - 1) {
+      gdCurrentStep++;
+      gdMoveBall(gdCurrentStep);
+    }
+  }
+
+  function gdReset() {
+    if (gdInterval) { clearInterval(gdInterval); gdInterval = null; }
+    const btn = document.getElementById('gd-play-btn');
+    btn.textContent = '▶ Animate';
+    btn.classList.remove('active');
+    gdCurrentStep = 0;
+    gdMoveBall(0);
+    document.getElementById('gd-step-info').textContent = 'Click Animate to watch gradient descent find the minimum';
+  }
+
+  // init ball position
+  document.addEventListener('DOMContentLoaded', () => { gdMoveBall(0); });
+
+  // ── Deep dive toggles ─────────────────────────────────
+  function toggleDeepDive(btn) {
+    btn.classList.toggle('open');
+    const content = btn.nextElementSibling;
+    content.classList.toggle('open');
+  }
+
+  // ── Progress tracking ─────────────────────────────────
+  const MODULE_ID = 'fundamentals';
+  const TOPIC_IDS = ['topic-1','topic-2','topic-3','topic-4','topic-5','topic-6'];
+  const CARD_IDS  = ['card-1','card-2','card-3','card-4','card-5','card-6'];
+  const TOTAL = TOPIC_IDS.length;
+
+  function loadProgress() {
+    const data = JSON.parse(localStorage.getItem('ai_eng_progress') || '{}');
+    const mod = data[MODULE_ID] || { topics: {} };
+    mod.total = TOTAL;
+
+    TOPIC_IDS.forEach((tid, i) => {
+      if (mod.topics && mod.topics[tid]) {
+        applyReadState(CARD_IDS[i], true);
+      }
+    });
+    updateProgressBar();
+  }
+
+  function applyReadState(cardId, isRead) {
+    const card = document.getElementById(cardId);
+    if (!card) return;
+    const btn = card.querySelector('.mark-read-btn');
+    const icon = btn && btn.querySelector('.read-icon');
+    if (isRead) {
+      card.classList.add('read');
+      if (btn) btn.innerHTML = '<span class="read-icon">✓</span> Read';
+    } else {
+      card.classList.remove('read');
+      if (btn) btn.innerHTML = '<span class="read-icon">○</span> Mark as read';
+    }
+  }
+
+  function toggleRead(cardId, moduleId, topicId) {
+    const wasRead = markTopicComplete(moduleId, topicId);
+    const data = JSON.parse(localStorage.getItem('ai_eng_progress') || '{}');
+    const mod = data[MODULE_ID] || { topics: {} };
+    const nowRead = !!(mod.topics && mod.topics[topicId]);
+    applyReadState(cardId, nowRead);
+
+    // ensure total is set
+    if (!mod.total || mod.total !== TOTAL) {
+      mod.total = TOTAL;
+      data[MODULE_ID] = mod;
+      localStorage.setItem('ai_eng_progress', JSON.stringify(data));
+    }
+
+    updateProgressBar();
+  }
+
+  function updateProgressBar() {
+    const data = JSON.parse(localStorage.getItem('ai_eng_progress') || '{}');
+    const mod = data[MODULE_ID] || { topics: {}, completed: 0 };
+    const completed = mod.completed || 0;
+    const pct = Math.round((completed / TOTAL) * 100);
+
+    const fill = document.getElementById('prog-fill');
+    const count = document.getElementById('prog-count');
+    if (fill) fill.style.width = pct + '%';
+    if (count) count.textContent = `${completed} / ${TOTAL}`;
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    loadProgress();
+    updateProgressBar();
+  });
+
+  function toggleCheatSheet() {
+    const panel = document.getElementById('cheat-sheet');
+    const btn = document.getElementById('cs-btn');
+    const isOpen = panel.classList.toggle('open');
+    btn.setAttribute('aria-expanded', isOpen);
+    btn.textContent = isOpen ? '✕ Close' : '📋 Cheat Sheet';
+  }
+</script>
+</body>
+</html>

@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Engineering from Scratch</title>
+  <link rel="stylesheet" href="shared/styles.css">
+  <style>
+    /* ── Hero ── */
+    .hero {
+      padding: 60px 0 48px;
+      position: relative;
+    }
+
+    .hero::before {
+      content: '';
+      position: absolute;
+      top: -60px; left: -60px;
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, rgba(99,102,241,0.08) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      color: var(--accent-hover);
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    .hero h1 {
+      background: linear-gradient(135deg, #e2e8f0 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 16px;
+    }
+
+    .hero-desc {
+      font-size: 17px;
+      color: var(--text-secondary);
+      max-width: 560px;
+      margin-bottom: 36px;
+      line-height: 1.7;
+    }
+
+    /* ── Overall Progress ── */
+    .overall-progress {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px 28px;
+      margin-bottom: 48px;
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      flex-wrap: wrap;
+    }
+
+    .progress-circle {
+      position: relative;
+      width: 72px;
+      height: 72px;
+      flex-shrink: 0;
+    }
+
+    .progress-circle svg {
+      transform: rotate(-90deg);
+      width: 72px;
+      height: 72px;
+    }
+
+    .progress-circle-track {
+      fill: none;
+      stroke: var(--bg-tertiary);
+      stroke-width: 5;
+    }
+
+    .progress-circle-fill {
+      fill: none;
+      stroke: var(--accent);
+      stroke-width: 5;
+      stroke-linecap: round;
+      stroke-dasharray: 195.8;
+      stroke-dashoffset: 195.8;
+      transition: stroke-dashoffset 1s cubic-bezier(0.4, 0, 0.2, 1);
+      filter: drop-shadow(0 0 6px var(--accent-glow));
+    }
+
+    .progress-circle-label {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .progress-text-block { flex: 1; min-width: 200px; }
+
+    .progress-text-block h3 {
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .progress-breakdown {
+      display: flex;
+      gap: 20px;
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+
+    .progress-breakdown-item {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .progress-breakdown-item strong {
+      color: var(--text-secondary);
+    }
+
+    .progress-bar-section { flex: 2; min-width: 200px; }
+
+    .progress-bar-label {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+    }
+
+    .progress-bar-label strong { color: var(--accent-hover); }
+
+    /* ── Module Grid ── */
+    .modules-section h2 {
+      margin-bottom: 24px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .modules-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+    }
+
+    .module-card {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      transition: all var(--transition);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .module-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--card-accent, var(--accent)), transparent);
+      opacity: 0;
+      transition: opacity var(--transition);
+    }
+
+    .module-card:hover {
+      border-color: var(--border-accent);
+      transform: translateY(-3px);
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4), var(--shadow-accent);
+    }
+
+    .module-card:hover::before { opacity: 1; }
+
+    .module-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .module-card-icon {
+      font-size: 28px;
+      line-height: 1;
+    }
+
+    .module-card-num {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      background: var(--bg-tertiary);
+      padding: 2px 7px;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+
+    .module-card h3 {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .module-card-desc {
+      font-size: 13.5px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      flex: 1;
+    }
+
+    .module-card-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .meta-dot { color: var(--text-muted); }
+
+    .meta-item {
+      font-size: 12px;
+      color: var(--text-muted);
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .module-card-progress {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .module-card-progress .progress-bar-track { flex: 1; height: 4px; }
+
+    .module-card-progress-label {
+      font-size: 11px;
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+
+    .module-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .module-card .btn { width: 100%; }
+
+    /* ── Search Bar ── */
+    .search-bar-wrap {
+      position: relative;
+      max-width: 520px;
+      margin-bottom: 32px;
+    }
+    .search-input {
+      width: 100%;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 12px 16px 12px 44px;
+      font-size: 14px;
+      color: var(--text-primary);
+      font-family: inherit;
+      outline: none;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      box-sizing: border-box;
+    }
+    .search-input:focus {
+      border-color: var(--border-accent);
+      box-shadow: 0 0 0 3px rgba(99,102,241,.15);
+    }
+    .search-input::placeholder { color: var(--text-muted); }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 16px;
+      pointer-events: none;
+    }
+    .search-results {
+      position: absolute;
+      top: calc(100% + 6px);
+      left: 0;
+      right: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      z-index: 200;
+      box-shadow: var(--shadow-lg);
+      display: none;
+    }
+    .search-results.visible { display: block; }
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 11px 16px;
+      cursor: pointer;
+      text-decoration: none;
+      border-bottom: 1px solid var(--border);
+      transition: background var(--transition);
+    }
+    .search-result-item:last-child { border-bottom: none; }
+    .search-result-item:hover { background: var(--bg-hover); }
+    .search-result-icon { font-size: 18px; flex-shrink: 0; }
+    .search-result-meta { flex: 1; min-width: 0; }
+    .search-result-topic { font-size: 13px; font-weight: 600; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .search-result-module { font-size: 11px; color: var(--text-muted); margin-top: 1px; }
+    .search-result-mark { font-size: 11px; color: var(--accent-hover); background: var(--accent-dim); padding: 2px 7px; border-radius: 10px; flex-shrink: 0; }
+    .search-no-results { padding: 14px 16px; font-size: 13px; color: var(--text-muted); text-align: center; }
+
+    /* ── Tips Strip ── */
+    .tips-strip {
+      margin-top: 48px;
+      padding: 20px 24px;
+      background: var(--accent-dim);
+      border: 1px solid var(--border-accent);
+      border-radius: var(--radius-lg);
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .tips-icon { font-size: 24px; flex-shrink: 0; }
+
+    .tips-text { font-size: 13.5px; color: var(--text-secondary); }
+    .tips-text strong { color: var(--text-primary); }
+
+    @media (max-width: 600px) {
+      .overall-progress { flex-direction: column; align-items: flex-start; }
+      .modules-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app-layout">
+    <div class="main-content">
+      <div class="page-container">
+
+        <!-- Hero -->
+        <section class="hero fade-up">
+          <div class="hero-eyebrow">⚡ Structured Learning Path</div>
+          <h1>AI Engineering<br>from Scratch</h1>
+          <p class="hero-desc">
+            A complete, hands-on curriculum covering mathematics, classical ML, deep learning,
+            large language models, RAG, agentic AI, and production MLOps — one topic at a time.
+          </p>
+        </section>
+
+        <!-- Search Bar -->
+        <div class="search-bar-wrap fade-up" role="search" aria-label="Search topics">
+          <span class="search-icon" aria-hidden="true">🔍</span>
+          <input
+            type="search"
+            class="search-input"
+            id="topic-search"
+            placeholder="Search topics across all modules…"
+            autocomplete="off"
+            aria-label="Search topics"
+            aria-controls="search-results-list"
+            aria-expanded="false"
+          />
+          <div class="search-results" id="search-results-list" role="listbox" aria-label="Search results"></div>
+        </div>
+
+        <!-- Overall Progress -->
+        <div class="overall-progress fade-up fade-up-delay-1" id="overall-progress">
+          <div class="progress-circle">
+            <svg viewBox="0 0 72 72">
+              <circle class="progress-circle-track" cx="36" cy="36" r="31.2"/>
+              <circle class="progress-circle-fill" id="circle-fill" cx="36" cy="36" r="31.2"/>
+            </svg>
+            <div class="progress-circle-label" id="pct-label">0%</div>
+          </div>
+
+          <div class="progress-text-block">
+            <h3>Overall Progress</h3>
+            <p style="font-size:13px;color:var(--text-muted)" id="progress-summary">Start a module to track your progress</p>
+            <div class="progress-breakdown" id="progress-breakdown"></div>
+          </div>
+
+          <div class="progress-bar-section">
+            <div class="progress-bar-label">
+              <span>Completion</span>
+              <strong id="pct-text">0%</strong>
+            </div>
+            <div class="progress-bar-track">
+              <div class="progress-bar-fill" id="overall-bar" style="width:0%"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Module Grid -->
+        <section class="modules-section fade-up fade-up-delay-2">
+          <h2>7 Modules · 63 Topics</h2>
+          <div class="modules-grid" id="modules-grid"></div>
+        </section>
+
+        <!-- Tips -->
+        <div class="tips-strip fade-up fade-up-delay-3">
+          <div class="tips-icon">💡</div>
+          <div class="tips-text">
+            <strong>How to use this curriculum:</strong> Work through modules in order — each builds on the last.
+            Mark topics complete as you go. Your progress is saved locally in your browser.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script src="shared/nav.js"></script>
+  <script>
+    const MODULES = [
+      {
+        id: 'fundamentals',
+        name: 'Fundamentals',
+        icon: '🔢',
+        difficulty: 'Beginner',
+        topics: 8,
+        time: '6 hrs',
+        desc: 'Linear algebra, probability theory, statistics, and calculus — the mathematical backbone of every AI system.',
+        accent: '#6366f1',
+        path: 'pages/fundamentals.html',
+      },
+      {
+        id: 'ml-core',
+        name: 'ML Core',
+        icon: '📐',
+        difficulty: 'Beginner',
+        topics: 10,
+        time: '8 hrs',
+        desc: 'Supervised, unsupervised, and reinforcement learning. Loss functions, optimization, and model evaluation.',
+        accent: '#3b82f6',
+        path: 'pages/ml-core.html',
+      },
+      {
+        id: 'deep-learning',
+        name: 'Deep Learning',
+        icon: '🧠',
+        difficulty: 'Intermediate',
+        topics: 12,
+        time: '12 hrs',
+        desc: 'Neural network architectures — CNNs, RNNs, Transformers, attention mechanisms, and training techniques.',
+        accent: '#8b5cf6',
+        path: 'pages/deep-learning.html',
+      },
+      {
+        id: 'llms',
+        name: 'LLMs',
+        icon: '💬',
+        difficulty: 'Intermediate',
+        topics: 9,
+        time: '10 hrs',
+        desc: 'Large language models from GPT to Claude. Pre-training, fine-tuning, RLHF, prompt engineering, and APIs.',
+        accent: '#06b6d4',
+        path: 'pages/llms.html',
+      },
+      {
+        id: 'rag',
+        name: 'RAG Systems',
+        icon: '🔍',
+        difficulty: 'Intermediate',
+        topics: 7,
+        time: '7 hrs',
+        desc: 'Retrieval-Augmented Generation: vector databases, chunking strategies, embeddings, reranking, and evaluation.',
+        accent: '#10b981',
+        path: 'pages/rag.html',
+      },
+      {
+        id: 'agents',
+        name: 'AI Agents',
+        icon: '🤖',
+        difficulty: 'Advanced',
+        topics: 8,
+        time: '9 hrs',
+        desc: 'Agentic systems: tool use, planning, memory, multi-agent orchestration, and safety guardrails.',
+        accent: '#f59e0b',
+        path: 'pages/agents.html',
+      },
+      {
+        id: 'mlops',
+        name: 'MLOps',
+        icon: '⚙️',
+        difficulty: 'Advanced',
+        topics: 9,
+        time: '8 hrs',
+        desc: 'Production ML: experiment tracking, model registries, serving infrastructure, monitoring, and CI/CD pipelines.',
+        accent: '#ef4444',
+        path: 'pages/mlops.html',
+      },
+    ];
+
+    function diffBadge(d) {
+      const cls = { Beginner: 'badge-beginner', Intermediate: 'badge-intermediate', Advanced: 'badge-advanced' };
+      return `<span class="badge ${cls[d]}">${d}</span>`;
+    }
+
+    function renderModules() {
+      const grid = document.getElementById('modules-grid');
+      const data = JSON.parse(localStorage.getItem('ai_eng_progress') || '{}');
+
+      grid.innerHTML = MODULES.map((m, i) => {
+        const prog = data[m.id] || {};
+        const done = prog.completed || 0;
+        const pct = Math.round((done / m.topics) * 100);
+        const started = done > 0;
+        const complete = done >= m.topics;
+
+        return `
+          <div class="module-card fade-up" style="animation-delay:${0.05 * i}s; --card-accent:${m.accent}">
+            <div class="module-card-header">
+              <div class="module-card-icon">${m.icon}</div>
+              <div class="module-card-num">0${i + 1}</div>
+            </div>
+
+            <div>
+              <h3>${m.name}</h3>
+            </div>
+
+            <p class="module-card-desc">${m.desc}</p>
+
+            <div class="module-card-meta">
+              ${diffBadge(m.difficulty)}
+              <span class="meta-dot">·</span>
+              <span class="meta-item">📚 ${m.topics} topics</span>
+              <span class="meta-dot">·</span>
+              <span class="meta-item">⏱ ${m.time}</span>
+            </div>
+
+            <div class="module-card-progress">
+              <div class="progress-bar-track">
+                <div class="progress-bar-fill" style="width:${pct}%"></div>
+              </div>
+              <span class="module-card-progress-label">${done}/${m.topics}</span>
+            </div>
+
+            <a href="${m.path}" class="btn btn-primary">
+              ${complete ? '✅ Review Module' : started ? '▶ Continue' : '→ Start Module'}
+            </a>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function updateOverallProgress() {
+      const { total, completed, pct } = getOverallProgress();
+
+      document.getElementById('pct-label').textContent = pct + '%';
+      document.getElementById('pct-text').textContent = pct + '%';
+      document.getElementById('overall-bar').style.width = pct + '%';
+
+      const circumference = 195.8;
+      const offset = circumference - (pct / 100) * circumference;
+      document.getElementById('circle-fill').style.strokeDashoffset = offset;
+
+      const summary = document.getElementById('progress-summary');
+      if (completed === 0) {
+        summary.textContent = 'Start a module to track your progress';
+      } else {
+        summary.textContent = `${completed} of ${total} topics complete`;
+      }
+
+      const breakdown = document.getElementById('progress-breakdown');
+      const data = JSON.parse(localStorage.getItem('ai_eng_progress') || '{}');
+      breakdown.innerHTML = MODULES.map(m => {
+        const done = (data[m.id] || {}).completed || 0;
+        if (done === 0) return '';
+        return `<div class="progress-breakdown-item">${m.icon} <strong>${done}</strong>/${m.topics}</div>`;
+      }).join('');
+    }
+
+    renderModules();
+    updateOverallProgress();
+
+    // ── Search ──────────────────────────────────────────────────────────────
+    const SEARCH_INDEX = [
+      // Fundamentals
+      { module: 'Fundamentals', icon: '🔢', topic: 'Linear Algebra — Vectors, Matrices & Tensors', path: 'pages/fundamentals.html' },
+      { module: 'Fundamentals', icon: '🔢', topic: 'Probability & Information Theory', path: 'pages/fundamentals.html' },
+      { module: 'Fundamentals', icon: '🔢', topic: 'Calculus & Gradient Descent', path: 'pages/fundamentals.html' },
+      { module: 'Fundamentals', icon: '🔢', topic: 'Statistics & Hypothesis Testing', path: 'pages/fundamentals.html' },
+      // ML Core
+      { module: 'ML Core', icon: '📐', topic: 'Supervised Learning — Regression & Classification', path: 'pages/ml-core.html' },
+      { module: 'ML Core', icon: '📐', topic: 'Decision Trees, Random Forests & Gradient Boosting', path: 'pages/ml-core.html' },
+      { module: 'ML Core', icon: '📐', topic: 'Model Evaluation — Metrics, Overfitting & Cross-Validation', path: 'pages/ml-core.html' },
+      { module: 'ML Core', icon: '📐', topic: 'Unsupervised Learning — Clustering & Dimensionality Reduction', path: 'pages/ml-core.html' },
+      // Deep Learning
+      { module: 'Deep Learning', icon: '🧠', topic: 'Neural Networks & Backpropagation', path: 'pages/deep-learning.html' },
+      { module: 'Deep Learning', icon: '🧠', topic: 'Convolutional Neural Networks (CNNs)', path: 'pages/deep-learning.html' },
+      { module: 'Deep Learning', icon: '🧠', topic: 'Attention Mechanisms & Transformers', path: 'pages/deep-learning.html' },
+      { module: 'Deep Learning', icon: '🧠', topic: 'Training Tricks — Batch Norm, Dropout, Learning Rate', path: 'pages/deep-learning.html' },
+      // LLMs
+      { module: 'LLMs', icon: '💬', topic: 'What Are LLMs — Scale, Parameters & Emergent Behaviour', path: 'pages/llms.html' },
+      { module: 'LLMs', icon: '💬', topic: 'Tokenization & Context Windows', path: 'pages/llms.html' },
+      { module: 'LLMs', icon: '💬', topic: 'Prompt Engineering — Zero-shot, Few-shot, Chain-of-Thought', path: 'pages/llms.html' },
+      { module: 'LLMs', icon: '💬', topic: 'Fine-tuning vs RAG vs Prompt Engineering', path: 'pages/llms.html' },
+      { module: 'LLMs', icon: '💬', topic: 'RLHF & Alignment', path: 'pages/llms.html' },
+      // RAG
+      { module: 'RAG Systems', icon: '🔍', topic: 'RAG Architecture & Retrieval Pipeline', path: 'pages/rag.html' },
+      { module: 'RAG Systems', icon: '🔍', topic: 'Vector Databases — Pinecone, Weaviate, Qdrant', path: 'pages/rag.html' },
+      { module: 'RAG Systems', icon: '🔍', topic: 'Chunking Strategies & Embedding Models', path: 'pages/rag.html' },
+      { module: 'RAG Systems', icon: '🔍', topic: 'Reranking & Hybrid Search', path: 'pages/rag.html' },
+      // Agents
+      { module: 'AI Agents', icon: '🤖', topic: 'What Makes Something an Agent?', path: 'pages/agents.html' },
+      { module: 'AI Agents', icon: '🤖', topic: 'ReAct Pattern — Thought / Action / Observation', path: 'pages/agents.html' },
+      { module: 'AI Agents', icon: '🤖', topic: 'Tool Use & Function Calling', path: 'pages/agents.html' },
+      { module: 'AI Agents', icon: '🤖', topic: 'Multi-Agent Orchestration', path: 'pages/agents.html' },
+      { module: 'AI Agents', icon: '🤖', topic: 'Memory Systems for Agents', path: 'pages/agents.html' },
+      // MLOps
+      { module: 'MLOps', icon: '⚙️', topic: 'The ML Lifecycle — Data → Train → Evaluate → Deploy → Monitor', path: 'pages/mlops.html' },
+      { module: 'MLOps', icon: '⚙️', topic: 'Model Serving — REST, Batch, Streaming', path: 'pages/mlops.html' },
+      { module: 'MLOps', icon: '⚙️', topic: 'Containerization — Docker for ML Models', path: 'pages/mlops.html' },
+      { module: 'MLOps', icon: '⚙️', topic: 'CI/CD for ML Pipelines', path: 'pages/mlops.html' },
+      { module: 'MLOps', icon: '⚙️', topic: 'Model Monitoring — Data Drift & Concept Drift', path: 'pages/mlops.html' },
+      { module: 'MLOps', icon: '⚙️', topic: 'Observability — Prometheus & Grafana', path: 'pages/mlops.html' },
+      { module: 'MLOps', icon: '⚙️', topic: 'Quantization & Inference Optimization — INT8, GGUF, vLLM', path: 'pages/mlops.html' },
+      { module: 'MLOps', icon: '⚙️', topic: 'Cloud AI Services — SageMaker, Vertex AI, Azure ML', path: 'pages/mlops.html' },
+    ];
+
+    const searchInput = document.getElementById('topic-search');
+    const searchResults = document.getElementById('search-results-list');
+
+    function runSearch(query) {
+      const q = query.trim().toLowerCase();
+      if (q.length < 2) {
+        searchResults.classList.remove('visible');
+        searchInput.setAttribute('aria-expanded', 'false');
+        return;
+      }
+      const matches = SEARCH_INDEX.filter(item =>
+        item.topic.toLowerCase().includes(q) || item.module.toLowerCase().includes(q)
+      ).slice(0, 8);
+
+      if (matches.length === 0) {
+        searchResults.innerHTML = `<div class="search-no-results">No topics match "${query}"</div>`;
+      } else {
+        searchResults.innerHTML = matches.map(item => `
+          <a href="${item.path}" class="search-result-item" role="option">
+            <span class="search-result-icon">${item.icon}</span>
+            <div class="search-result-meta">
+              <div class="search-result-topic">${item.topic}</div>
+              <div class="search-result-module">${item.module}</div>
+            </div>
+            <span class="search-result-mark">Go →</span>
+          </a>
+        `).join('');
+      }
+      searchResults.classList.add('visible');
+      searchInput.setAttribute('aria-expanded', 'true');
+    }
+
+    searchInput.addEventListener('input', e => runSearch(e.target.value));
+
+    searchInput.addEventListener('keydown', e => {
+      if (e.key === 'Escape') {
+        searchResults.classList.remove('visible');
+        searchInput.setAttribute('aria-expanded', 'false');
+        searchInput.value = '';
+      }
+    });
+
+    document.addEventListener('click', e => {
+      if (!e.target.closest('.search-bar-wrap')) {
+        searchResults.classList.remove('visible');
+        searchInput.setAttribute('aria-expanded', 'false');
+      }
+    });
+  </script>
+</body>
+</html>

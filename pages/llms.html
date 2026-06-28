@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LLMs — AI Engineering</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <script>
+    MathJax = { tex: { inlineMath: [['$','$']], displayMath: [['$$','$$']] }, svg: { fontCache: 'global' } };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js" async></script>
+  <style>
+    /* ── sticky progress ── */
+    .sticky-progress{position:sticky;top:0;z-index:50;background:rgba(15,17,23,.93);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 32px;display:flex;align-items:center;gap:16px;}
+    .progress-label{font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap;}
+    .progress-count{font-size:12px;font-weight:700;color:var(--accent-hover);font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+    .progress-bar-track{flex:1;}
+
+    /* ── topic card ── */
+    .topic-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px;transition:border-color var(--transition),box-shadow var(--transition);}
+    .topic-card.read{border-color:rgba(16,185,129,.3);}
+    .topic-card-header{padding:24px 28px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+    .topic-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    .topic-number{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);background:var(--bg-tertiary);border:1px solid var(--border);padding:2px 7px;border-radius:4px;}
+    .mark-read-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg-tertiary);color:var(--text-muted);font-family:inherit;transition:all var(--transition);flex-shrink:0;}
+    .mark-read-btn:hover{border-color:var(--green);color:#34d399;background:rgba(16,185,129,.08);}
+    .topic-card.read .mark-read-btn{border-color:rgba(16,185,129,.4);color:#34d399;background:rgba(16,185,129,.1);}
+    .topic-card-body{padding:16px 28px 24px;}
+    .topic-title{font-size:1.25rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px;color:var(--text-primary);}
+    .topic-summary{color:var(--text-secondary);font-size:14.5px;line-height:1.65;margin-bottom:20px;max-width:720px;}
+
+    /* ── visual area ── */
+    .visual-area{background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;margin-bottom:16px;overflow:hidden;}
+    .visual-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;}
+
+    /* ── code block ── */
+    .code-block{background:#0a0c14;border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.75;color:#e2e8f0;position:relative;margin-bottom:16px;}
+    .code-lang{position:absolute;top:10px;right:14px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
+    .kw{color:#c084fc;} .fn{color:#60a5fa;} .str{color:#86efac;} .num{color:#fb923c;} .cm{color:#4b5563;font-style:italic;} .var{color:#fde68a;} .cl{color:#f9a8d4;}
+
+    /* ── key insight ── */
+    .key-insight{display:flex;gap:12px;align-items:flex-start;background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);border-left:3px solid var(--accent);border-radius:var(--radius-md);padding:14px 16px;margin:16px 0;}
+    .key-insight-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+    .key-insight-text{font-size:13.5px;color:var(--text-secondary);line-height:1.6;}
+    .key-insight-text strong{color:#a5b4fc;display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+
+    /* ── engineer note ── */
+    .engineer-note{display:flex;gap:12px;align-items:flex-start;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18);border-left:3px solid #10b981;border-radius:var(--radius-md);padding:14px 16px;margin:16px 0;}
+    .engineer-note-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+    .engineer-note-text{font-size:13.5px;color:var(--text-secondary);line-height:1.6;}
+    .engineer-note-text strong{color:#34d399;display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+
+    /* ── real-world tag ── */
+    .realworld{display:inline-flex;align-items:center;gap:7px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);border-radius:6px;padding:7px 12px;font-size:12.5px;color:#93c5fd;margin-bottom:16px;}
+    .realworld strong{color:#60a5fa;}
+
+    /* ── deep dive accordion ── */
+    .deep-dive-toggle{display:flex;align-items:center;gap:8px;padding:10px 0;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;border:none;background:none;font-family:inherit;width:100%;text-align:left;border-top:1px solid var(--border);transition:color var(--transition);margin-top:4px;}
+    .deep-dive-toggle:hover{color:var(--accent-hover);}
+    .deep-dive-toggle .chevron{margin-left:auto;transition:transform var(--transition);font-size:10px;}
+    .deep-dive-toggle.open .chevron{transform:rotate(180deg);}
+    .deep-dive-content{display:none;padding-top:16px;}
+    .deep-dive-content.open{display:block;animation:fadeUp .25s ease both;}
+
+    /* ── formula box ── */
+    .formula-box{background:rgba(99,102,241,.06);border:1px solid rgba(99,102,241,.2);border-radius:var(--radius-md);padding:14px 18px;text-align:center;font-size:1.05rem;color:var(--text-primary);margin-bottom:16px;}
+    .formula-label{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.08em;color:var(--text-muted);margin-bottom:8px;}
+
+    /* ── compare table ── */
+    .compare-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;}
+    .compare-table th{background:var(--bg-tertiary);padding:9px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);border:1px solid var(--border);}
+    .compare-table td{padding:9px 12px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;}
+    .compare-table tr:hover td{background:rgba(255,255,255,.02);}
+
+    /* ── grid helpers ── */
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+    .info-box{background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;}
+    .info-box h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;color:var(--text-muted);}
+    .info-box p{font-size:13px;color:var(--text-secondary);line-height:1.6;}
+
+    /* ── tokenizer ── */
+    .tok-input{width:100%;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:10px 14px;font-size:14px;color:var(--text-primary);font-family:inherit;resize:none;outline:none;transition:border-color var(--transition);box-sizing:border-box;}
+    .tok-input:focus{border-color:var(--accent);}
+    .tok-output{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px;min-height:36px;}
+    .tok-pill{display:inline-flex;align-items:center;padding:3px 9px;border-radius:5px;font-size:12.5px;font-family:'JetBrains Mono',monospace;font-weight:600;border:1px solid;cursor:default;transition:transform .1s;}
+    .tok-pill:hover{transform:translateY(-1px);}
+    .tok-stats{display:flex;gap:16px;margin-top:10px;font-size:12px;color:var(--text-muted);flex-wrap:wrap;}
+    .tok-stat-val{color:var(--accent-hover);font-weight:700;font-family:'JetBrains Mono',monospace;}
+    .tc0{background:rgba(99,102,241,.15);border-color:rgba(99,102,241,.4);color:#a5b4fc;}
+    .tc1{background:rgba(16,185,129,.12);border-color:rgba(16,185,129,.35);color:#6ee7b7;}
+    .tc2{background:rgba(245,158,11,.12);border-color:rgba(245,158,11,.35);color:#fcd34d;}
+    .tc3{background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.3);color:#fca5a5;}
+    .tc4{background:rgba(168,85,247,.12);border-color:rgba(168,85,247,.35);color:#d8b4fe;}
+    .tc5{background:rgba(59,130,246,.12);border-color:rgba(59,130,246,.35);color:#93c5fd;}
+    .tc6{background:rgba(236,72,153,.1);border-color:rgba(236,72,153,.3);color:#f9a8d4;}
+    .tc7{background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.3);color:#5eead4;}
+
+    /* ── context window visual ── */
+    .ctx-bar-wrap{display:flex;flex-direction:column;gap:6px;margin-top:4px;}
+    .ctx-bar-row{display:flex;align-items:center;gap:10px;}
+    .ctx-bar-label{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);width:72px;flex-shrink:0;text-align:right;}
+    .ctx-bar-track{flex:1;height:22px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;overflow:hidden;position:relative;}
+    .ctx-bar-fill{height:100%;border-radius:3px;}
+    .ctx-bar-num{position:absolute;right:6px;top:4px;font-size:10px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);}
+
+    /* ── temperature ── */
+    .slider-row{display:flex;align-items:center;gap:14px;margin-top:10px;flex-wrap:wrap;}
+    .slider-row label{font-size:12px;color:var(--text-muted);font-weight:600;white-space:nowrap;}
+    input[type=range]{-webkit-appearance:none;appearance:none;flex:1;min-width:80px;height:5px;border-radius:3px;background:var(--bg-secondary);outline:none;border:1px solid var(--border);}
+    input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;border-radius:50%;background:var(--accent);cursor:pointer;border:2px solid #fff;}
+    .slider-val{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--accent-hover);min-width:90px;text-align:right;}
+    .temp-token{padding:3px 9px;border-radius:5px;font-size:12px;font-family:'JetBrains Mono',monospace;border:1px solid var(--border);color:var(--text-secondary);display:inline-block;margin:2px;transition:all .3s;}
+    .temp-token.selected{border-color:rgba(99,102,241,.6);color:#a5b4fc;background:rgba(99,102,241,.12);}
+
+    /* ── prompt engineering tabs ── */
+    .pe-tab-bar{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+    .pe-tab{padding:6px 16px;border-radius:20px;font-size:12.5px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg-secondary);color:var(--text-muted);font-family:inherit;transition:all var(--transition);}
+    .pe-tab.active{border-color:var(--accent);color:var(--accent-hover);background:rgba(99,102,241,.1);}
+    .pe-panel{display:none;}
+    .pe-panel.active{display:block;animation:fadeUp .2s ease both;}
+    .pe-split{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+    .pe-box{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;}
+    .pe-box-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px;}
+    .pe-prompt{font-family:'JetBrains Mono',monospace;font-size:11.5px;color:#e2e8f0;line-height:1.7;white-space:pre-wrap;word-break:break-word;}
+    .pe-response{font-size:12.5px;color:var(--text-secondary);line-height:1.65;white-space:pre-wrap;word-break:break-word;}
+    .pe-divider{border:none;border-top:1px solid var(--border);margin:10px 0;}
+    .pe-verdict{display:flex;gap:8px;align-items:flex-start;margin-top:10px;padding:10px 12px;border-radius:var(--radius-md);font-size:12px;line-height:1.55;}
+    .pe-verdict.good{background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);color:#6ee7b7;}
+    .pe-verdict.bad{background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.2);color:#fca5a5;}
+
+    /* ── decision tree ── */
+    .dt-node{border-radius:var(--radius-md);padding:10px 14px;margin-bottom:4px;font-size:13px;line-height:1.5;}
+    .dt-question{background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);color:#a5b4fc;font-weight:600;}
+    .dt-leaf-ft{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.25);color:#fcd34d;}
+    .dt-leaf-rag{background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.25);color:#93c5fd;}
+    .dt-leaf-prompt{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#6ee7b7;}
+    .dt-leaf-combo{background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);color:#d8b4fe;}
+    .dt-branch{display:flex;gap:12px;margin-left:20px;padding-left:12px;border-left:2px solid var(--border);}
+    .dt-branch-col{flex:1;min-width:0;}
+    .dt-branch-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);padding:4px 0;display:block;}
+
+    /* ── RLHF ── */
+    .rlhf-stage{display:flex;align-items:flex-start;gap:14px;padding:14px 0;border-bottom:1px solid var(--border);}
+    .rlhf-stage:last-child{border-bottom:none;}
+    .rlhf-num{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;}
+    .rlhf-title{font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:4px;}
+    .rlhf-desc{font-size:13px;color:var(--text-secondary);line-height:1.6;}
+    .rlhf-arrow{text-align:center;font-size:18px;color:var(--text-muted);padding:2px 0;}
+
+    /* ── embedding canvas ── */
+    .embed-canvas-wrap{position:relative;width:100%;height:280px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);overflow:hidden;}
+    #embed-canvas{position:absolute;top:0;left:0;width:100%;height:100%;}
+    .embed-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;font-size:11.5px;}
+    .embed-legend-item{display:flex;align-items:center;gap:6px;color:var(--text-muted);}
+    .embed-legend-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+
+    /* ── model table badges ── */
+    .model-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;}
+    .model-open{background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.25);}
+    .model-closed{background:rgba(239,68,68,.1);color:#f87171;border:1px solid rgba(239,68,68,.2);}
+
+    /* ── emergent pills ── */
+    .emerge-grid{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0;}
+    .emerge-pill{padding:6px 13px;border-radius:20px;font-size:12.5px;font-weight:600;border:1px solid;}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+    @media(max-width:640px){
+      .sticky-progress{padding:10px 16px;}
+      .topic-card-header{padding:18px 16px 0;}
+      .topic-card-body{padding:14px 16px 20px;}
+      .grid-2,.grid-3,.pe-split{grid-template-columns:1fr;}
+      .dt-branch{flex-direction:column;}
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <a href="../index.html">
+        <div class="logo-icon">🤖</div>
+        <div class="logo-text">AI Engineer<span>Learning Path</span></div>
+      </a>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-label">Modules</div>
+      <a href="fundamentals.html" class="nav-link"><span class="nav-link-icon">🧠</span>Fundamentals<span class="nav-link-num">01</span></a>
+      <a href="ml-core.html" class="nav-link"><span class="nav-link-icon">📊</span>ML Core<span class="nav-link-num">02</span></a>
+      <a href="deep-learning.html" class="nav-link"><span class="nav-link-icon">🔥</span>Deep Learning<span class="nav-link-num">03</span></a>
+      <a href="llms.html" class="nav-link active"><span class="nav-link-icon">💬</span>LLMs<span class="nav-link-num">04</span></a>
+      <a href="rag.html" class="nav-link"><span class="nav-link-icon">🔍</span>RAG<span class="nav-link-num">05</span></a>
+      <a href="agents.html" class="nav-link"><span class="nav-link-icon">🤖</span>Agents<span class="nav-link-num">06</span></a>
+      <a href="mlops.html" class="nav-link"><span class="nav-link-icon">⚙️</span>MLOps<span class="nav-link-num">07</span></a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="../index.html" class="back-home-btn">← Home</a>
+    </div>
+  </aside>
+
+  <div class="main-content">
+
+    <div class="sticky-progress" role="status" aria-label="Reading progress">
+      <span class="progress-label">Progress</span>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="9" aria-valuenow="0" id="prog-bar">
+        <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+      <span class="progress-count" id="prog-count">0 / 9</span>
+    </div>
+
+    <div class="page-container">
+
+      <div class="module-hero fade-up">
+        <div class="module-hero-meta">
+          <span class="badge badge-advanced">⬤ Advanced</span>
+          <span class="badge" style="background:rgba(99,102,241,.12);color:#a5b4fc;">Module 4</span>
+        </div>
+        <h1>Large Language Models</h1>
+        <p class="module-hero-desc">The technology powering every AI product you ship — from understanding how scale produces intelligence to hands-on tokenization, prompting strategies, and knowing when to fine-tune versus retrieve. This module turns LLM users into LLM engineers.</p>
+        <div class="module-hero-stats">
+          <div class="stat-item">📚 <strong>9 topics</strong></div>
+          <div class="stat-item">⏱ <strong>~4.5 hours</strong></div>
+          <div class="stat-item">💬 <strong>Interactive demos</strong></div>
+        </div>
+      </div>
+
+      <!-- Cheat Sheet -->
+      <div class="fade-up" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <button class="cheat-sheet-toggle" onclick="toggleCheatSheet()" aria-expanded="false" aria-controls="cheat-sheet" id="cs-btn">
+          📋 Cheat Sheet
+        </button>
+        <span style="font-size:12px;color:var(--text-muted);">All key LLM terms on one screen</span>
+      </div>
+      <div class="cheat-sheet-panel" id="cheat-sheet" role="region" aria-label="LLMs Cheat Sheet">
+        <h2 style="font-size:1.1rem;margin-bottom:4px;">LLMs Quick Reference</h2>
+        <p style="font-size:12.5px;color:var(--text-muted);margin-bottom:12px;">All key terms at a glance — print-friendly.</p>
+        <div class="cs-grid">
+          <div class="cs-section">
+            <h4>Architecture</h4>
+            <div class="cs-term"><span class="cs-key">Transformer</span><span class="cs-def">Self-attention + FFN blocks stacked N times</span></div>
+            <div class="cs-term"><span class="cs-key">Token</span><span class="cs-def">Sub-word unit — average 0.75 words per token</span></div>
+            <div class="cs-term"><span class="cs-key">Context window</span><span class="cs-def">Max tokens the model can attend to at once</span></div>
+            <div class="cs-term"><span class="cs-key">KV-cache</span><span class="cs-def">Cached key/value pairs to avoid re-computing attention</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Training</h4>
+            <div class="cs-term"><span class="cs-key">Pre-training</span><span class="cs-def">Next-token prediction on trillions of tokens</span></div>
+            <div class="cs-term"><span class="cs-key">SFT</span><span class="cs-def">Supervised fine-tuning on curated instruction datasets</span></div>
+            <div class="cs-term"><span class="cs-key">RLHF</span><span class="cs-def">Reward model trained on human preferences, PPO optimisation</span></div>
+            <div class="cs-term"><span class="cs-key">DPO</span><span class="cs-def">Direct Preference Optimisation — simpler alternative to RLHF</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Prompting</h4>
+            <div class="cs-term"><span class="cs-key">Zero-shot</span><span class="cs-def">Task described but no examples given</span></div>
+            <div class="cs-term"><span class="cs-key">Few-shot</span><span class="cs-def">2–8 examples in the prompt</span></div>
+            <div class="cs-term"><span class="cs-key">CoT</span><span class="cs-def">"Let's think step by step" → improved reasoning</span></div>
+            <div class="cs-term"><span class="cs-key">System prompt</span><span class="cs-def">Persistent instructions prepended to every conversation</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Sampling</h4>
+            <div class="cs-term"><span class="cs-key">Temperature</span><span class="cs-def">Scales logits — 0=deterministic, 1=creative, >1=chaotic</span></div>
+            <div class="cs-term"><span class="cs-key">Top-p</span><span class="cs-def">Nucleus sampling — sample from smallest set summing to p</span></div>
+            <div class="cs-term"><span class="cs-key">Greedy</span><span class="cs-def">Always pick argmax — fast but repetitive</span></div>
+            <div class="cs-term"><span class="cs-key">Beam search</span><span class="cs-def">Keep top-k beams — better for structured output</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Fine-tuning</h4>
+            <div class="cs-term"><span class="cs-key">LoRA</span><span class="cs-def">Low-rank adapter matrices — 100× fewer trainable params</span></div>
+            <div class="cs-term"><span class="cs-key">QLoRA</span><span class="cs-def">Quantised base model + LoRA — fits on consumer GPU</span></div>
+            <div class="cs-term"><span class="cs-key">Full fine-tune</span><span class="cs-def">Update all weights — expensive but best for domain shift</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Scaling</h4>
+            <div class="cs-term"><span class="cs-key">Chinchilla law</span><span class="cs-def">Equal compute for model size and token count</span></div>
+            <div class="cs-term"><span class="cs-key">Emergence</span><span class="cs-def">Capabilities that phase-transition above a parameter threshold</span></div>
+            <div class="cs-term"><span class="cs-key">MoE</span><span class="cs-def">Mixture of Experts — sparse routing, fewer FLOPs per token</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 1 · What Are LLMs ══ -->
+      <div class="topic-card fade-up fade-up-delay-1" id="card-1">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">01</span><span class="badge badge-beginner">Beginner</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-1','llms','topic-1')"><span class="read-icon">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">What Are LLMs — Scale, Parameters &amp; Emergent Behaviour</h2>
+          <p class="topic-summary">A Large Language Model is a Transformer trained to predict the next token on internet-scale text. "Large" refers to parameter count — measured in billions — but the more surprising finding is that scale doesn't just make models better at known tasks, it unlocks entirely new capabilities that smaller models cannot do at all.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">Scale of modern LLMs — parameters vs capability</div>
+            <svg viewBox="0 0 560 195" width="100%" style="max-height:195px;display:block;">
+              <line x1="50" y1="168" x2="540" y2="168" stroke="#1f2937" stroke-width="1.5"/>
+              <line x1="50" y1="20" x2="50" y2="168" stroke="#1f2937" stroke-width="1.5"/>
+              <text x="295" y="186" text-anchor="middle" fill="#475569" font-size="10">Parameters (log scale) →</text>
+              <text x="16" y="95" text-anchor="middle" fill="#475569" font-size="10" transform="rotate(-90,16,95)">Capability</text>
+              <line x1="50" y1="118" x2="540" y2="118" stroke="#1f2937" stroke-dasharray="3,4" stroke-width="1"/>
+              <line x1="50" y1="68"  x2="540" y2="68"  stroke="#1f2937" stroke-dasharray="3,4" stroke-width="1"/>
+              <path d="M 50,166 C 80,164 110,161 150,153 C 190,142 220,126 255,106 C 290,84 315,68 355,56 C 390,45 430,38 540,33" fill="none" stroke="#6366f1" stroke-width="2.5"/>
+              <!-- emergence marker -->
+              <line x1="252" y1="108" x2="252" y2="53" stroke="rgba(245,158,11,.55)" stroke-width="1.5" stroke-dasharray="4,3"/>
+              <text x="255" y="50" fill="#fcd34d" font-size="9" font-weight="600">Emergence</text>
+              <!-- model dots -->
+              <circle cx="128" cy="156" r="5" fill="#475569"/>
+              <text x="128" y="147" text-anchor="middle" fill="#6b7280" font-size="8.5">GPT-2</text>
+              <circle cx="210" cy="133" r="5" fill="#6366f1" opacity=".7"/>
+              <text x="210" y="124" text-anchor="middle" fill="#a5b4fc" font-size="8.5">LLaMA-7B</text>
+              <circle cx="270" cy="98" r="6" fill="#6366f1"/>
+              <text x="270" y="88" text-anchor="middle" fill="#a5b4fc" font-size="8.5">LLaMA-70B</text>
+              <circle cx="358" cy="54" r="7" fill="#f59e0b"/>
+              <text x="358" y="43" text-anchor="middle" fill="#fcd34d" font-size="8.5">GPT-4</text>
+              <circle cx="430" cy="40" r="6" fill="#10b981"/>
+              <text x="430" y="30" text-anchor="middle" fill="#34d399" font-size="8.5">Claude 3.5</text>
+              <circle cx="490" cy="35" r="6" fill="#a855f7"/>
+              <text x="490" y="25" text-anchor="middle" fill="#d8b4fe" font-size="8.5">Gemini</text>
+            </svg>
+          </div>
+
+          <div class="visual-label" style="margin-bottom:8px;">Emergent capabilities — appear suddenly above scale thresholds</div>
+          <div class="emerge-grid">
+            <div class="emerge-pill" style="background:rgba(99,102,241,.12);border-color:rgba(99,102,241,.3);color:#a5b4fc;">Chain-of-thought reasoning</div>
+            <div class="emerge-pill" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.25);color:#6ee7b7;">In-context few-shot learning</div>
+            <div class="emerge-pill" style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.25);color:#fcd34d;">Instruction following</div>
+            <div class="emerge-pill" style="background:rgba(239,68,68,.1);border-color:rgba(239,68,68,.2);color:#fca5a5;">Multi-step arithmetic</div>
+            <div class="emerge-pill" style="background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.25);color:#d8b4fe;">Code generation</div>
+            <div class="emerge-pill" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.25);color:#93c5fd;">Language translation</div>
+            <div class="emerge-pill" style="background:rgba(236,72,153,.1);border-color:rgba(236,72,153,.25);color:#f9a8d4;">Theory of mind</div>
+            <div class="emerge-pill" style="background:rgba(20,184,166,.1);border-color:rgba(20,184,166,.25);color:#5eead4;">Calibrated uncertainty</div>
+          </div>
+
+          <div class="grid-3" style="margin-top:16px;">
+            <div class="info-box">
+              <h4>Self-supervised pretraining</h4>
+              <p>LLMs are trained on next-token prediction across trillions of tokens. No labels — the text itself provides the supervision signal. Scale + diversity = generalisation.</p>
+            </div>
+            <div class="info-box">
+              <h4>Parameters as memory</h4>
+              <p>Each parameter is a weight storing a learned pattern. LLaMA-3-70B has 70 billion — more parameters than synapses in 7 human brains combined.</p>
+            </div>
+            <div class="info-box">
+              <h4>Chinchilla scaling laws</h4>
+              <p>Compute should be split equally between model size and token count. GPT-3 was undertrained — LLaMA-3 trained on 15T tokens to fix the imbalance.</p>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Emergence is not fully understood</strong>
+              Emergent capabilities don't appear gradually — they phase-transition. A model at 50B parameters may score 0% on a benchmark; a model at 70B scores 85%. Whether this reflects discontinuous generalisation or a measurement artefact is an active research debate.
+            </div>
+          </div>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🔧</span>
+            <div class="engineer-note-text">
+              <strong>Why an AI Engineer needs this</strong>
+              Model selection comes down to scale vs cost. A 7B model serves 50× more requests per dollar than a 70B model. If your task is in the 7B capability range, don't use 70B. If it requires emergent reasoning — multi-step planning, code debugging, complex analysis — you need a frontier model. Benchmark on your specific task before choosing.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 2 · Tokenisation ══ -->
+      <div class="topic-card fade-up fade-up-delay-2" id="card-2">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">02</span><span class="badge badge-beginner">Beginner</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-2','llms','topic-2')"><span class="read-icon">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Tokenisation — Interactive Demo</h2>
+          <p class="topic-summary">LLMs don't read characters or words — they read <em>tokens</em>. A tokeniser splits text into subword units using Byte-Pair Encoding (BPE). Common words become single tokens; rare or technical words split into several. This has direct cost and context window implications.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">Type text below — watch it split into tokens in real time</div>
+            <textarea class="tok-input" id="tok-input" rows="3" placeholder="Type anything…">The quick brown fox jumps over the lazy dog. AI engineering is fascinating!</textarea>
+            <div class="tok-output" id="tok-output"></div>
+            <div class="tok-stats">
+              <span>Tokens: <span class="tok-stat-val" id="tok-count">0</span></span>
+              <span>Characters: <span class="tok-stat-val" id="tok-chars">0</span></span>
+              <span>Chars/token: <span class="tok-stat-val" id="tok-ratio">—</span></span>
+              <span>Est. cost (GPT-4o): <span class="tok-stat-val" id="tok-cost">—</span></span>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="info-box">
+              <h4>How BPE works</h4>
+              <p>Start with individual bytes. Repeatedly merge the most frequent adjacent pair into a new token. After 50k–100k merges you have a vocabulary. Common sequences ("the", "ing", "tion") become single tokens; rare ones split.</p>
+            </div>
+            <div class="info-box">
+              <h4>Tokenisation quirks</h4>
+              <p>Whitespace is included in tokens. "dog" ≠ " dog". Numbers often split digit-by-digit. Non-Latin scripts use more tokens per character — Arabic and Chinese cost 3–5× more than English per semantic unit.</p>
+            </div>
+          </div>
+
+          <table class="compare-table">
+            <thead><tr><th>Text</th><th>Approximate tokens</th><th>Count</th><th>Why</th></tr></thead>
+            <tbody>
+              <tr><td>"hello world"</td><td><code>hello</code> · <code> world</code></td><td>2</td><td>Common English words → single tokens</td></tr>
+              <tr><td>"supercalifragilistic"</td><td><code>super</code>·<code>cal</code>·<code>if</code>·<code>rag</code>·<code>il</code>·<code>istic</code></td><td>6</td><td>Rare word split by frequent subwords</td></tr>
+              <tr><td>"123456"</td><td><code>123</code>·<code>456</code></td><td>2</td><td>Numbers grouped by training frequency</td></tr>
+              <tr><td>"المهندس" (engineer, Arabic)</td><td>6–8 tokens</td><td>6–8</td><td>Non-Latin script tokenises less efficiently</td></tr>
+              <tr><td>"&lt;|endoftext|&gt;"</td><td>1 special token</td><td>1</td><td>Control token baked into vocabulary at training time</td></tr>
+            </tbody>
+          </table>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🔧</span>
+            <div class="engineer-note-text">
+              <strong>Why an AI Engineer needs this</strong>
+              API costs are billed per token, not per character. A verbose system prompt uses 500 tokens before the user speaks. Knowing tokenisation lets you estimate costs, optimise system prompts, and understand why multi-digit arithmetic, URL parsing, and code completion are harder than they look — token boundaries misalign with semantic boundaries.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 3 · Prompt Engineering ══ -->
+      <div class="topic-card fade-up fade-up-delay-3" id="card-3" style="border-color:rgba(99,102,241,.3);box-shadow:0 0 0 1px rgba(99,102,241,.1),0 8px 32px rgba(99,102,241,.08);">
+        <div class="topic-card-header">
+          <div class="topic-card-meta">
+            <span class="topic-number">03</span>
+            <span class="badge badge-intermediate">Intermediate</span>
+            <span class="badge" style="background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:#fcd34d;">⭐ Interactive</span>
+          </div>
+          <button class="mark-read-btn" onclick="toggleRead('card-3','llms','topic-3')"><span class="read-icon">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Prompt Engineering — Zero-shot, Few-shot &amp; Chain-of-Thought</h2>
+          <p class="topic-summary">How you structure a prompt determines output quality more than which model you use. Select a technique below to see a before/after example rendered live — bad prompt on the left, improved prompt on the right.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">Select a technique to see it in action</div>
+            <div class="pe-tab-bar">
+              <button class="pe-tab active" onclick="showPE(event,'zeroshot')">Zero-shot</button>
+              <button class="pe-tab" onclick="showPE(event,'fewshot')">Few-shot</button>
+              <button class="pe-tab" onclick="showPE(event,'cot')">Chain-of-Thought</button>
+            </div>
+
+            <!-- Zero-shot -->
+            <div class="pe-panel active" id="pe-zeroshot">
+              <div class="pe-split">
+                <div class="pe-box">
+                  <div class="pe-box-label" style="color:#f87171;">Without technique</div>
+                  <div class="pe-prompt">Classify the sentiment.
+
+Text: "The hotel room was small but the location was perfect and the staff were incredibly friendly."</div>
+                  <hr class="pe-divider">
+                  <div class="pe-response" style="color:#fca5a5;">Positive</div>
+                  <div class="pe-verdict bad">Oversimplified. The review is mixed — the model collapsed nuance into a single label without being asked for detail.</div>
+                </div>
+                <div class="pe-box">
+                  <div class="pe-box-label" style="color:#34d399;">With zero-shot instruction</div>
+                  <div class="pe-prompt">You are a sentiment analysis expert. Classify as Positive, Negative, or Mixed and explain which aspects drove each label.
+
+Text: "The hotel room was small but the location was perfect and the staff were incredibly friendly."</div>
+                  <hr class="pe-divider">
+                  <div class="pe-response">Sentiment: <strong style="color:#6ee7b7;">Mixed</strong>
+
+• Negative: "room was small"
+• Positive: "location was perfect", "staff incredibly friendly"
+
+Overall lean: Positive (2 strong positives vs 1 minor negative)</div>
+                  <div class="pe-verdict good">Role + explicit format + reasoning request → structured, nuanced output with no examples needed.</div>
+                </div>
+              </div>
+              <div class="key-insight" style="margin-top:14px;">
+                <span class="key-insight-icon">💡</span>
+                <div class="key-insight-text">
+                  <strong>Zero-shot principle</strong>
+                  No examples — just a clear instruction. Specify: (1) the model's role, (2) exact output format, (3) any constraints. Works well for common tasks; fails on novel schemas or domain-specific output formats.
+                </div>
+              </div>
+            </div>
+
+            <!-- Few-shot -->
+            <div class="pe-panel" id="pe-fewshot">
+              <div class="pe-split">
+                <div class="pe-box">
+                  <div class="pe-box-label" style="color:#f87171;">Zero-shot for novel format</div>
+                  <div class="pe-prompt">Extract product info from reviews.
+
+Review: "Bought the Sony WH-1000XM5 headphones. Paid $350. Noise cancellation is incredible but ear cups get warm after 2h."</div>
+                  <hr class="pe-divider">
+                  <div class="pe-response" style="color:#fca5a5;">The product is Sony WH-1000XM5 headphones. Price was $350. Reviewer liked noise cancellation but found ear cups warm.</div>
+                  <div class="pe-verdict bad">Free-form prose. No consistent schema — not parseable programmatically.</div>
+                </div>
+                <div class="pe-box">
+                  <div class="pe-box-label" style="color:#34d399;">With few-shot examples</div>
+                  <div class="pe-prompt">Extract product info as JSON.
+
+Review: "Tried Bose QC45 for $279. Great comfort, mediocre battery."
+Output: {"product":"Bose QC45","price":279,"pros":["comfort"],"cons":["battery"]}
+
+Review: "Samsung 4K TV, $799. Stunning picture but cheap remote."
+Output: {"product":"Samsung 4K TV","price":799,"pros":["picture"],"cons":["remote"]}
+
+Review: "Bought Sony WH-1000XM5 headphones. Paid $350. Noise cancellation is incredible but ear cups get warm after 2h."
+Output:</div>
+                  <hr class="pe-divider">
+                  <div class="pe-response">{"product":"Sony WH-1000XM5","price":350,"pros":["noise cancellation"],"cons":["ear cups warm after 2h"]}</div>
+                  <div class="pe-verdict good">Two examples taught the exact schema. Output is valid JSON, parseable without post-processing. Format shown > format described.</div>
+                </div>
+              </div>
+              <div class="key-insight" style="margin-top:14px;">
+                <span class="key-insight-icon">💡</span>
+                <div class="key-insight-text">
+                  <strong>Few-shot principle</strong>
+                  2–8 input/output examples demonstrate the exact format and style you want. Critical for: custom JSON schemas, specific writing styles, classification with unusual label sets. Keep examples diverse — don't repeat the same scenario.
+                </div>
+              </div>
+            </div>
+
+            <!-- Chain-of-thought -->
+            <div class="pe-panel" id="pe-cot">
+              <div class="pe-split">
+                <div class="pe-box">
+                  <div class="pe-box-label" style="color:#f87171;">Direct answer prompt</div>
+                  <div class="pe-prompt">A factory produces 240 widgets/hour, runs 16h/day, 5 days/week. Widgets sell for $4.50, cost $0.80 each, plus $8,000 fixed daily costs. What is the weekly profit?</div>
+                  <hr class="pe-divider">
+                  <div class="pe-response" style="color:#fca5a5;">$14,400</div>
+                  <div class="pe-verdict bad">Wrong. The model skipped intermediate steps and made arithmetic errors. Direct-answer prompts on multi-step math are unreliable.</div>
+                </div>
+                <div class="pe-box">
+                  <div class="pe-box-label" style="color:#34d399;">Chain-of-thought prompt</div>
+                  <div class="pe-prompt">Solve step by step, showing each calculation.
+
+A factory produces 240 widgets/hour, runs 16h/day, 5 days/week. Widgets sell for $4.50, cost $0.80 each, plus $8,000 fixed daily costs. What is the weekly profit?</div>
+                  <hr class="pe-divider">
+                  <div class="pe-response">Step 1: Weekly widgets
+240 × 16 × 5 = 19,200
+
+Step 2: Revenue
+19,200 × $4.50 = $86,400
+
+Step 3: Variable costs
+19,200 × $0.80 = $15,360
+
+Step 4: Fixed costs
+$8,000 × 5 = $40,000
+
+Step 5: Profit
+$86,400 − $15,360 − $40,000 = <strong style="color:#34d399;">$31,040</strong></div>
+                  <div class="pe-verdict good">Serialised reasoning forces the model to use each step as context for the next. Accurate, auditable, and correct.</div>
+                </div>
+              </div>
+              <div class="key-insight" style="margin-top:14px;">
+                <span class="key-insight-icon">💡</span>
+                <div class="key-insight-text">
+                  <strong>Chain-of-thought principle</strong>
+                  "Think step by step" dramatically improves multi-step reasoning and math. Generated intermediate tokens act as a scratchpad — each step becomes context for the next. This is the mechanism behind extended thinking and o1-style reasoning models.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🔧</span>
+            <div class="engineer-note-text">
+              <strong>Why an AI Engineer needs this</strong>
+              Prompt engineering is the highest-leverage, lowest-cost lever you have. Before spending on fine-tuning or RAG infrastructure, exhaust: (1) system prompt role + constraints, (2) output format specification, (3) few-shot demonstrations, (4) chain-of-thought for reasoning. A well-crafted prompt on a 7B model often beats a naive prompt on 70B — and costs 10× less.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 4 · Context Window ══ -->
+      <div class="topic-card fade-up fade-up-delay-4" id="card-4">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">04</span><span class="badge badge-beginner">Beginner</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-4','llms','topic-4')"><span class="read-icon">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Context Window — How Tokens Fill Memory</h2>
+          <p class="topic-summary">The context window is the total number of tokens a model can "see" at once — system prompt, conversation history, retrieved documents, and the current user message all share this fixed budget. Running out means the model silently truncates the oldest content.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">Context window sizes — different models</div>
+            <div class="ctx-bar-wrap">
+              <div class="ctx-bar-row">
+                <div class="ctx-bar-label">GPT-3.5</div>
+                <div class="ctx-bar-track"><div class="ctx-bar-fill" style="width:1.6%;background:rgba(239,68,68,.55);"></div><div class="ctx-bar-num">16k</div></div>
+              </div>
+              <div class="ctx-bar-row">
+                <div class="ctx-bar-label">GPT-4o</div>
+                <div class="ctx-bar-track"><div class="ctx-bar-fill" style="width:12.8%;background:rgba(245,158,11,.55);"></div><div class="ctx-bar-num">128k</div></div>
+              </div>
+              <div class="ctx-bar-row">
+                <div class="ctx-bar-label">Claude 3.5</div>
+                <div class="ctx-bar-track"><div class="ctx-bar-fill" style="width:20%;background:rgba(16,185,129,.5);"></div><div class="ctx-bar-num">200k</div></div>
+              </div>
+              <div class="ctx-bar-row">
+                <div class="ctx-bar-label">Gemini 1.5</div>
+                <div class="ctx-bar-track"><div class="ctx-bar-fill" style="width:100%;background:rgba(168,85,247,.5);"></div><div class="ctx-bar-num">1M</div></div>
+              </div>
+              <div class="ctx-bar-row">
+                <div class="ctx-bar-label">LLaMA-3 8B</div>
+                <div class="ctx-bar-track"><div class="ctx-bar-fill" style="width:0.8%;background:rgba(99,102,241,.6);"></div><div class="ctx-bar-num">8k</div></div>
+              </div>
+            </div>
+
+            <div style="margin-top:18px;">
+              <div class="visual-label">Typical context composition — 128k window, RAG chatbot</div>
+              <svg viewBox="0 0 520 44" width="100%" style="max-height:44px;display:block;">
+                <rect x="0" y="8" width="80" height="28" rx="4" fill="rgba(239,68,68,.35)" stroke="rgba(239,68,68,.5)" stroke-width="1"/>
+                <text x="40" y="25" text-anchor="middle" fill="#fca5a5" font-size="9" font-weight="600">System</text>
+                <text x="40" y="34" text-anchor="middle" fill="#f87171" font-size="7.5">~600 tok</text>
+                <rect x="82" y="8" width="130" height="28" rx="4" fill="rgba(99,102,241,.3)" stroke="rgba(99,102,241,.45)" stroke-width="1"/>
+                <text x="147" y="25" text-anchor="middle" fill="#a5b4fc" font-size="9" font-weight="600">Chat history</text>
+                <text x="147" y="34" text-anchor="middle" fill="#818cf8" font-size="7.5">~4,000 tok</text>
+                <rect x="214" y="8" width="200" height="28" rx="4" fill="rgba(59,130,246,.3)" stroke="rgba(59,130,246,.45)" stroke-width="1"/>
+                <text x="314" y="25" text-anchor="middle" fill="#93c5fd" font-size="9" font-weight="600">Retrieved documents (RAG)</text>
+                <text x="314" y="34" text-anchor="middle" fill="#60a5fa" font-size="7.5">~8,000 tok</text>
+                <rect x="416" y="8" width="56" height="28" rx="4" fill="rgba(16,185,129,.3)" stroke="rgba(16,185,129,.45)" stroke-width="1"/>
+                <text x="444" y="25" text-anchor="middle" fill="#6ee7b7" font-size="9" font-weight="600">User</text>
+                <text x="444" y="34" text-anchor="middle" fill="#34d399" font-size="7.5">~200 tok</text>
+                <rect x="474" y="8" width="46" height="28" rx="4" fill="rgba(30,30,50,.6)" stroke="var(--border)" stroke-width="1" stroke-dasharray="3,2"/>
+                <text x="497" y="26" text-anchor="middle" fill="#475569" font-size="9">Free</text>
+              </svg>
+              <p style="font-size:11.5px;color:var(--text-muted);margin-top:8px;">When the window fills, older messages are truncated — the model forgets them silently.</p>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Lost-in-the-middle problem</strong>
+              Studies show LLMs recall information at the beginning and end of context reliably, but memory degrades for content buried in the middle. Put critical information last, closest to the question.
+            </div>
+          </div>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🔧</span>
+            <div class="engineer-note-text">
+              <strong>Why an AI Engineer needs this</strong>
+              Latency and cost scale with context length. Design your context budget explicitly: cap system prompts, summarise old history instead of appending, truncate RAG chunks to the minimum needed. Large context windows are a last resort, not a default.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 5 · Temperature & Sampling ══ -->
+      <div class="topic-card fade-up" id="card-5">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">05</span><span class="badge badge-intermediate">Intermediate</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-5','llms','topic-5')"><span class="read-icon">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Temperature &amp; Sampling — Controlling Randomness</h2>
+          <p class="topic-summary">LLMs don't pick the single best token — they sample from a probability distribution. Temperature controls how "peaked" or "flat" that distribution is. Top-p and top-k limit which tokens are eligible. Together they determine whether your model gives reliable facts or creative surprises.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">Interactive — drag temperature to see how the distribution changes</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+              Prompt: <em style="color:var(--text-secondary);">"The capital of France is"</em> — next token probabilities:
+            </div>
+            <div id="temp-chart" style="display:flex;align-items:flex-end;gap:5px;height:88px;padding:0 4px;"></div>
+            <div id="temp-labels" style="display:flex;gap:5px;margin-top:4px;font-size:9px;color:var(--text-muted);font-family:'JetBrains Mono',monospace;"></div>
+            <div class="slider-row">
+              <label>Temperature</label>
+              <input type="range" id="temp-slider" min="0" max="2" step="0.05" value="0.7" oninput="updateTemp(this.value)">
+              <span class="slider-val" id="temp-val">T = 0.70</span>
+            </div>
+            <div id="temp-tokens" style="display:flex;flex-wrap:wrap;gap:4px;margin-top:10px;"></div>
+            <div id="temp-desc" style="font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.5;"></div>
+          </div>
+
+          <div class="formula-box">
+            <div class="formula-label">Softmax with temperature T</div>
+            $$P(x_i) = \frac{e^{z_i / T}}{\sum_j e^{z_j / T}}$$
+            <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">T→0: deterministic (argmax). T=1: raw model probabilities. T&gt;1: flattened → high randomness.</p>
+          </div>
+
+          <table class="compare-table">
+            <thead><tr><th>Parameter</th><th>What it does</th><th>Typical range</th><th>Best for</th></tr></thead>
+            <tbody>
+              <tr><td><strong style="color:#a5b4fc">Temperature</strong></td><td>Scales all logits before softmax</td><td>0–1 prod; up to 2 creative</td><td>Global creativity dial</td></tr>
+              <tr><td><strong style="color:#6ee7b7">Top-p (nucleus)</strong></td><td>Sample only from tokens summing to p probability mass</td><td>0.85–0.95</td><td>Prevents incoherent long-tail tokens</td></tr>
+              <tr><td><strong style="color:#fcd34d">Top-k</strong></td><td>Consider only k highest-probability tokens</td><td>40–100</td><td>Hard cap on vocabulary size</td></tr>
+              <tr><td><strong style="color:#f9a8d4">Repetition penalty</strong></td><td>Reduces logits of recently seen tokens</td><td>1.0–1.3</td><td>Prevents loops in open-ended generation</td></tr>
+            </tbody>
+          </table>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🔧</span>
+            <div class="engineer-note-text">
+              <strong>Production defaults by use case</strong>
+              Factual Q&amp;A / code: T=0–0.2, top-p=0.9. Chatbots / assistants: T=0.5–0.7. Creative writing / brainstorming: T=0.9–1.2, top-p=0.95. Never use T=0 for chat — identical responses feel robotic.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 6 · Fine-tuning vs RAG vs Prompting ══ -->
+      <div class="topic-card fade-up" id="card-6">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">06</span><span class="badge badge-advanced">Advanced</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-6','llms','topic-6')"><span class="read-icon">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Fine-tuning vs RAG vs Prompting — When to Use Each</h2>
+          <p class="topic-summary">Three strategies for customising LLM behaviour — each with different cost, latency, and capability trade-offs. Choosing wrong wastes weeks of engineering. Walk through this decision tree to pick the right approach.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">Decision tree — follow the questions</div>
+            <div class="dt-node dt-question">❓ Do you need the model to know information not in its training data (proprietary docs, live data, post-cutoff facts)?</div>
+            <div class="dt-branch">
+              <div class="dt-branch-col">
+                <span class="dt-branch-label">YES →</span>
+                <div class="dt-node dt-question">❓ Does it need to retrieve and cite specific documents, or reason over large corpora?</div>
+                <div class="dt-branch">
+                  <div class="dt-branch-col">
+                    <span class="dt-branch-label">YES →</span>
+                    <div class="dt-node dt-leaf-rag">🔍 <strong>RAG</strong> — chunk docs, embed, store in vector DB, retrieve top-k at query time.</div>
+                  </div>
+                  <div class="dt-branch-col">
+                    <span class="dt-branch-label">NO (small set) →</span>
+                    <div class="dt-node dt-leaf-prompt">💬 <strong>Prompting</strong> — inject knowledge directly into system prompt if it fits in context.</div>
+                  </div>
+                </div>
+              </div>
+              <div class="dt-branch-col">
+                <span class="dt-branch-label">NO →</span>
+                <div class="dt-node dt-question">❓ Do you need to change the model's behaviour, style, or domain expertise?</div>
+                <div class="dt-branch">
+                  <div class="dt-branch-col">
+                    <span class="dt-branch-label">YES, consistently →</span>
+                    <div class="dt-node dt-leaf-ft">⚡ <strong>Fine-tuning (LoRA)</strong> — when consistent format/tone/domain matters at scale and prompting alone is brittle.</div>
+                  </div>
+                  <div class="dt-branch-col">
+                    <span class="dt-branch-label">YES, minor →</span>
+                    <div class="dt-node dt-leaf-prompt">💬 <strong>Better prompting</strong> — add role, format, few-shot examples. Most "I need fine-tuning" cases are solved here first.</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div style="margin-top:12px;" class="dt-node dt-leaf-combo">🔀 <strong>Often the answer combines approaches:</strong> RAG + fine-tuning for domain chatbots needing both fresh knowledge and specialist tone. Prompting + RAG covers 80% of production use cases without training cost.</div>
+          </div>
+
+          <table class="compare-table" style="margin-top:16px;">
+            <thead><tr><th>Approach</th><th>Changes model?</th><th>New data?</th><th>Cost</th><th>Latency</th><th>Best for</th></tr></thead>
+            <tbody>
+              <tr><td><strong style="color:#6ee7b7">Prompting</strong></td><td>No</td><td>No</td><td>Low</td><td>Baseline</td><td>Format, tone, task framing, quick prototypes</td></tr>
+              <tr><td><strong style="color:#93c5fd">RAG</strong></td><td>No</td><td>Yes (docs)</td><td>Medium</td><td>+50–200ms</td><td>Grounded Q&amp;A, citing sources, live/private data</td></tr>
+              <tr><td><strong style="color:#fcd34d">Fine-tuning (LoRA)</strong></td><td>Yes</td><td>Yes (pairs)</td><td>High</td><td>Low (merged)</td><td>Style, domain jargon, smaller/faster model</td></tr>
+              <tr><td><strong style="color:#f9a8d4">RAG + Fine-tuning</strong></td><td>Yes</td><td>Yes (both)</td><td>Very high</td><td>Medium</td><td>Production domain chatbots needing both</td></tr>
+            </tbody>
+          </table>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🔧</span>
+            <div class="engineer-note-text">
+              <strong>The most common mistake</strong>
+              Jumping to fine-tuning before exhausting prompting. Fine-tuning costs 10–100h of GPU time, requires high-quality training data, and locks you into a model version. A system prompt with five well-crafted few-shot examples often produces 90% of the quality in 30 minutes. Always baseline with prompting first.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 7 · RLHF ══ -->
+      <div class="topic-card fade-up" id="card-7">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">07</span><span class="badge badge-advanced">Advanced</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-7','llms','topic-7')"><span class="read-icon">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">RLHF — Reinforcement Learning from Human Feedback</h2>
+          <p class="topic-summary">Base LLMs predict the next token — they don't naturally follow instructions or avoid harmful outputs. RLHF is the three-stage pipeline that turned raw GPT-3 into ChatGPT, using human preferences to align model behaviour with human intent.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">Three-stage RLHF pipeline</div>
+            <div class="rlhf-stage">
+              <div class="rlhf-num" style="background:rgba(59,130,246,.2);color:#93c5fd;border:1px solid rgba(59,130,246,.3);">1</div>
+              <div class="rlhf-body">
+                <div class="rlhf-title">Supervised Fine-Tuning (SFT)</div>
+                <div class="rlhf-desc">Human labellers write ideal responses to thousands of prompts. The base model is fine-tuned on these (prompt, ideal-response) pairs using standard cross-entropy loss. This teaches instruction-following format and safe response patterns.</div>
+              </div>
+            </div>
+            <div class="rlhf-arrow">↓</div>
+            <div class="rlhf-stage">
+              <div class="rlhf-num" style="background:rgba(245,158,11,.15);color:#fcd34d;border:1px solid rgba(245,158,11,.25);">2</div>
+              <div class="rlhf-body">
+                <div class="rlhf-title">Reward Model (RM) Training</div>
+                <div class="rlhf-desc">For each prompt the SFT model generates multiple responses. Humans rank them pairwise. A separate Reward Model — another LLM with a scalar output head — is trained to predict human preference scores from these comparisons, distilling human judgement into a differentiable function.</div>
+              </div>
+            </div>
+            <div class="rlhf-arrow">↓</div>
+            <div class="rlhf-stage">
+              <div class="rlhf-num" style="background:rgba(16,185,129,.15);color:#34d399;border:1px solid rgba(16,185,129,.25);">3</div>
+              <div class="rlhf-body">
+                <div class="rlhf-title">PPO Optimisation (RL phase)</div>
+                <div class="rlhf-desc">The SFT model is the RL agent. It generates responses, the Reward Model scores them, and PPO updates the model to maximise expected reward. A KL-divergence penalty prevents the model from drifting too far from the SFT base — without it, the model would exploit the reward model with high-scoring gibberish.</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="info-box">
+              <h4>DPO — the modern alternative</h4>
+              <p>Direct Preference Optimisation (2023) achieves RLHF-quality alignment without a separate reward model or RL loop. It directly optimises the policy on preference pairs. Much simpler to implement, more stable. Used in LLaMA-3, Mistral Instruct, and most modern open models.</p>
+            </div>
+            <div class="info-box">
+              <h4>Constitutional AI (Claude)</h4>
+              <p>Instead of human preference labels, the model is given a "constitution" of principles and trained to critique and revise its own outputs. Reduces dependence on labellers at scale. Combines SFT + RLAIF (AI feedback) rather than pure human feedback.</p>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Reward hacking — Goodhart's Law</strong>
+              If the reward model is imperfect (it always is), PPO can exploit its blind spots — generating responses that score high on the proxy reward but aren't actually helpful. The KL penalty and careful reward model design are the main mitigations.
+            </div>
+          </div>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🔧</span>
+            <div class="engineer-note-text">
+              <strong>Why an AI Engineer needs this</strong>
+              When your fine-tuned model gives technically correct but weirdly formatted or off-tone responses, that's a symptom of SFT-only training without preference data. Adding DPO with even 500 preference pairs can dramatically improve output quality. Understanding RLHF also explains why base models (LLaMA-3-base) are hard to use directly — they predict tokens, not answers.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 8 · Key Models Overview ══ -->
+      <div class="topic-card fade-up" id="card-8">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">08</span><span class="badge badge-beginner">Beginner</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-8','llms','topic-8')"><span class="read-icon">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Key Models Overview — GPT-4, Claude, Gemini, LLaMA, Mistral</h2>
+          <p class="topic-summary">The frontier model landscape shifts every few months, but the same trade-offs persist: capability vs cost vs openness vs context length. This comparison covers the models you'll most likely integrate with, evaluate, or deploy.</p>
+
+          <table class="compare-table" style="margin-top:0;">
+            <thead>
+              <tr><th>Model</th><th>Provider</th><th>Type</th><th>Context</th><th>Strengths</th><th>Best for</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td><strong style="color:#a5b4fc">GPT-4o</strong></td><td>OpenAI</td>
+                <td><span class="model-badge model-closed">Closed</span></td><td>128k</td>
+                <td>Multimodal (vision + audio), reasoning, large ecosystem</td>
+                <td>General production, vision tasks, fine-tuning via API</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#6ee7b7">Claude 3.5 Sonnet</strong></td><td>Anthropic</td>
+                <td><span class="model-badge model-closed">Closed</span></td><td>200k</td>
+                <td>Long context, coding, instruction-following, safety</td>
+                <td>Long-document analysis, code assistants, enterprise</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#fcd34d">Gemini 1.5 Pro</strong></td><td>Google</td>
+                <td><span class="model-badge model-closed">Closed</span></td><td>1M</td>
+                <td>Longest context, native multimodal, Google workspace</td>
+                <td>Whole-codebase analysis, video QA, massive docs</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#f9a8d4">LLaMA 3.1 70B</strong></td><td>Meta</td>
+                <td><span class="model-badge model-open">Open</span></td><td>128k</td>
+                <td>Near-frontier open weights, fine-tunable, self-hostable</td>
+                <td>On-prem deployment, custom fine-tuning, privacy-critical</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#d8b4fe">LLaMA 3.2 3B/1B</strong></td><td>Meta</td>
+                <td><span class="model-badge model-open">Open</span></td><td>128k</td>
+                <td>Edge-deployable, extremely fast, tiny memory footprint</td>
+                <td>On-device, mobile, latency-critical microservices</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#93c5fd">Mixtral 8×7B</strong></td><td>Mistral AI</td>
+                <td><span class="model-badge model-open">Open</span></td><td>32k</td>
+                <td>MoE architecture, best quality/parameter ratio, multilingual</td>
+                <td>Cost-sensitive APIs, multilingual tasks, MoE experimentation</td>
+              </tr>
+              <tr>
+                <td><strong style="color:#fbbf24">o1 / o3</strong></td><td>OpenAI</td>
+                <td><span class="model-badge model-closed">Closed</span></td><td>200k</td>
+                <td>Extended chain-of-thought, STEM, complex logic</td>
+                <td>Math, competitive programming, hard agentic reasoning</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="key-insight" style="margin-top:16px;">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Open vs Closed — the real trade-off</strong>
+              Closed models lead on raw benchmarks but cost per token and offer no data privacy guarantees. Open models (LLaMA, Mistral) let you self-host, fine-tune freely, and keep data on-premise. The gap has narrowed dramatically — LLaMA-3-70B beats GPT-3.5 on most benchmarks.
+            </div>
+          </div>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🔧</span>
+            <div class="engineer-note-text">
+              <strong>Model selection framework</strong>
+              (1) Data privacy required? → Open/self-hosted. (2) Need &gt;32k context? → GPT-4o/Claude/Gemini. (3) Cost is primary constraint? → LLaMA-3-8B or Mistral-7B. (4) Coding is primary task? → Claude 3.5 Sonnet. (5) Multi-step reasoning critical? → o1/o3. Never choose by brand — benchmark on your specific task distribution first.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 9 · Embeddings ══ -->
+      <div class="topic-card fade-up" id="card-9">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">09</span><span class="badge badge-intermediate">Intermediate</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-9','llms','topic-9')"><span class="read-icon">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Embeddings — Vector Space &amp; Word Relationships</h2>
+          <p class="topic-summary">Embeddings are dense vector representations of text where semantic similarity corresponds to geometric proximity. Words, sentences, or documents map to points in a high-dimensional space (1536D for OpenAI's text-embedding-3-small). The 2D projection below shows how semantic clusters emerge naturally from meaning.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">2D projection of word embeddings — hover or tap a cluster to highlight it</div>
+            <div class="embed-canvas-wrap">
+              <canvas id="embed-canvas"></canvas>
+            </div>
+            <div class="embed-legend">
+              <div class="embed-legend-item"><div class="embed-legend-dot" style="background:#6366f1;"></div>Royalty</div>
+              <div class="embed-legend-item"><div class="embed-legend-dot" style="background:#10b981;"></div>Animals</div>
+              <div class="embed-legend-item"><div class="embed-legend-dot" style="background:#f59e0b;"></div>Tech</div>
+              <div class="embed-legend-item"><div class="embed-legend-dot" style="background:#ef4444;"></div>Geography</div>
+              <div class="embed-legend-item"><div class="embed-legend-dot" style="background:#a855f7;"></div>Food</div>
+            </div>
+          </div>
+
+          <div class="formula-box">
+            <div class="formula-label">Word analogy — vector arithmetic in embedding space</div>
+            $$\text{king} - \text{man} + \text{woman} \approx \text{queen}$$
+            <p style="font-size:12px;color:var(--text-muted);margin-top:8px;">Relationships encode as vector offsets: gender, royalty, location, and sentiment are directions in embedding space.</p>
+          </div>
+
+          <div class="grid-2">
+            <div class="info-box">
+              <h4>Cosine similarity</h4>
+              <p>Similarity = cosine of the angle between two vectors. Range: −1 (opposite) to +1 (identical). Used by every vector database for nearest-neighbour search. Dot product is faster when vectors are normalised (L2 norm = 1).</p>
+            </div>
+            <div class="info-box">
+              <h4>Embedding models</h4>
+              <p>text-embedding-3-small (OpenAI): 1536D, fast, cheap. text-embedding-3-large: 3072D, better recall. BGE-M3 (open): multilingual, 8k context. sentence-transformers: local, flexible. Choose based on latency vs quality vs cost.</p>
+            </div>
+          </div>
+
+          <div class="code-block"><span class="code-lang">python</span>
+<pre><span class="kw">from</span> <span class="var">openai</span> <span class="kw">import</span> <span class="cl">OpenAI</span>
+<span class="kw">import</span> <span class="var">numpy</span> <span class="kw">as</span> <span class="var">np</span>
+
+<span class="var">client</span> = <span class="cl">OpenAI</span>()
+
+<span class="kw">def</span> <span class="fn">embed</span>(<span class="var">text</span>: <span class="cl">str</span>) -&gt; <span class="var">np</span>.ndarray:
+    <span class="var">resp</span> = <span class="var">client</span>.embeddings.<span class="fn">create</span>(
+        model=<span class="str">"text-embedding-3-small"</span>,
+        input=<span class="var">text</span>
+    )
+    <span class="kw">return</span> <span class="var">np</span>.<span class="fn">array</span>(<span class="var">resp</span>.data[<span class="num">0</span>].embedding)
+
+<span class="kw">def</span> <span class="fn">cosine_similarity</span>(<span class="var">a</span>, <span class="var">b</span>):
+    <span class="kw">return</span> <span class="var">np</span>.<span class="fn">dot</span>(<span class="var">a</span>, <span class="var">b</span>) / (<span class="var">np</span>.<span class="fn">linalg</span>.<span class="fn">norm</span>(<span class="var">a</span>) * <span class="var">np</span>.<span class="fn">linalg</span>.<span class="fn">norm</span>(<span class="var">b</span>))
+
+<span class="cm"># Semantic search: rank docs by similarity to query</span>
+<span class="var">query_vec</span> = <span class="fn">embed</span>(<span class="str">"machine learning tutorial"</span>)
+<span class="var">doc_vecs</span>  = [<span class="fn">embed</span>(<span class="var">d</span>) <span class="kw">for</span> <span class="var">d</span> <span class="kw">in</span> <span class="var">docs</span>]
+<span class="var">scores</span>    = [<span class="fn">cosine_similarity</span>(<span class="var">query_vec</span>, <span class="var">dv</span>) <span class="kw">for</span> <span class="var">dv</span> <span class="kw">in</span> <span class="var">doc_vecs</span>]
+<span class="var">top_docs</span>  = <span class="fn">sorted</span>(<span class="fn">zip</span>(<span class="var">docs</span>, <span class="var">scores</span>), key=<span class="kw">lambda</span> <span class="var">x</span>: -<span class="var">x</span>[<span class="num">1</span>])[:<span class="num">3</span>]</pre>
+          </div>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🔧</span>
+            <div class="engineer-note-text">
+              <strong>Why an AI Engineer needs this</strong>
+              Embeddings are the foundation of RAG systems, semantic search, duplicate detection, and clustering. Every vector database (Pinecone, Weaviate, pgvector, Chroma) stores and queries embedding vectors. Understanding dimensionality, similarity metric, and model choice directly impacts retrieval quality, storage cost, and query latency in production.
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /page-container -->
+  </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<nav class="bottom-nav">
+  <div class="bottom-nav-inner">
+    <a href="deep-learning.html" class="bottom-nav-link"><span>🔥</span>Deep Learning</a>
+    <a href="llms.html" class="bottom-nav-link active"><span>💬</span>LLMs</a>
+    <a href="rag.html" class="bottom-nav-link"><span>🔍</span>RAG</a>
+    <a href="agents.html" class="bottom-nav-link"><span>🤖</span>Agents</a>
+  </div>
+</nav>
+
+<script>
+// ── Shared utilities ──────────────────────────────────────────────────────────
+function toggleRead(cardId, module, topicId) {
+  const card = document.getElementById(cardId);
+  const btn  = card.querySelector('.mark-read-btn');
+  const icon = btn.querySelector('.read-icon');
+  const isRead = card.classList.toggle('read');
+  localStorage.setItem(`${module}-${topicId}`, isRead ? '1' : '');
+  icon.textContent = isRead ? '✓' : '○';
+  updateProgress();
+}
+
+function updateProgress() {
+  const total = 9;
+  const done  = document.querySelectorAll('.topic-card.read').length;
+  const pct   = Math.round((done / total) * 100);
+  document.getElementById('prog-fill').style.width = pct + '%';
+  document.getElementById('prog-count').textContent = `${done} / ${total}`;
+  const bar = document.getElementById('prog-bar');
+  if (bar) bar.setAttribute('aria-valuenow', done);
+}
+
+window.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.topic-card').forEach((card, i) => {
+    if (localStorage.getItem(`llms-topic-${i + 1}`)) {
+      card.classList.add('read');
+      const icon = card.querySelector('.read-icon');
+      if (icon) icon.textContent = '✓';
+    }
+    const btn = card.querySelector('.mark-read-btn');
+    if (btn) btn.setAttribute('aria-label', `Mark topic ${i + 1} as read`);
+  });
+  updateProgress();
+  initTokenizer();
+  updateTemp(0.7);
+  initEmbedCanvas();
+});
+
+// ── Prompt engineering tabs ───────────────────────────────────────────────────
+function showPE(evt, id) {
+  document.querySelectorAll('.pe-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.pe-panel').forEach(p => p.classList.remove('active'));
+  evt.currentTarget.classList.add('active');
+  document.getElementById('pe-' + id).classList.add('active');
+}
+
+// ── Tokenizer ─────────────────────────────────────────────────────────────────
+const TOK_CLASSES = ['tc0','tc1','tc2','tc3','tc4','tc5','tc6','tc7'];
+
+function pseudoTokenize(text) {
+  const specialWords = new Set([
+    'the','a','an','is','in','of','to','and','for','on','it','this','that',
+    'are','was','be','with','as','at','by','from','or','but','not','he',
+    'she','we','they','you','I','The','A','In','quick','brown','fox','lazy',
+    'dog','over','jumps','AI','fascinating','engineering','is'
+  ]);
+  const suffixes = ['ing','tion','ness','ment','er','est','ed','ly','al','ic','ive','ous'];
+  const prefixes = ['un','re','pre','dis','over','under','super','inter','trans'];
+  const tokens = [];
+  const chunks = text.match(/(\s+|\S+)/g) || [];
+
+  for (const chunk of chunks) {
+    if (/^\s+$/.test(chunk)) {
+      if (tokens.length > 0) tokens[tokens.length - 1] += chunk;
+      else tokens.push(chunk);
+      continue;
+    }
+    const lower = chunk.toLowerCase().replace(/[^a-z0-9]/g, '');
+    if (specialWords.has(chunk) || lower.length <= 3) { tokens.push(chunk); continue; }
+
+    let split = false;
+    for (const suf of suffixes) {
+      if (lower.endsWith(suf) && lower.length > suf.length + 2) {
+        tokens.push(chunk.slice(0, chunk.length - suf.length), suf);
+        split = true; break;
+      }
+    }
+    if (!split) {
+      for (const pre of prefixes) {
+        if (lower.startsWith(pre) && lower.length > pre.length + 3) {
+          tokens.push(chunk.slice(0, pre.length), chunk.slice(pre.length));
+          split = true; break;
+        }
+      }
+    }
+    if (!split) {
+      if (chunk.length > 8) {
+        const m = Math.ceil(chunk.length / 2);
+        tokens.push(chunk.slice(0, m), chunk.slice(m));
+      } else { tokens.push(chunk); }
+    }
+  }
+  return tokens.filter(t => t && t.trim().length > 0);
+}
+
+function initTokenizer() {
+  const input = document.getElementById('tok-input');
+  input.addEventListener('input', renderTokens);
+  renderTokens();
+}
+
+function renderTokens() {
+  const text = document.getElementById('tok-input').value;
+  const tokens = pseudoTokenize(text);
+  const out = document.getElementById('tok-output');
+  out.innerHTML = tokens.map((t, i) => {
+    const cls = TOK_CLASSES[i % TOK_CLASSES.length];
+    const display = t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/ /g,'·');
+    return `<span class="tok-pill ${cls}" title="Token ${i+1}">${display}</span>`;
+  }).join('');
+  const chars = text.length;
+  const count = tokens.length;
+  document.getElementById('tok-count').textContent = count;
+  document.getElementById('tok-chars').textContent = chars;
+  document.getElementById('tok-ratio').textContent = count ? (chars / count).toFixed(1) : '—';
+  document.getElementById('tok-cost').textContent = count ? `$${((count / 1e6) * 5).toFixed(6)}` : '—';
+}
+
+// ── Temperature ───────────────────────────────────────────────────────────────
+const TEMP_DATA = [
+  { label:'Paris',    logit:5.2 },
+  { label:'France',   logit:2.1 },
+  { label:'beautiful',logit:1.4 },
+  { label:'Lyon',     logit:0.8 },
+  { label:'located',  logit:0.5 },
+  { label:'known',    logit:0.3 },
+  { label:'city',     logit:0.2 },
+  { label:'called',   logit:0.1 },
+];
+const TEMP_COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#a855f7','#3b82f6','#ec4899','#14b8a6'];
+
+function softmax(logits, T) {
+  const scaled = logits.map(l => Math.exp(l / Math.max(T, 0.01)));
+  const sum = scaled.reduce((a, b) => a + b, 0);
+  return scaled.map(e => e / sum);
+}
+
+function updateTemp(rawVal) {
+  const T = parseFloat(rawVal);
+  document.getElementById('temp-val').textContent = `T = ${T.toFixed(2)}`;
+  const probs = softmax(TEMP_DATA.map(d => d.logit), T);
+  const maxP = Math.max(...probs);
+
+  document.getElementById('temp-chart').innerHTML = TEMP_DATA.map((d, i) => {
+    const h = Math.max(3, Math.round((probs[i] / maxP) * 84));
+    return `<div style="flex:1;height:${h}px;background:${TEMP_COLORS[i]};border-radius:3px 3px 0 0;opacity:${0.4 + probs[i] * 2};transition:all .3s;" title="${d.label}: ${(probs[i]*100).toFixed(1)}%"></div>`;
+  }).join('');
+
+  document.getElementById('temp-labels').innerHTML = TEMP_DATA.map((d, i) =>
+    `<span style="flex:1;text-align:center;color:${TEMP_COLORS[i]};overflow:hidden;white-space:nowrap;">${d.label}</span>`
+  ).join('');
+
+  document.getElementById('temp-tokens').innerHTML = TEMP_DATA.map((d, i) => {
+    const pct = (probs[i] * 100).toFixed(1);
+    const sel = probs[i] === maxP;
+    return `<span class="temp-token${sel ? ' selected' : ''}" style="${sel ? `border-color:${TEMP_COLORS[i]};` : ''}">${d.label} <span style="color:${TEMP_COLORS[i]};font-size:10px;">${pct}%</span></span>`;
+  }).join('');
+
+  let desc;
+  if (T < 0.1) desc = 'T ≈ 0: Deterministic — always picks "Paris". No randomness. Good for factual lookups.';
+  else if (T < 0.5) desc = `T = ${T.toFixed(2)}: Low — peaked distribution. "Paris" dominates at ${(probs[0]*100).toFixed(0)}%. Reliable for factual tasks.`;
+  else if (T < 1.0) desc = `T = ${T.toFixed(2)}: Balanced — "Paris" still most likely but alternatives have real probability. Good for chat.`;
+  else if (T < 1.5) desc = `T = ${T.toFixed(2)}: High — distribution flattening. Surprising tokens become possible. Good for creative tasks, risky for facts.`;
+  else desc = `T = ${T.toFixed(2)}: Very high — near-uniform distribution. Highly random, often incoherent for factual tasks.`;
+  document.getElementById('temp-desc').textContent = desc;
+}
+
+// ── Embedding canvas ──────────────────────────────────────────────────────────
+const EMBED_WORDS = [
+  { label:'king',   x:.15, y:.22, g:0 }, { label:'queen',  x:.22, y:.17, g:0 },
+  { label:'prince', x:.10, y:.31, g:0 }, { label:'crown',  x:.19, y:.11, g:0 },
+  { label:'throne', x:.28, y:.26, g:0 },
+  { label:'cat',    x:.56, y:.20, g:1 }, { label:'dog',    x:.66, y:.15, g:1 },
+  { label:'lion',   x:.59, y:.33, g:1 }, { label:'tiger',  x:.73, y:.27, g:1 },
+  { label:'wolf',   x:.63, y:.41, g:1 },
+  { label:'python', x:.35, y:.61, g:2 }, { label:'model',  x:.42, y:.54, g:2 },
+  { label:'GPU',    x:.28, y:.70, g:2 }, { label:'neural', x:.48, y:.65, g:2 },
+  { label:'AI',     x:.38, y:.75, g:2 },
+  { label:'Paris',  x:.76, y:.60, g:3 }, { label:'France', x:.83, y:.52, g:3 },
+  { label:'London', x:.89, y:.66, g:3 }, { label:'Berlin', x:.78, y:.73, g:3 },
+  { label:'Rome',   x:.71, y:.79, g:3 },
+  { label:'pizza',  x:.15, y:.76, g:4 }, { label:'sushi',  x:.22, y:.86, g:4 },
+  { label:'pasta',  x:.08, y:.89, g:4 }, { label:'bread',  x:.29, y:.81, g:4 },
+  { label:'cake',   x:.18, y:.93, g:4 },
+];
+const GRP_COLORS = ['#6366f1','#10b981','#f59e0b','#ef4444','#a855f7'];
+
+function initEmbedCanvas() {
+  const canvas = document.getElementById('embed-canvas');
+  const wrap   = canvas.parentElement;
+  const dpr    = window.devicePixelRatio || 1;
+  let activeGroup = -1;
+
+  function resize() {
+    const w = wrap.clientWidth;
+    const h = wrap.clientHeight;
+    canvas.width  = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width  = w + 'px';
+    canvas.style.height = h + 'px';
+    draw();
+  }
+
+  function wordPos(word) {
+    return { x: word.x * canvas.width / dpr, y: word.y * canvas.height / dpr };
+  }
+
+  function draw() {
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width / dpr;
+    const H = canvas.height / dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+
+    [0,1,2,3,4].forEach(g => {
+      const members = EMBED_WORDS.filter(w => w.g === g);
+      const cx = members.reduce((a, w) => a + w.x, 0) / members.length * W;
+      const cy = members.reduce((a, w) => a + w.y, 0) / members.length * H;
+      const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, 65);
+      grad.addColorStop(0, GRP_COLORS[g] + '28');
+      grad.addColorStop(1, GRP_COLORS[g] + '00');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(cx, cy, 65, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    EMBED_WORDS.forEach(word => {
+      const { x, y } = wordPos(word);
+      const col = GRP_COLORS[word.g];
+      const active = activeGroup === -1 || activeGroup === word.g;
+      ctx.globalAlpha = active ? 1 : 0.15;
+      ctx.beginPath();
+      ctx.arc(x, y, 5, 0, Math.PI * 2);
+      ctx.fillStyle = col;
+      ctx.fill();
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.fillStyle = active ? '#e2e8f0' : '#475569';
+      ctx.font = `${active ? 600 : 400} 10px Inter, sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.fillText(word.label, x + 8, y + 4);
+      ctx.globalAlpha = 1;
+    });
+  }
+
+  function handlePointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    const mx = (e.touches ? e.touches[0].clientX : e.clientX) - rect.left;
+    const my = (e.touches ? e.touches[0].clientY : e.clientY) - rect.top;
+    let found = -1;
+    EMBED_WORDS.forEach(word => {
+      const { x, y } = wordPos(word);
+      if (Math.hypot(mx - x, my - y) < 22) found = word.g;
+    });
+    if (e.type === 'click' || e.type === 'touchend') {
+      activeGroup = activeGroup === found ? -1 : found;
+    } else {
+      if (found !== activeGroup) activeGroup = found;
+    }
+    draw();
+  }
+
+  canvas.addEventListener('mousemove', handlePointer);
+  canvas.addEventListener('mouseleave', () => { activeGroup = -1; draw(); });
+  canvas.addEventListener('click', handlePointer);
+  canvas.addEventListener('touchend', e => { e.preventDefault(); handlePointer(e); });
+
+  new ResizeObserver(resize).observe(wrap);
+  resize();
+}
+
+function toggleCheatSheet() {
+  const panel = document.getElementById('cheat-sheet');
+  const btn = document.getElementById('cs-btn');
+  const isOpen = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', isOpen);
+  btn.textContent = isOpen ? '✕ Close' : '📋 Cheat Sheet';
+}
+</script>
+</body>
+</html>

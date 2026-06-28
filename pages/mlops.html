@@ -1,0 +1,1177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MLOps — AI Engineering</title>
+  <link rel="stylesheet" href="../shared/styles.css">
+  <style>
+    /* ── sticky progress ── */
+    .sticky-progress{position:sticky;top:0;z-index:50;background:rgba(15,17,23,.93);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:10px 32px;display:flex;align-items:center;gap:16px;}
+    .progress-label{font-size:12px;font-weight:600;color:var(--text-muted);white-space:nowrap;}
+    .progress-count{font-size:12px;font-weight:700;color:#fb923c;font-family:'JetBrains Mono',monospace;white-space:nowrap;}
+
+    /* ── accent override ── */
+    :root{--mlops-accent:#f97316;--mlops-accent-dim:rgba(249,115,22,.12);--mlops-accent-glow:rgba(249,115,22,.25);--mlops-border:rgba(249,115,22,.3);}
+    #prog-fill{background:linear-gradient(90deg,#f97316,#fb923c)!important;}
+
+    /* ── topic card ── */
+    .topic-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;margin-bottom:24px;transition:border-color var(--transition),box-shadow var(--transition);}
+    .topic-card.read{border-color:rgba(16,185,129,.3);}
+    .topic-card-header{padding:24px 28px 0;display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+    .topic-card-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+    .topic-number{font-size:11px;font-family:'JetBrains Mono',monospace;color:var(--text-muted);background:var(--bg-tertiary);border:1px solid var(--border);padding:2px 7px;border-radius:4px;}
+    .mark-read-btn{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border);background:var(--bg-tertiary);color:var(--text-muted);font-family:inherit;transition:all var(--transition);flex-shrink:0;}
+    .mark-read-btn:hover{border-color:var(--green);color:#34d399;background:rgba(16,185,129,.08);}
+    .topic-card.read .mark-read-btn{border-color:rgba(16,185,129,.4);color:#34d399;background:rgba(16,185,129,.1);}
+    .topic-card-body{padding:16px 28px 24px;}
+    .topic-title{font-size:1.25rem;font-weight:700;letter-spacing:-.02em;margin-bottom:8px;color:var(--text-primary);}
+    .topic-summary{color:var(--text-secondary);font-size:14.5px;line-height:1.65;margin-bottom:20px;max-width:720px;}
+
+    /* ── visual area ── */
+    .visual-area{background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-md);padding:20px;margin-bottom:16px;overflow:hidden;}
+    .visual-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);margin-bottom:10px;}
+
+    /* ── code block ── */
+    .code-block{background:#0a0c14;border:1px solid var(--border);border-radius:var(--radius-md);padding:16px 20px;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:12.5px;line-height:1.75;color:#e2e8f0;position:relative;margin-bottom:16px;}
+    .code-lang{position:absolute;top:10px;right:14px;font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text-muted);}
+    .kw{color:#c084fc;} .fn{color:#60a5fa;} .str{color:#86efac;} .num{color:#fb923c;} .cm{color:#4b5563;font-style:italic;} .var{color:#fde68a;} .cl{color:#f9a8d4;}
+
+    /* ── key insight ── */
+    .key-insight{display:flex;gap:12px;align-items:flex-start;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-left:3px solid var(--mlops-accent);border-radius:var(--radius-md);padding:14px 16px;margin:16px 0;}
+    .key-insight-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+    .key-insight-text{font-size:13.5px;color:var(--text-secondary);line-height:1.6;}
+    .key-insight-text strong{color:#fdba74;display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+
+    /* ── engineer note ── */
+    .engineer-note{display:flex;gap:12px;align-items:flex-start;background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.18);border-left:3px solid #10b981;border-radius:var(--radius-md);padding:14px 16px;margin:16px 0;}
+    .engineer-note-icon{font-size:18px;flex-shrink:0;margin-top:1px;}
+    .engineer-note-text{font-size:13.5px;color:var(--text-secondary);line-height:1.6;}
+    .engineer-note-text strong{color:#34d399;display:block;font-size:11px;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;}
+
+    /* ── real-world tag ── */
+    .realworld{display:inline-flex;align-items:center;gap:7px;background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.25);border-radius:6px;padding:7px 12px;font-size:12.5px;color:#fdba74;margin-bottom:16px;}
+    .realworld strong{color:#fb923c;}
+
+    /* ── deep dive accordion ── */
+    .deep-dive-toggle{display:flex;align-items:center;gap:8px;padding:10px 0;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;border:none;background:none;font-family:inherit;width:100%;text-align:left;border-top:1px solid var(--border);transition:color var(--transition);margin-top:4px;}
+    .deep-dive-toggle:hover{color:#fb923c;}
+    .deep-dive-toggle .chevron{margin-left:auto;transition:transform var(--transition);font-size:10px;}
+    .deep-dive-toggle.open .chevron{transform:rotate(180deg);}
+    .deep-dive-content{display:none;padding-top:16px;}
+    .deep-dive-content.open{display:block;animation:fadeUp .25s ease both;}
+
+    /* ── compare table ── */
+    .compare-table{width:100%;border-collapse:collapse;font-size:13px;margin-top:12px;}
+    .compare-table th{background:var(--bg-tertiary);padding:9px 12px;text-align:left;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);border:1px solid var(--border);}
+    .compare-table td{padding:9px 12px;border:1px solid var(--border);color:var(--text-secondary);vertical-align:top;}
+    .compare-table tr:hover td{background:rgba(255,255,255,.02);}
+
+    /* ── grid helpers ── */
+    .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+    .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px;}
+    .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+    .info-box{background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px 16px;}
+    .info-box h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;color:var(--text-muted);}
+    .info-box p{font-size:13px;color:var(--text-secondary);line-height:1.6;}
+
+    /* ── lifecycle loop diagram ── */
+    .lifecycle-loop{position:relative;width:100%;height:280px;}
+
+    /* ── serving mode cards ── */
+    .serving-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:12px 0;}
+    .serving-card{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;}
+    .serving-card-label{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px;}
+    .serving-card h4{font-size:14px;font-weight:700;color:var(--text-primary);margin-bottom:6px;}
+    .serving-card p{font-size:12.5px;color:var(--text-secondary);line-height:1.55;}
+    .serving-card .metric{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;}
+    .metric-chip{font-size:11px;font-family:'JetBrains Mono',monospace;padding:2px 8px;border-radius:4px;border:1px solid;}
+
+    /* ── tradeoff bar ── */
+    .tradeoff{display:flex;align-items:center;gap:10px;margin:6px 0;font-size:12px;}
+    .tradeoff-label{width:80px;color:var(--text-muted);text-align:right;font-size:11px;}
+    .tradeoff-track{flex:1;height:8px;background:var(--bg-secondary);border-radius:4px;border:1px solid var(--border);overflow:hidden;}
+    .tradeoff-fill{height:100%;border-radius:3px;transition:width .5s ease;}
+    .tradeoff-val{width:60px;color:var(--text-secondary);font-family:'JetBrains Mono',monospace;font-size:11px;}
+
+    /* ── drift visual ── */
+    .drift-visual{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0;}
+    .drift-box{background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius-md);padding:12px;}
+    .drift-box-title{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px;}
+    .drift-signal{display:flex;align-items:center;gap:8px;margin:4px 0;font-size:12px;color:var(--text-secondary);}
+    .drift-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+
+    /* ── quant table ── */
+    .quant-row{display:grid;grid-template-columns:100px 1fr 80px 80px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:12.5px;}
+    .quant-row:last-child{border-bottom:none;}
+    .quant-header{color:var(--text-muted);font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;}
+    .quant-format{font-family:'JetBrains Mono',monospace;font-weight:700;}
+
+    /* ── cloud table ── */
+    .cloud-table{width:100%;border-collapse:collapse;font-size:13px;}
+    .cloud-table th{background:var(--bg-tertiary);padding:10px 14px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);border-bottom:1px solid var(--border);}
+    .cloud-table td{padding:10px 14px;border-bottom:1px solid var(--border);color:var(--text-secondary);vertical-align:top;}
+    .cloud-table td:first-child{color:var(--text-primary);font-weight:600;}
+    .cloud-table tr:last-child td{border-bottom:none;}
+    .cloud-badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:10px;font-weight:700;letter-spacing:.04em;margin-right:3px;}
+
+    /* ── pipeline flow ── */
+    .pipe-flow{display:flex;align-items:center;gap:0;overflow-x:auto;padding:4px 0;}
+    .pipe-step{display:flex;flex-direction:column;align-items:center;min-width:80px;}
+    .pipe-node{padding:7px 12px;border-radius:var(--radius-sm);font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace;text-align:center;white-space:nowrap;}
+    .pipe-arrow{color:var(--text-muted);font-size:14px;padding:0 4px;flex-shrink:0;}
+    .pipe-sub{font-size:9px;color:var(--text-muted);margin-top:4px;text-align:center;max-width:76px;}
+
+    /* ── related topics ── */
+    .related-topics{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:14px 0 0;border-top:1px solid var(--border);margin-top:20px;}
+    .related-label{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;color:var(--text-muted);white-space:nowrap;}
+    .related-link{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:500;color:var(--text-secondary);border:1px solid var(--border);background:var(--bg-tertiary);text-decoration:none;transition:all var(--transition);}
+    .related-link:hover{border-color:var(--mlops-accent);color:#fdba74;background:rgba(249,115,22,.08);}
+
+    /* ── cheat sheet ── */
+    .cheat-sheet-toggle{display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:600;cursor:pointer;border:1px solid var(--mlops-border);background:var(--mlops-accent-dim);color:#fdba74;font-family:inherit;transition:all var(--transition);}
+    .cheat-sheet-toggle:hover{background:rgba(249,115,22,.18);border-color:#fb923c;}
+    .cheat-sheet-panel{display:none;background:var(--bg-secondary);border:1px solid var(--mlops-border);border-radius:var(--radius-lg);padding:24px 28px;margin-bottom:24px;animation:fadeUp .25s ease both;}
+    .cheat-sheet-panel.open{display:block;}
+    .cs-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px;margin-top:16px;}
+    .cs-section{background:var(--bg-tertiary);border:1px solid var(--border);border-radius:var(--radius-md);padding:14px;}
+    .cs-section h4{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#fdba74;margin-bottom:8px;}
+    .cs-term{display:flex;gap:8px;margin:5px 0;font-size:12px;}
+    .cs-key{font-family:'JetBrains Mono',monospace;color:var(--text-primary);font-weight:600;min-width:120px;flex-shrink:0;}
+    .cs-def{color:var(--text-secondary);line-height:1.5;}
+
+    @keyframes fadeUp{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:none;}}
+    @media(max-width:640px){
+      .sticky-progress{padding:10px 16px;}
+      .topic-card-header{padding:18px 16px 0;}
+      .topic-card-body{padding:14px 16px 20px;}
+      .grid-2,.grid-3,.grid-4,.serving-grid,.drift-visual{grid-template-columns:1fr;}
+      .quant-row{grid-template-columns:90px 1fr 70px;}
+    }
+
+    @media print{
+      .sticky-progress,.sidebar,.bottom-nav,.mark-read-btn,.deep-dive-toggle,.cheat-sheet-toggle{display:none!important;}
+      .topic-card{border:1px solid #ccc;margin-bottom:16px;break-inside:avoid;}
+      .deep-dive-content{display:block!important;}
+      body{background:#fff;color:#000;}
+      .topic-title{color:#000;}
+      .topic-summary{color:#333;}
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <div class="main-content">
+
+    <div class="sticky-progress" role="status" aria-label="Reading progress">
+      <span class="progress-label">Progress</span>
+      <div class="progress-bar-track" role="progressbar" aria-valuemin="0" aria-valuemax="8" aria-valuenow="0" id="prog-bar">
+        <div class="progress-bar-fill" id="prog-fill" style="width:0%"></div>
+      </div>
+      <span class="progress-count" id="prog-count">0 / 8</span>
+    </div>
+
+    <div class="page-container">
+
+      <div class="module-hero fade-up">
+        <div class="module-hero-meta">
+          <span class="badge badge-advanced">⬤ Advanced</span>
+          <span class="badge" style="background:rgba(249,115,22,.12);color:#fdba74;">Module 7</span>
+        </div>
+        <h1>MLOps</h1>
+        <p class="module-hero-desc">Take models from notebook to production — and keep them healthy once they're there. From Docker containers and REST serving to drift monitoring, quantization tricks, and cloud ML platforms.</p>
+        <div class="module-hero-stats">
+          <div class="stat-item">📚 <strong>8 topics</strong></div>
+          <div class="stat-item">⏱ <strong>~4 hours</strong></div>
+          <div class="stat-item">⚙️ <strong>Production-focused</strong></div>
+        </div>
+      </div>
+
+      <!-- Cheat Sheet -->
+      <div class="fade-up" style="margin-bottom:8px;display:flex;align-items:center;gap:12px;">
+        <button class="cheat-sheet-toggle" onclick="toggleCheatSheet()" aria-expanded="false" aria-controls="cheat-sheet" id="cs-btn">
+          📋 Cheat Sheet
+        </button>
+        <span style="font-size:12px;color:var(--text-muted);">Collapse all key terms to one view</span>
+      </div>
+      <div class="cheat-sheet-panel" id="cheat-sheet" role="region" aria-label="Cheat Sheet">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+          <div>
+            <h2 style="font-size:1.1rem;margin-bottom:4px;">MLOps Quick Reference</h2>
+            <p style="font-size:12.5px;color:var(--text-muted);">All key terms at a glance — print-friendly.</p>
+          </div>
+        </div>
+        <div class="cs-grid">
+          <div class="cs-section">
+            <h4>ML Lifecycle</h4>
+            <div class="cs-term"><span class="cs-key">Data → Train</span><span class="cs-def">Feature eng + training loop with tracked experiments</span></div>
+            <div class="cs-term"><span class="cs-key">Evaluate</span><span class="cs-def">Offline metrics (AUC, F1) before any serving</span></div>
+            <div class="cs-term"><span class="cs-key">Deploy</span><span class="cs-def">Package, containerize, route traffic</span></div>
+            <div class="cs-term"><span class="cs-key">Monitor</span><span class="cs-def">Drift, latency, cost, output quality</span></div>
+            <div class="cs-term"><span class="cs-key">Canary</span><span class="cs-def">Route % traffic to new model before full cutover</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Model Serving</h4>
+            <div class="cs-term"><span class="cs-key">REST API</span><span class="cs-def">Synchronous request/response, &lt;100ms latency goal</span></div>
+            <div class="cs-term"><span class="cs-key">Batch</span><span class="cs-def">Overnight scoring of millions of rows</span></div>
+            <div class="cs-term"><span class="cs-key">Streaming</span><span class="cs-def">Kafka/Kinesis feeds continuous real-time scoring</span></div>
+            <div class="cs-term"><span class="cs-key">p99 latency</span><span class="cs-def">99th percentile — the tail that users feel</span></div>
+            <div class="cs-term"><span class="cs-key">Throughput</span><span class="cs-def">Requests per second; batching improves it</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Containerization</h4>
+            <div class="cs-term"><span class="cs-key">Dockerfile</span><span class="cs-def">Recipe: base image + deps + model artifact + entrypoint</span></div>
+            <div class="cs-term"><span class="cs-key">OCI image</span><span class="cs-def">Portable bundle that runs identically anywhere</span></div>
+            <div class="cs-term"><span class="cs-key">Multi-stage</span><span class="cs-def">Build heavy → copy only artifacts into slim runtime</span></div>
+            <div class="cs-term"><span class="cs-key">Layer cache</span><span class="cs-def">Order Dockerfile by change frequency; deps before code</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>CI/CD for ML</h4>
+            <div class="cs-term"><span class="cs-key">CML</span><span class="cs-def">CI for ML: post model metrics as PR comments</span></div>
+            <div class="cs-term"><span class="cs-key">Model gate</span><span class="cs-def">Block deploy if eval metric &lt; threshold</span></div>
+            <div class="cs-term"><span class="cs-key">Shadow mode</span><span class="cs-def">New model runs in parallel, not serving users yet</span></div>
+            <div class="cs-term"><span class="cs-key">Blue/green</span><span class="cs-def">Instant swap between old and new version</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Monitoring</h4>
+            <div class="cs-term"><span class="cs-key">Data drift</span><span class="cs-def">Input distribution P(X) has shifted</span></div>
+            <div class="cs-term"><span class="cs-key">Concept drift</span><span class="cs-def">P(Y|X) has shifted — model's world-view is stale</span></div>
+            <div class="cs-term"><span class="cs-key">PSI</span><span class="cs-def">Population Stability Index — drift score (&gt;0.2 = retrain)</span></div>
+            <div class="cs-term"><span class="cs-key">KS test</span><span class="cs-def">Kolmogorov-Smirnov: compare distributions statistically</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Quantization</h4>
+            <div class="cs-term"><span class="cs-key">FP32</span><span class="cs-def">Full precision, 4 bytes/weight — training standard</span></div>
+            <div class="cs-term"><span class="cs-key">FP16/BF16</span><span class="cs-def">2 bytes — most inference; near-zero quality loss</span></div>
+            <div class="cs-term"><span class="cs-key">INT8</span><span class="cs-def">1 byte — 4× smaller, small accuracy dip</span></div>
+            <div class="cs-term"><span class="cs-key">GGUF</span><span class="cs-def">4-bit format for CPU inference via llama.cpp</span></div>
+            <div class="cs-term"><span class="cs-key">vLLM</span><span class="cs-def">PagedAttention — 24× throughput for LLM serving</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Cloud Platforms</h4>
+            <div class="cs-term"><span class="cs-key">SageMaker</span><span class="cs-def">AWS: managed training, registry, endpoints</span></div>
+            <div class="cs-term"><span class="cs-key">Vertex AI</span><span class="cs-def">GCP: Pipelines + Model Garden + Feature Store</span></div>
+            <div class="cs-term"><span class="cs-key">Azure ML</span><span class="cs-def">Prompt flow, responsible AI dashboard built-in</span></div>
+            <div class="cs-term"><span class="cs-key">Spot/Preemptible</span><span class="cs-def">70-80% cost savings for fault-tolerant training</span></div>
+          </div>
+          <div class="cs-section">
+            <h4>Observability</h4>
+            <div class="cs-term"><span class="cs-key">Prometheus</span><span class="cs-def">Scrape /metrics endpoint — counters, histograms, gauges</span></div>
+            <div class="cs-term"><span class="cs-key">Grafana</span><span class="cs-def">Dashboard &amp; alerting over Prometheus time-series</span></div>
+            <div class="cs-term"><span class="cs-key">Prediction log</span><span class="cs-def">inputs + outputs + latency + model version per request</span></div>
+            <div class="cs-term"><span class="cs-key">Alert</span><span class="cs-def">p99 &gt; 200ms or accuracy drops → page on-call</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ══ CARD 1 · ML Lifecycle ══ -->
+      <article class="topic-card fade-up fade-up-delay-1" id="card-1">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">01</span><span class="badge badge-beginner">Beginner</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-1','mlops','topic-1')" aria-label="Mark topic 1 as read"><span class="read-icon" aria-hidden="true">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">The ML Lifecycle — Data → Train → Evaluate → Deploy → Monitor</h2>
+          <p class="topic-summary">MLOps is what happens between a Jupyter notebook and a model that's reliably serving users six months later. The ML lifecycle is a loop, not a line: every production deployment generates new data and feedback that drives the next training iteration.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">ML Lifecycle — continuous loop diagram</div>
+            <svg viewBox="0 0 580 240" width="100%" aria-label="ML lifecycle loop: Data, Train, Evaluate, Deploy, Monitor feeding back into Data">
+              <defs>
+                <marker id="arr1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#f97316"/></marker>
+                <marker id="arr2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#6366f1"/></marker>
+              </defs>
+
+              <!-- Cycle nodes arranged in a pentagon -->
+              <!-- Data (left) -->
+              <rect x="22" y="95" width="88" height="44" rx="8" fill="rgba(99,102,241,.12)" stroke="rgba(99,102,241,.4)" stroke-width="1.5"/>
+              <text x="66" y="113" text-anchor="middle" fill="#a5b4fc" font-size="12" font-weight="700">📥 Data</text>
+              <text x="66" y="128" text-anchor="middle" fill="#6b7280" font-size="9">Collect · Clean · Version</text>
+
+              <!-- Train (top-left) -->
+              <rect x="148" y="30" width="88" height="44" rx="8" fill="rgba(16,185,129,.1)" stroke="rgba(16,185,129,.3)" stroke-width="1.5"/>
+              <text x="192" y="48" text-anchor="middle" fill="#6ee7b7" font-size="12" font-weight="700">🏋 Train</text>
+              <text x="192" y="63" text-anchor="middle" fill="#6b7280" font-size="9">Experiment · Track · Tune</text>
+
+              <!-- Evaluate (top-right) -->
+              <rect x="288" y="30" width="96" height="44" rx="8" fill="rgba(245,158,11,.1)" stroke="rgba(245,158,11,.3)" stroke-width="1.5"/>
+              <text x="336" y="48" text-anchor="middle" fill="#fcd34d" font-size="12" font-weight="700">📊 Evaluate</text>
+              <text x="336" y="63" text-anchor="middle" fill="#6b7280" font-size="9">Metrics · Bias · Regression</text>
+
+              <!-- Deploy (right) -->
+              <rect x="418" y="95" width="88" height="44" rx="8" fill="rgba(249,115,22,.1)" stroke="rgba(249,115,22,.3)" stroke-width="1.5"/>
+              <text x="462" y="113" text-anchor="middle" fill="#fdba74" font-size="12" font-weight="700">🚀 Deploy</text>
+              <text x="462" y="128" text-anchor="middle" fill="#6b7280" font-size="9">Container · Canary · Serve</text>
+
+              <!-- Monitor (bottom) -->
+              <rect x="218" y="170" width="96" height="44" rx="8" fill="rgba(239,68,68,.08)" stroke="rgba(239,68,68,.25)" stroke-width="1.5"/>
+              <text x="266" y="188" text-anchor="middle" fill="#fca5a5" font-size="12" font-weight="700">🔭 Monitor</text>
+              <text x="266" y="203" text-anchor="middle" fill="#6b7280" font-size="9">Drift · Latency · Cost</text>
+
+              <!-- Arrows: Data→Train -->
+              <path d="M 110,108 C 128,80 138,62 148,52" fill="none" stroke="#f97316" stroke-width="1.8" marker-end="url(#arr1)"/>
+              <!-- Train→Evaluate -->
+              <line x1="236" y1="52" x2="288" y2="52" stroke="#f97316" stroke-width="1.8" marker-end="url(#arr1)"/>
+              <!-- Evaluate→Deploy -->
+              <path d="M 384,74 C 400,82 418,100 418,117" fill="none" stroke="#f97316" stroke-width="1.8" marker-end="url(#arr1)"/>
+              <!-- Deploy→Monitor -->
+              <path d="M 450,139 C 424,155 374,168 314,180" fill="none" stroke="#f97316" stroke-width="1.8" marker-end="url(#arr1)"/>
+              <!-- Monitor→Data (feedback loop) -->
+              <path d="M 218,187 C 160,195 80,180 66,139" fill="none" stroke="#6366f1" stroke-width="1.8" stroke-dasharray="5,3" marker-end="url(#arr2)"/>
+              <text x="128" y="210" text-anchor="middle" fill="#6366f1" font-size="9" font-style="italic">feedback loop</text>
+
+              <!-- Retrain shortcut -->
+              <path d="M 266,170 C 240,145 210,90 236,74" fill="none" stroke="#4b5563" stroke-width="1" stroke-dasharray="3,3"/>
+              <text x="222" y="120" fill="#4b5563" font-size="8">retrain</text>
+            </svg>
+          </div>
+
+          <div class="grid-3">
+            <div class="info-box">
+              <h4>Why it's a loop</h4>
+              <p>Production data reveals distribution shifts, edge cases, and label drift that notebooks never see. Every deployment is a data collection experiment that improves the next model version.</p>
+            </div>
+            <div class="info-box">
+              <h4>Model registry</h4>
+              <p>A versioned catalogue of trained model artifacts with stage labels (Staging → Production → Archived). MLflow Registry and W&B Artifacts are common implementations. Enables rollback in under 60 seconds.</p>
+            </div>
+            <div class="info-box">
+              <h4>Canary deployment</h4>
+              <p>Route 5–10% of traffic to the new model version, compare metrics against the old version in production, then gradually increase if metrics hold. Cuts rollout risk dramatically.</p>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>The notebook-to-production gap</strong>
+              A model that achieves 94% accuracy in a notebook can behave catastrophically in production. The notebook uses a fixed, clean dataset; production sees real-time, messy, drifting data. MLOps exists to close this gap systematically.
+            </div>
+          </div>
+
+          <div class="related-topics" aria-label="Related topics">
+            <span class="related-label">Related:</span>
+            <a href="ml-core.html" class="related-link">📊 ML Core</a>
+            <a href="#card-5" class="related-link">🔭 Monitoring</a>
+            <a href="#card-4" class="related-link">⚙️ CI/CD for ML</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ══ CARD 2 · Model Serving ══ -->
+      <article class="topic-card fade-up fade-up-delay-2" id="card-2">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">02</span><span class="badge badge-intermediate">Intermediate</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-2','mlops','topic-2')" aria-label="Mark topic 2 as read"><span class="read-icon" aria-hidden="true">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Model Serving — REST, Batch, Streaming &amp; the Latency vs Throughput Tradeoff</h2>
+          <p class="topic-summary">How you serve a model is as important as the model itself. A fraud detector needs a response in under 50ms during a payment; a churn prediction model can score overnight. Matching serving mode to use case determines infrastructure cost, latency, and complexity.</p>
+
+          <div class="serving-grid" role="list">
+            <div class="serving-card" role="listitem">
+              <div class="serving-card-label" style="color:#6ee7b7;">Online / REST</div>
+              <h4>Synchronous API</h4>
+              <p>Client sends request, waits for prediction. FastAPI + uvicorn is the standard Python stack. Best when users or systems need the result immediately.</p>
+              <div class="metric">
+                <span class="metric-chip" style="background:rgba(16,185,129,.1);border-color:rgba(16,185,129,.3);color:#6ee7b7;">latency goal &lt;100ms</span>
+                <span class="metric-chip" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:#93c5fd;">fraud · rec · search</span>
+              </div>
+            </div>
+            <div class="serving-card" role="listitem">
+              <div class="serving-card-label" style="color:#fcd34d;">Batch</div>
+              <h4>Offline Scoring</h4>
+              <p>Score millions of records in bulk during off-peak hours. Results written to database, then read by downstream systems. No latency requirement — throughput is everything.</p>
+              <div class="metric">
+                <span class="metric-chip" style="background:rgba(245,158,11,.1);border-color:rgba(245,158,11,.3);color:#fcd34d;">throughput-first</span>
+                <span class="metric-chip" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:#93c5fd;">churn · risk scores</span>
+              </div>
+            </div>
+            <div class="serving-card" role="listitem">
+              <div class="serving-card-label" style="color:#c084fc;">Streaming</div>
+              <h4>Event-Driven</h4>
+              <p>Model consumes a Kafka or Kinesis stream, scores each event, and publishes predictions to another topic. Continuous low-latency scoring without per-request overhead.</p>
+              <div class="metric">
+                <span class="metric-chip" style="background:rgba(168,85,247,.1);border-color:rgba(168,85,247,.3);color:#c084fc;">continuous</span>
+                <span class="metric-chip" style="background:rgba(59,130,246,.1);border-color:rgba(59,130,246,.3);color:#93c5fd;">ad-bidding · IoT</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="visual-area" style="margin-top:4px;">
+            <div class="visual-label">Latency vs Throughput tradeoff — the fundamental serving tension</div>
+            <div style="margin-bottom:10px;">
+              <div class="tradeoff">
+                <span class="tradeoff-label">Batch size 1</span>
+                <div class="tradeoff-track"><div class="tradeoff-fill" style="width:95%;background:#10b981;"></div></div>
+                <span class="tradeoff-val">~5ms p99</span>
+              </div>
+              <div style="font-size:10px;color:var(--text-muted);text-align:right;margin-bottom:6px;">← low latency, low GPU utilization</div>
+              <div class="tradeoff">
+                <span class="tradeoff-label">Batch size 8</span>
+                <div class="tradeoff-track"><div class="tradeoff-fill" style="width:60%;background:#f59e0b;"></div></div>
+                <span class="tradeoff-val">~40ms p99</span>
+              </div>
+              <div class="tradeoff">
+                <span class="tradeoff-label">Batch size 32</span>
+                <div class="tradeoff-track"><div class="tradeoff-fill" style="width:30%;background:#ef4444;"></div></div>
+                <span class="tradeoff-val">~180ms p99</span>
+              </div>
+              <div style="font-size:10px;color:var(--text-muted);text-align:right;margin-top:2px;">← high latency, 4-8× GPU utilization ↑</div>
+            </div>
+            <p style="font-size:12px;color:var(--text-muted);">Dynamic batching: accumulate requests for a short window (5–10ms) then process as a batch. Most serving frameworks (Triton, TorchServe, vLLM) do this automatically.</p>
+          </div>
+
+          <table class="compare-table" aria-label="Serving framework comparison">
+            <thead><tr><th>Framework</th><th>Best For</th><th>Key Feature</th></tr></thead>
+            <tbody>
+              <tr><td>FastAPI + uvicorn</td><td>Custom logic, prototypes</td><td>Python-native, async, auto OpenAPI docs</td></tr>
+              <tr><td>TorchServe</td><td>PyTorch production</td><td>Dynamic batching, multi-model, built-in metrics</td></tr>
+              <tr><td>NVIDIA Triton</td><td>GPU inference at scale</td><td>Multi-framework, concurrent model execution</td></tr>
+              <tr><td>vLLM</td><td>LLM serving</td><td>PagedAttention → 24× throughput vs HuggingFace</td></tr>
+              <tr><td>BentoML</td><td>Any model, any cloud</td><td>Unified packaging + serving + deploy</td></tr>
+            </tbody>
+          </table>
+
+          <div class="engineer-note">
+            <span class="engineer-note-icon">🛠</span>
+            <div class="engineer-note-text">
+              <strong>From production experience</strong>
+              At Oracle, we served risk-scoring models behind a FastAPI endpoint hitting every database write operation. p99 latency was the SLA, not average latency — the 1% of slow requests are the ones that time out and fail users. Instrument p50/p95/p99 from day one; averages hide the tail.
+            </div>
+          </div>
+
+          <div class="related-topics" aria-label="Related topics">
+            <span class="related-label">Related:</span>
+            <a href="#card-7" class="related-link">⚡ Quantization</a>
+            <a href="#card-6" class="related-link">📡 Observability</a>
+            <a href="agents.html" class="related-link">🤖 Agents</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ══ CARD 3 · Containerization ══ -->
+      <article class="topic-card fade-up fade-up-delay-3" id="card-3">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">03</span><span class="badge badge-intermediate">Intermediate</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-3','mlops','topic-3')" aria-label="Mark topic 3 as read"><span class="read-icon" aria-hidden="true">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Containerization — Docker for ML Models</h2>
+          <p class="topic-summary">Docker solves the "works on my machine" problem that plagues ML deployments. A container bundles your Python environment, CUDA version, model weights, and serving code into a single portable image that runs identically from a laptop to a Kubernetes cluster.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">What's inside a Docker image for an ML model</div>
+            <svg viewBox="0 0 520 200" width="100%" aria-label="Diagram of Docker image layers for ML model">
+              <!-- Host OS -->
+              <rect x="10" y="165" width="500" height="28" rx="4" fill="#0a0c14" stroke="#1f2937" stroke-width="1.5"/>
+              <text x="260" y="183" text-anchor="middle" fill="#475569" font-size="10">Host OS + Docker Engine</text>
+
+              <!-- Container box -->
+              <rect x="40" y="20" width="440" height="138" rx="8" fill="rgba(249,115,22,.04)" stroke="rgba(249,115,22,.3)" stroke-width="1.5" stroke-dasharray="5,3"/>
+              <text x="56" y="38" fill="#fdba74" font-size="9" font-weight="700" text-transform="uppercase">Docker Container</text>
+
+              <!-- Layers stacked inside -->
+              <rect x="60" y="44" width="400" height="22" rx="4" fill="#0a0c14" stroke="#1f2937" stroke-width="1"/>
+              <text x="260" y="59" text-anchor="middle" fill="#6b7280" font-size="9">Base image: python:3.11-slim or nvidia/cuda:12.3</text>
+
+              <rect x="60" y="70" width="400" height="22" rx="4" fill="rgba(99,102,241,.1)" stroke="rgba(99,102,241,.25)" stroke-width="1"/>
+              <text x="260" y="85" text-anchor="middle" fill="#a5b4fc" font-size="9">Dependencies: requirements.txt (torch, fastapi, transformers …)</text>
+
+              <rect x="60" y="96" width="400" height="22" rx="4" fill="rgba(16,185,129,.08)" stroke="rgba(16,185,129,.25)" stroke-width="1"/>
+              <text x="260" y="111" text-anchor="middle" fill="#6ee7b7" font-size="9">Model artifact: weights.pt / model.onnx (copied from registry)</text>
+
+              <rect x="60" y="122" width="400" height="28" rx="4" fill="rgba(249,115,22,.12)" stroke="rgba(249,115,22,.35)" stroke-width="1"/>
+              <text x="260" y="134" text-anchor="middle" fill="#fdba74" font-size="9" font-weight="700">Application code: serve.py → CMD ["uvicorn", "serve:app"]</text>
+              <text x="260" y="145" text-anchor="middle" fill="#9a3412" font-size="8">← ENTRYPOINT: this layer changes most often, sits on top</text>
+            </svg>
+          </div>
+
+          <div class="code-block" role="region" aria-label="Optimized Dockerfile for ML model">
+            <span class="code-lang">Dockerfile</span>
+<span class="cm"># ── Stage 1: install heavy deps ─────────────────────</span>
+<span class="kw">FROM</span> python:3.11-slim <span class="kw">AS</span> builder
+<span class="kw">WORKDIR</span> /app
+<span class="kw">COPY</span> requirements.txt .
+<span class="cm"># Wheel-only installs avoid build deps in the final image</span>
+<span class="kw">RUN</span> pip install --no-cache-dir --user -r requirements.txt
+
+<span class="cm"># ── Stage 2: slim runtime image ─────────────────────</span>
+<span class="kw">FROM</span> python:3.11-slim
+<span class="kw">WORKDIR</span> /app
+<span class="cm"># Copy only installed packages (not build tools)</span>
+<span class="kw">COPY</span> --from=builder /root/.local /root/.local
+<span class="cm"># Copy model weights from a local registry mount or ARG</span>
+<span class="kw">COPY</span> model.onnx .
+<span class="kw">COPY</span> serve.py .
+
+<span class="kw">ENV</span> PATH=/root/.local/bin:$PATH
+<span class="kw">EXPOSE</span> <span class="num">8080</span>
+<span class="kw">HEALTHCHECK</span> --interval=30s <span class="kw">CMD</span> curl -f http://localhost:8080/health || exit 1
+<span class="kw">CMD</span> [<span class="str">"uvicorn"</span>, <span class="str">"serve:app"</span>, <span class="str">"--host"</span>, <span class="str">"0.0.0.0"</span>, <span class="str">"--port"</span>, <span class="str">"8080"</span>]
+          </div>
+
+          <div class="grid-3">
+            <div class="info-box">
+              <h4>Layer caching strategy</h4>
+              <p>Order layers by change frequency: base image (never) → deps (weekly) → model weights (per release) → app code (daily). A changed layer invalidates all layers above it.</p>
+            </div>
+            <div class="info-box">
+              <h4>Multi-stage builds</h4>
+              <p>Compilers and build tools inflate image size. Build in a fat stage, then COPY only the artifacts into a slim runtime. Final image can be 5× smaller with the same functionality.</p>
+            </div>
+            <div class="info-box">
+              <h4>GPU containers</h4>
+              <p>Use <code>nvidia/cuda:12.x-cudnn-runtime</code> as base. Add <code>--gpus all</code> or the NVIDIA device plugin in Kubernetes. Runtime images are much smaller than devel images.</p>
+            </div>
+          </div>
+
+          <div class="key-insight">
+            <span class="key-insight-icon">💡</span>
+            <div class="key-insight-text">
+              <strong>Model weights don't belong in the image</strong>
+              Baking large weights (1–70GB) directly into the image makes builds slow and pushes to a registry painful. Instead, pull weights from S3/GCS at container startup, or mount them as a volume. The image should be &lt;2GB so it builds and deploys in under 3 minutes.
+            </div>
+          </div>
+
+          <div class="related-topics" aria-label="Related topics">
+            <span class="related-label">Related:</span>
+            <a href="#card-4" class="related-link">⚙️ CI/CD for ML</a>
+            <a href="#card-2" class="related-link">🚀 Model Serving</a>
+            <a href="#card-8" class="related-link">☁️ Cloud Platforms</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ══ CARD 4 · CI/CD for ML ══ -->
+      <article class="topic-card fade-up fade-up-delay-4" id="card-4">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">04</span><span class="badge badge-intermediate">Intermediate</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-4','mlops','topic-4')" aria-label="Mark topic 4 as read"><span class="read-icon" aria-hidden="true">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">CI/CD for ML — How ML Pipelines Differ from Software CI/CD</h2>
+          <p class="topic-summary">Traditional CI/CD checks that code compiles and tests pass. ML CI/CD must also validate that the trained model meets quality thresholds — a pipeline that trains a worse model than what's in production should never deploy, even if the code is syntactically correct.</p>
+
+          <div class="visual-area">
+            <div class="visual-label">ML CI/CD pipeline — additional steps vs software CI/CD</div>
+            <div class="pipe-flow" role="list" aria-label="ML pipeline stages">
+              <div class="pipe-step" role="listitem">
+                <div class="pipe-node" style="background:rgba(99,102,241,.12);border:1px solid rgba(99,102,241,.3);color:#a5b4fc;">Code Push</div>
+                <div class="pipe-sub">trigger on src/ or data/</div>
+              </div>
+              <span class="pipe-arrow" aria-hidden="true">→</span>
+              <div class="pipe-step" role="listitem">
+                <div class="pipe-node" style="background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);color:#93c5fd;">Lint + Tests</div>
+                <div class="pipe-sub">unit tests, type check</div>
+              </div>
+              <span class="pipe-arrow" aria-hidden="true">→</span>
+              <div class="pipe-step" role="listitem">
+                <div class="pipe-node" style="background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#6ee7b7;">Train</div>
+                <div class="pipe-sub">on CI GPU or spot</div>
+              </div>
+              <span class="pipe-arrow" aria-hidden="true">→</span>
+              <div class="pipe-step" role="listitem">
+                <div class="pipe-node" style="background:rgba(245,158,11,.12);border:1px solid rgba(245,158,11,.3);color:#fcd34d;">Model Gate</div>
+                <div class="pipe-sub" style="color:#ef4444;font-weight:600;">AUC &lt; 0.85 → FAIL</div>
+              </div>
+              <span class="pipe-arrow" aria-hidden="true">→</span>
+              <div class="pipe-step" role="listitem">
+                <div class="pipe-node" style="background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.3);color:#fdba74;">Build Image</div>
+                <div class="pipe-sub">docker build + push</div>
+              </div>
+              <span class="pipe-arrow" aria-hidden="true">→</span>
+              <div class="pipe-step" role="listitem">
+                <div class="pipe-node" style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.3);color:#c084fc;">Staging</div>
+                <div class="pipe-sub">shadow + integration</div>
+              </div>
+              <span class="pipe-arrow" aria-hidden="true">→</span>
+              <div class="pipe-step" role="listitem">
+                <div class="pipe-node" style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5;">Canary</div>
+                <div class="pipe-sub">5% traffic → prod</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="info-box">
+              <h4>The Model Gate (ML-specific)</h4>
+              <p>After training, compare the new model against the current production model on a held-out dataset. If the challenger underperforms on key metrics (AUC, F1, NDCG), the pipeline fails and deployment is blocked — just like a failing test in software CI.</p>
+            </div>
+            <div class="info-box">
+              <h4>CML — CI for ML</h4>
+              <p>CML (Continuous Machine Learning) by Iterative.ai adds ML-aware steps to GitHub Actions: post model metrics as PR comments, generate performance plots, and compare experiments. Makes model quality visible in code review.</p>
+            </div>
+          </div>
+
+          <div class="code-block" role="region" aria-label="GitHub Actions ML pipeline YAML">
+            <span class="code-lang">YAML</span>
+<span class="cm"># .github/workflows/ml-pipeline.yml</span>
+<span class="kw">name</span>: ML Train-and-Deploy
+<span class="kw">on</span>:
+  push:
+    <span class="kw">paths</span>: [<span class="str">"src/**"</span>, <span class="str">"data/schema/**"</span>]
+
+<span class="kw">jobs</span>:
+  <span class="kw">train</span>:
+    <span class="kw">runs-on</span>: ubuntu-latest   <span class="cm"># use self-hosted GPU runner for real training</span>
+    <span class="kw">steps</span>:
+      - <span class="kw">uses</span>: actions/checkout@v4
+      - <span class="kw">name</span>: Train model
+        <span class="kw">run</span>: python src/train.py --config configs/prod.yaml
+        <span class="kw">env</span>: {MLFLOW_TRACKING_URI: ${{ secrets.MLFLOW_URI }}}
+
+      - <span class="kw">name</span>: <span class="str">🚦 Model gate — fail if AUC drops</span>
+        <span class="kw">run</span>: |
+          python src/evaluate.py \
+            --challenger runs/latest/model.pkl \
+            --champion models/production/model.pkl \
+            --min-auc 0.85 \
+            --min-improvement 0.005    <span class="cm"># must beat champion by 0.5%</span>
+
+      - <span class="kw">name</span>: Build &amp; push Docker image
+        <span class="kw">if</span>: success()
+        <span class="kw">run</span>: |
+          docker build -t $ECR_REPO:${{ github.sha }} .
+          docker push $ECR_REPO:${{ github.sha }}
+
+      - <span class="kw">name</span>: Deploy to staging (canary 5%)
+        <span class="kw">if</span>: success()
+        <span class="kw">run</span>: ./scripts/deploy.sh --env staging --weight 5
+          </div>
+
+          <table class="compare-table" aria-label="Software CI/CD vs ML CI/CD comparison">
+            <thead><tr><th>Dimension</th><th>Software CI/CD</th><th>ML CI/CD</th></tr></thead>
+            <tbody>
+              <tr><td>Success criterion</td><td>Tests pass, build compiles</td><td>Tests pass AND model quality ≥ threshold</td></tr>
+              <tr><td>Artefact</td><td>Compiled binary / Docker image</td><td>Trained weights + metadata + image</td></tr>
+              <tr><td>Reproducibility</td><td>Deterministic from source</td><td>Requires data + code + seed versioning</td></tr>
+              <tr><td>Run time</td><td>Minutes</td><td>Minutes to days (training)</td></tr>
+              <tr><td>Rollback</td><td>Re-deploy previous image</td><td>Re-deploy previous model version from registry</td></tr>
+            </tbody>
+          </table>
+
+          <div class="related-topics" aria-label="Related topics">
+            <span class="related-label">Related:</span>
+            <a href="#card-1" class="related-link">🔄 ML Lifecycle</a>
+            <a href="#card-3" class="related-link">🐳 Containerization</a>
+            <a href="#card-5" class="related-link">🔭 Monitoring</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ══ CARD 5 · Model Monitoring ══ -->
+      <article class="topic-card fade-up" id="card-5">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">05</span><span class="badge badge-intermediate">Intermediate</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-5','mlops','topic-5')" aria-label="Mark topic 5 as read"><span class="read-icon" aria-hidden="true">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Model Monitoring — Data Drift, Concept Drift &amp; Performance Degradation</h2>
+          <p class="topic-summary">A model that was 94% accurate at launch can silently degrade to 71% accuracy six months later without a single line of code changing. Production data drifts — user behaviour evolves, data pipelines change schema, seasonal patterns shift. Monitoring catches this before users notice.</p>
+
+          <div class="drift-visual" role="list">
+            <div class="drift-box" role="listitem">
+              <div class="drift-box-title" style="color:#93c5fd;">Data Drift — P(X) shifts</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#6366f1;"></span>Input feature distribution changes</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#6366f1;"></span>New user segments, seasonal behaviour</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#6366f1;"></span>Upstream schema change in ETL</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#f59e0b;"></span>Detection: PSI, KS test, chi-squared</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#10b981;"></span>Can detect without labels</div>
+            </div>
+            <div class="drift-box" role="listitem">
+              <div class="drift-box-title" style="color:#fca5a5;">Concept Drift — P(Y|X) shifts</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#ef4444;"></span>Relationship between inputs and outputs changes</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#ef4444;"></span>Fraud patterns evolve, preferences change</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#ef4444;"></span>World events alter true labels (COVID)</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#f59e0b;"></span>Detection: requires ground-truth labels</div>
+              <div class="drift-signal"><span class="drift-dot" style="background:#f87171;"></span>Harder — often has days/weeks of delay</div>
+            </div>
+          </div>
+
+          <div class="visual-area">
+            <div class="visual-label">PSI — Population Stability Index (the standard data drift score)</div>
+            <svg viewBox="0 0 540 140" width="100%" aria-label="PSI chart showing training distribution vs production distribution">
+              <!-- Training distribution bars -->
+              <text x="140" y="16" text-anchor="middle" fill="#6ee7b7" font-size="9" font-weight="600">TRAINING DISTRIBUTION</text>
+              <text x="400" y="16" text-anchor="middle" fill="#fdba74" font-size="9" font-weight="600">PRODUCTION DISTRIBUTION (3 months later)</text>
+              <!-- y-axis labels -->
+              <text x="30" y="120" fill="#4b5563" font-size="8">0%</text>
+              <text x="30" y="80" fill="#4b5563" font-size="8">20%</text>
+              <text x="30" y="40" fill="#4b5563" font-size="8">40%</text>
+
+              <!-- Training bars -->
+              <rect x="50" y="76" width="28" height="44" rx="2" fill="rgba(16,185,129,.6)"/>
+              <rect x="82" y="40" width="28" height="80" rx="2" fill="rgba(16,185,129,.6)"/>
+              <rect x="114" y="52" width="28" height="68" rx="2" fill="rgba(16,185,129,.6)"/>
+              <rect x="146" y="68" width="28" height="52" rx="2" fill="rgba(16,185,129,.6)"/>
+              <rect x="178" y="88" width="28" height="32" rx="2" fill="rgba(16,185,129,.6)"/>
+              <text x="96" y="132" text-anchor="middle" fill="#6b7280" font-size="8">feature value bins →</text>
+
+              <!-- Separator -->
+              <line x1="270" y1="20" x2="270" y2="130" stroke="#1f2937" stroke-width="1.5" stroke-dasharray="4,3"/>
+              <text x="270" y="135" text-anchor="middle" fill="#4b5563" font-size="7">3 months</text>
+
+              <!-- Production bars — shifted right (drift) -->
+              <rect x="308" y="96" width="28" height="24" rx="2" fill="rgba(249,115,22,.7)"/>
+              <rect x="340" y="72" width="28" height="48" rx="2" fill="rgba(249,115,22,.7)"/>
+              <rect x="372" y="40" width="28" height="80" rx="2" fill="rgba(249,115,22,.7)"/>
+              <rect x="404" y="56" width="28" height="64" rx="2" fill="rgba(249,115,22,.7)"/>
+              <rect x="436" y="60" width="28" height="60" rx="2" fill="rgba(249,115,22,.7)"/>
+              <text x="372" y="132" text-anchor="middle" fill="#6b7280" font-size="8">same bins, shifted distribution</text>
+
+              <!-- PSI score -->
+              <rect x="456" y="24" width="76" height="36" rx="6" fill="rgba(239,68,68,.12)" stroke="rgba(239,68,68,.3)"/>
+              <text x="494" y="38" text-anchor="middle" fill="#fca5a5" font-size="8" font-weight="600">PSI = 0.28</text>
+              <text x="494" y="52" text-anchor="middle" fill="#ef4444" font-size="8">RETRAIN ⚠</text>
+            </svg>
+            <div style="display:flex;gap:16px;margin-top:8px;font-size:11px;flex-wrap:wrap;">
+              <span style="color:#10b981;">● PSI &lt; 0.1: stable, no action</span>
+              <span style="color:#f59e0b;">● PSI 0.1–0.2: monitor closely</span>
+              <span style="color:#ef4444;">● PSI &gt; 0.2: investigate + consider retraining</span>
+            </div>
+          </div>
+
+          <div class="grid-3">
+            <div class="info-box">
+              <h4>What to monitor</h4>
+              <p>Input feature distributions (PSI per feature), prediction score distribution, model performance (if labels available), output confidence, and request latency.</p>
+            </div>
+            <div class="info-box">
+              <h4>Shadow mode</h4>
+              <p>Run a challenger model in parallel without serving its predictions to users. Compare distributions against the champion. Safe way to validate a new model on live data before cutover.</p>
+            </div>
+            <div class="info-box">
+              <h4>Alert thresholds</h4>
+              <p>Page on: PSI &gt; 0.2, accuracy drops &gt;2% week-over-week, p99 latency &gt;200ms, prediction distribution skews 20%+. Set per-feature thresholds, not just global ones.</p>
+            </div>
+          </div>
+
+          <div class="related-topics" aria-label="Related topics">
+            <span class="related-label">Related:</span>
+            <a href="#card-6" class="related-link">📡 Observability</a>
+            <a href="#card-1" class="related-link">🔄 ML Lifecycle</a>
+            <a href="ml-core.html" class="related-link">📊 ML Core</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ══ CARD 6 · Observability ══ -->
+      <article class="topic-card fade-up" id="card-6">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">06</span><span class="badge badge-intermediate">Intermediate</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-6','mlops','topic-6')" aria-label="Mark topic 6 as read"><span class="read-icon" aria-hidden="true">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Observability — What to Log, Prometheus &amp; Grafana</h2>
+          <p class="topic-summary">You cannot monitor what you don't measure. Observability for ML systems goes beyond infrastructure health (CPU/memory) to include prediction-level logging, latency histograms, and model-specific signals. Without it, degradation is invisible until users complain.</p>
+
+          <div class="realworld"><strong>Oracle context:</strong> Our fraud detection stack used Prometheus + Grafana dashboards displaying p50/p95/p99 prediction latency, prediction score distribution by hour, and daily PSI per top-10 feature. One dashboard saved us from a silent model failure after an upstream ETL pipeline changed a categorical encoding.</div>
+
+          <div class="grid-2">
+            <div class="info-box">
+              <h4>The Four Golden Signals (ML edition)</h4>
+              <p style="margin-bottom:6px;"><strong style="color:#fdba74;">Latency</strong> — p50/p95/p99 per endpoint. Don't track averages alone.<br>
+              <strong style="color:#fdba74;">Traffic</strong> — requests/sec, batch throughput per model version.<br>
+              <strong style="color:#fdba74;">Errors</strong> — HTTP 5xx, timeouts, malformed prediction outputs.<br>
+              <strong style="color:#fdba74;">Saturation</strong> — GPU utilisation, memory pressure, queue depth.</p>
+            </div>
+            <div class="info-box">
+              <h4>ML-specific signals</h4>
+              <p><strong style="color:#6ee7b7;">Prediction score distribution</strong> — histogram of model outputs. A shift here often precedes accuracy degradation by days.<br>
+              <strong style="color:#6ee7b7;">Feature value distributions</strong> — PSI per feature, alerting on drift.<br>
+              <strong style="color:#6ee7b7;">Confidence entropy</strong> — model becoming more uncertain signals concept drift.</p>
+            </div>
+          </div>
+
+          <div class="code-block" role="region" aria-label="Python FastAPI model serving with Prometheus metrics">
+            <span class="code-lang">Python</span>
+<span class="kw">from</span> prometheus_client <span class="kw">import</span> Counter, Histogram, Gauge, generate_latest
+<span class="kw">import</span> time, numpy <span class="kw">as</span> np
+
+<span class="cm"># ── Metric definitions ──────────────────────────────</span>
+<span class="var">PREDICTION_COUNT</span>  = Counter(<span class="str">"model_predictions_total"</span>, <span class="str">"Total predictions"</span>, [<span class="str">"model_version"</span>, <span class="str">"result_bucket"</span>])
+<span class="var">PREDICTION_LATENCY</span>= Histogram(<span class="str">"model_prediction_latency_seconds"</span>, <span class="str">"Prediction latency"</span>,
+                               buckets=[.005, .01, .025, .05, .1, .25, .5, 1])
+<span class="var">SCORE_HISTOGRAM</span>   = Histogram(<span class="str">"model_score_distribution"</span>, <span class="str">"Prediction score distribution"</span>,
+                               buckets=[i/<span class="num">10</span> <span class="kw">for</span> i <span class="kw">in</span> range(<span class="num">11</span>)])
+<span class="var">GPU_UTILISATION</span>   = Gauge(<span class="str">"gpu_utilisation_pct"</span>, <span class="str">"GPU utilisation %"</span>)
+
+<span class="cm"># ── Instrumented predict endpoint ───────────────────</span>
+@app.post(<span class="str">"/predict"</span>)
+<span class="kw">async def</span> <span class="fn">predict</span>(req: PredictRequest):
+    start = time.perf_counter()
+    score = <span class="kw">float</span>(model.predict(req.features))
+    latency = time.perf_counter() - start
+
+    <span class="var">PREDICTION_LATENCY</span>.observe(latency)
+    <span class="var">SCORE_HISTOGRAM</span>.observe(score)
+    bucket = <span class="str">"high"</span> <span class="kw">if</span> score > <span class="num">.7</span> <span class="kw">else</span> <span class="str">"medium"</span> <span class="kw">if</span> score > <span class="num">.3</span> <span class="kw">else</span> <span class="str">"low"</span>
+    <span class="var">PREDICTION_COUNT</span>.labels(model_version=<span class="str">"v2.1"</span>, result_bucket=bucket).inc()
+
+    <span class="cm"># ── Structured prediction log (JSON to stdout → log aggregator)</span>
+    <span class="kw">import</span> json, logging
+    logging.info(json.dumps({
+        <span class="str">"event"</span>: <span class="str">"prediction"</span>, <span class="str">"model_version"</span>: <span class="str">"v2.1"</span>,
+        <span class="str">"score"</span>: round(score, <span class="num">4</span>), <span class="str">"latency_ms"</span>: round(latency*<span class="num">1000</span>, <span class="num">2</span>),
+        <span class="str">"feature_hash"</span>: hash(str(req.features)) % <span class="num">10</span>**<span class="num">8</span>  <span class="cm"># privacy-safe</span>
+    }))
+    <span class="kw">return</span> {<span class="str">"score"</span>: score}
+
+@app.get(<span class="str">"/metrics"</span>)  <span class="cm"># Prometheus scrapes this endpoint every 15s</span>
+<span class="kw">async def</span> <span class="fn">metrics</span>(): <span class="kw">return</span> generate_latest()
+          </div>
+
+          <div class="grid-3">
+            <div class="info-box">
+              <h4>Prometheus scraping</h4>
+              <p>Prometheus polls <code>/metrics</code> every 15–60 seconds. Each service exposes counters, gauges, and histograms in the text format. Alertmanager fires on Prometheus rules.</p>
+            </div>
+            <div class="info-box">
+              <h4>Grafana dashboards</h4>
+              <p>Query Prometheus with PromQL. Build panels for: latency percentiles, request rate, score distribution over time, drift alerts, cost (tokens × price for LLMs).</p>
+            </div>
+            <div class="info-box">
+              <h4>What to log per prediction</h4>
+              <p>Model version, timestamp, latency, input feature hash (not raw features for privacy), output score/decision, and a request ID. Store logs in a data warehouse for retrospective analysis.</p>
+            </div>
+          </div>
+
+          <div class="related-topics" aria-label="Related topics">
+            <span class="related-label">Related:</span>
+            <a href="#card-5" class="related-link">🔭 Drift Monitoring</a>
+            <a href="#card-2" class="related-link">🚀 Model Serving</a>
+            <a href="llms.html" class="related-link">💬 LLMs</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ══ CARD 7 · Quantization & Inference Optimization ══ -->
+      <article class="topic-card fade-up" id="card-7">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">07</span><span class="badge badge-advanced">Advanced</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-7','mlops','topic-7')" aria-label="Mark topic 7 as read"><span class="read-icon" aria-hidden="true">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Quantization &amp; Inference Optimization — INT8, FP16, GGUF, vLLM, Speculative Decoding</h2>
+          <p class="topic-summary">A 70B parameter model in FP32 needs 280GB of GPU memory. The same model in INT4 fits on two consumer GPUs. Quantization and inference optimizations are the bridge between "this model is impressive" and "this model is deployable."</p>
+
+          <div class="visual-area">
+            <div class="visual-label">Precision formats — memory per parameter vs quality tradeoff</div>
+            <div>
+              <div class="quant-row quant-header">
+                <span>Format</span><span>Memory / weight</span><span>70B model</span><span>Quality</span>
+              </div>
+              <div class="quant-row">
+                <span class="quant-format" style="color:#ef4444;">FP32</span>
+                <div><div style="height:12px;width:100%;background:var(--bg-secondary);border-radius:3px;overflow:hidden;"><div style="width:100%;height:100%;background:#ef4444;"></div></div><span style="font-size:10px;color:#ef4444;">4 bytes — training standard</span></div>
+                <span style="color:#fca5a5;font-size:12px;">280 GB</span>
+                <span style="color:#6ee7b7;font-size:12px;">Baseline</span>
+              </div>
+              <div class="quant-row">
+                <span class="quant-format" style="color:#f59e0b;">BF16</span>
+                <div><div style="height:12px;width:100%;background:var(--bg-secondary);border-radius:3px;overflow:hidden;"><div style="width:50%;height:100%;background:#f59e0b;"></div></div><span style="font-size:10px;color:#f59e0b;">2 bytes — inference standard</span></div>
+                <span style="color:#fcd34d;font-size:12px;">140 GB</span>
+                <span style="color:#6ee7b7;font-size:12px;">≈ 100%</span>
+              </div>
+              <div class="quant-row">
+                <span class="quant-format" style="color:#6366f1;">INT8</span>
+                <div><div style="height:12px;width:100%;background:var(--bg-secondary);border-radius:3px;overflow:hidden;"><div style="width:25%;height:100%;background:#6366f1;"></div></div><span style="font-size:10px;color:#6366f1;">1 byte — post-training quant</span></div>
+                <span style="color:#a5b4fc;font-size:12px;">70 GB</span>
+                <span style="color:#fcd34d;font-size:12px;">~99%</span>
+              </div>
+              <div class="quant-row">
+                <span class="quant-format" style="color:#10b981;">INT4 / GGUF</span>
+                <div><div style="height:12px;width:100%;background:var(--bg-secondary);border-radius:3px;overflow:hidden;"><div style="width:12%;height:100%;background:#10b981;"></div></div><span style="font-size:10px;color:#10b981;">0.5 bytes — CPU inference</span></div>
+                <span style="color:#6ee7b7;font-size:12px;">35 GB</span>
+                <span style="color:#fcd34d;font-size:12px;">~97%</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="info-box">
+              <h4>GGUF — CPU Inference</h4>
+              <p>GGUF (GPT-Generated Unified Format) is used by <strong>llama.cpp</strong> for 4-bit quantized inference on CPUs and Apple Silicon. Enables running LLaMA-3-70B on a MacBook Pro M3 Max (~36GB unified memory) without any GPU. The go-to format for local development and edge deployments.</p>
+            </div>
+            <div class="info-box">
+              <h4>vLLM — PagedAttention</h4>
+              <p>vLLM's PagedAttention manages KV-cache memory like an OS manages virtual memory — no wasted pre-allocated blocks. Result: 24× higher throughput than naive HuggingFace serving with the same hardware. Use vLLM for any production LLM endpoint handling more than a few concurrent users.</p>
+            </div>
+          </div>
+
+          <div class="visual-area">
+            <div class="visual-label">Speculative decoding — how it achieves 2–3× speedup</div>
+            <svg viewBox="0 0 540 130" width="100%" aria-label="Speculative decoding diagram showing draft model and verifier model working together">
+              <defs>
+                <marker id="arrowSpec" markerWidth="7" markerHeight="7" refX="5" refY="3" orient="auto"><path d="M0,0 L0,6 L7,3 z" fill="#f97316"/></marker>
+              </defs>
+              <!-- Draft model -->
+              <rect x="16" y="30" width="130" height="52" rx="6" fill="rgba(99,102,241,.1)" stroke="rgba(99,102,241,.3)"/>
+              <text x="81" y="50" text-anchor="middle" fill="#a5b4fc" font-size="11" font-weight="700">Draft Model</text>
+              <text x="81" y="65" text-anchor="middle" fill="#6b7280" font-size="9">Small (7B) — fast</text>
+              <text x="81" y="76" text-anchor="middle" fill="#6b7280" font-size="9">Generates K tokens in parallel</text>
+
+              <!-- Arrow -->
+              <line x1="146" y1="56" x2="186" y2="56" stroke="#f97316" stroke-width="1.5" marker-end="url(#arrowSpec)"/>
+              <text x="166" y="48" text-anchor="middle" fill="#6b7280" font-size="8">K tokens</text>
+
+              <!-- Verifier model -->
+              <rect x="186" y="16" width="160" height="80" rx="6" fill="rgba(249,115,22,.1)" stroke="rgba(249,115,22,.3)"/>
+              <text x="266" y="38" text-anchor="middle" fill="#fdba74" font-size="11" font-weight="700">Verifier Model</text>
+              <text x="266" y="53" text-anchor="middle" fill="#6b7280" font-size="9">Large (70B) — authoritative</text>
+              <text x="266" y="67" text-anchor="middle" fill="#6b7280" font-size="9">Scores all K tokens at once</text>
+              <text x="266" y="81" text-anchor="middle" fill="#6b7280" font-size="9">(one forward pass!)</text>
+
+              <!-- Accept/reject -->
+              <line x1="346" y1="56" x2="390" y2="56" stroke="#f97316" stroke-width="1.5" marker-end="url(#arrowSpec)"/>
+              <rect x="390" y="32" width="140" height="48" rx="6" fill="rgba(16,185,129,.08)" stroke="rgba(16,185,129,.25)"/>
+              <text x="460" y="50" text-anchor="middle" fill="#6ee7b7" font-size="11" font-weight="700">Accept / Reject</text>
+              <text x="460" y="65" text-anchor="middle" fill="#6b7280" font-size="9">Accepted tokens committed</text>
+              <text x="460" y="76" text-anchor="middle" fill="#6b7280" font-size="9">First rejection → restart draft</text>
+
+              <text x="270" y="118" text-anchor="middle" fill="#6b7280" font-size="9">Result: same output as running large model alone, but 2–3× faster when draft acceptance rate is high</text>
+            </svg>
+          </div>
+
+          <div class="grid-3">
+            <div class="info-box">
+              <h4>Flash Attention</h4>
+              <p>Rewrites attention computation to avoid materialising the full N×N attention matrix in HBM memory. 2–4× faster attention, 10–20× less memory for long sequences. Now standard in all serious LLM serving.</p>
+            </div>
+            <div class="info-box">
+              <h4>ONNX &amp; TensorRT</h4>
+              <p>ONNX provides a universal IR for exporting models from any framework. TensorRT (NVIDIA) JIT-compiles ONNX graphs into GPU-optimised kernels — typical 2–4× speedup for CV and NLP models on NVIDIA hardware.</p>
+            </div>
+            <div class="info-box">
+              <h4>When to quantize</h4>
+              <p>INT8 for classic ML (negligible accuracy loss). BF16 for LLMs in production. INT4/GGUF for local/edge deployments. Never quantize the final classification head — it needs full precision. Benchmark on your eval set before and after.</p>
+            </div>
+          </div>
+
+          <div class="related-topics" aria-label="Related topics">
+            <span class="related-label">Related:</span>
+            <a href="#card-2" class="related-link">🚀 Model Serving</a>
+            <a href="llms.html" class="related-link">💬 LLMs</a>
+            <a href="deep-learning.html" class="related-link">🔥 Deep Learning</a>
+          </div>
+        </div>
+      </article>
+
+      <!-- ══ CARD 8 · Cloud AI Services ══ -->
+      <article class="topic-card fade-up" id="card-8">
+        <div class="topic-card-header">
+          <div class="topic-card-meta"><span class="topic-number">08</span><span class="badge badge-intermediate">Intermediate</span></div>
+          <button class="mark-read-btn" onclick="toggleRead('card-8','mlops','topic-8')" aria-label="Mark topic 8 as read"><span class="read-icon" aria-hidden="true">○</span> Mark as read</button>
+        </div>
+        <div class="topic-card-body">
+          <h2 class="topic-title">Cloud AI Services — AWS SageMaker, GCP Vertex AI, Azure ML</h2>
+          <p class="topic-summary">Cloud ML platforms abstract away the infrastructure layer so teams focus on models rather than Kubernetes manifests. The tradeoff: managed convenience vs flexibility and vendor lock-in. Understanding what each platform provides — and where they differ — helps you choose the right tool and avoid being surprised by the bill.</p>
+
+          <table class="cloud-table" aria-label="Cloud ML platform comparison: SageMaker, Vertex AI, Azure ML">
+            <thead>
+              <tr>
+                <th>Capability</th>
+                <th>AWS SageMaker</th>
+                <th>GCP Vertex AI</th>
+                <th>Azure ML</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Managed Training</td>
+                <td>Training Jobs — bring your container or use built-in algorithms</td>
+                <td>Custom Training — same container-bring pattern, Colab integration</td>
+                <td>Compute Clusters — AutoML for no-code training</td>
+              </tr>
+              <tr>
+                <td>Model Registry</td>
+                <td>SageMaker Model Registry with approval workflows</td>
+                <td>Vertex Model Registry + Model Cards</td>
+                <td>Azure ML Model Registry with lineage tracking</td>
+              </tr>
+              <tr>
+                <td>Serving</td>
+                <td>Real-time endpoints, serverless inference, async batch</td>
+                <td>Prediction endpoints + Batch Prediction Jobs</td>
+                <td>Managed Online/Batch Endpoints</td>
+              </tr>
+              <tr>
+                <td>Pipeline Orchestration</td>
+                <td>SageMaker Pipelines (step-based DAGs)</td>
+                <td>Vertex Pipelines (Kubeflow-based)</td>
+                <td>Azure ML Pipelines + Prompt flow (LLM)</td>
+              </tr>
+              <tr>
+                <td>Feature Store</td>
+                <td>SageMaker Feature Store</td>
+                <td>Vertex Feature Store</td>
+                <td>No native; integrate with Azure Data services</td>
+              </tr>
+              <tr>
+                <td>Experiment Tracking</td>
+                <td>SageMaker Experiments (similar to MLflow)</td>
+                <td>Vertex Experiments + TensorBoard</td>
+                <td>Azure ML Studio with job tracking</td>
+              </tr>
+              <tr>
+                <td>Foundation Models</td>
+                <td>Bedrock (Claude, Titan, Llama) + SageMaker JumpStart</td>
+                <td>Model Garden (Gemini, Llama, PaLM)</td>
+                <td>Azure OpenAI Service (GPT-4, o3)</td>
+              </tr>
+              <tr>
+                <td>Responsible AI</td>
+                <td>SageMaker Clarify (bias, explainability)</td>
+                <td>Vertex Model Monitoring</td>
+                <td>Responsible AI dashboard built-in</td>
+              </tr>
+              <tr>
+                <td>Cost Optimisation</td>
+                <td>Spot Training instances (70% savings)</td>
+                <td>Preemptible VMs (80% savings)</td>
+                <td>Low-priority compute (up to 80% savings)</td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="grid-3" style="margin-top:16px;">
+            <div class="info-box">
+              <h4>When to use managed</h4>
+              <p>You want to move fast and don't have a dedicated MLOps team. Managed services handle autoscaling, load balancing, health checks, and container orchestration. Great for startups and small teams.</p>
+            </div>
+            <div class="info-box">
+              <h4>When to go custom</h4>
+              <p>You need specific hardware (H100 clusters), have bespoke serving requirements, or need to avoid vendor lock-in. Self-managed Kubernetes with Kubeflow gives maximum flexibility at the cost of operational complexity.</p>
+            </div>
+            <div class="info-box">
+              <h4>Cost reality</h4>
+              <p>Cloud GPU instances are expensive. ml.p3.2xlarge (V100) on SageMaker: ~$3.83/hr. Use spot/preemptible for training (fault-tolerant jobs only). Use serverless endpoints for low-traffic models; they scale to zero when idle.</p>
+            </div>
+          </div>
+
+          <button class="deep-dive-toggle" onclick="toggleDeepDive(this)" aria-expanded="false" aria-controls="dd-cloud">
+            <span>▶ Deep Dive: SageMaker deployment walkthrough</span>
+            <span class="chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="deep-dive-content" id="dd-cloud">
+            <div class="code-block" role="region" aria-label="SageMaker model deployment using Python SDK">
+              <span class="code-lang">Python</span>
+<span class="kw">import</span> boto3
+<span class="kw">from</span> sagemaker.model <span class="kw">import</span> Model
+<span class="kw">from</span> sagemaker.serializers <span class="kw">import</span> JSONSerializer
+<span class="kw">from</span> sagemaker.deserializers <span class="kw">import</span> JSONDeserializer
+
+<span class="cm"># Deploy model from S3 artifact</span>
+<span class="var">model</span> = Model(
+    image_uri=<span class="str">"763104351884.dkr.ecr.us-east-1.amazonaws.com/pytorch-inference:2.1-gpu-py310"</span>,
+    model_data=<span class="str">"s3://my-bucket/models/fraud-detector-v3/model.tar.gz"</span>,
+    role=<span class="str">"arn:aws:iam::123456789:role/SageMakerRole"</span>,
+    env={<span class="str">"MODEL_SERVER_WORKERS"</span>: <span class="str">"2"</span>},
+)
+
+<span class="cm"># Real-time endpoint (auto-scaling)</span>
+<span class="var">predictor</span> = model.deploy(
+    initial_instance_count=<span class="num">2</span>,
+    instance_type=<span class="str">"ml.g4dn.xlarge"</span>,  <span class="cm"># T4 GPU, $0.736/hr</span>
+    endpoint_name=<span class="str">"fraud-detector-v3"</span>,
+    serializer=JSONSerializer(),
+    deserializer=JSONDeserializer(),
+)
+
+<span class="cm"># Auto-scaling policy: 1–10 instances, target 70% CPU</span>
+<span class="var">client</span> = boto3.client(<span class="str">"application-autoscaling"</span>)
+client.register_scalable_target(
+    ServiceNamespace=<span class="str">"sagemaker"</span>,
+    ResourceId=<span class="str">"endpoint/fraud-detector-v3/variant/AllTraffic"</span>,
+    ScalableDimension=<span class="str">"sagemaker:variant:DesiredInstanceCount"</span>,
+    MinCapacity=<span class="num">1</span>, MaxCapacity=<span class="num">10</span>
+)
+            </div>
+          </div>
+
+          <div class="related-topics" aria-label="Related topics">
+            <span class="related-label">Related:</span>
+            <a href="#card-3" class="related-link">🐳 Containerization</a>
+            <a href="#card-2" class="related-link">🚀 Model Serving</a>
+            <a href="agents.html" class="related-link">🤖 Agents</a>
+          </div>
+        </div>
+      </article>
+
+    </div>
+  </div>
+</div>
+
+<script src="../shared/nav.js"></script>
+<script>
+const PAGE_MODULE = 'mlops';
+const TOTAL = 8;
+
+function getReadState() {
+  const data = JSON.parse(localStorage.getItem('ai_eng_progress') || '{}');
+  return (data[PAGE_MODULE] || {}).topics || {};
+}
+
+function updateProgress() {
+  const state = getReadState();
+  const done = Object.values(state).filter(Boolean).length;
+  document.getElementById('prog-fill').style.width = (done / TOTAL * 100) + '%';
+  document.getElementById('prog-count').textContent = done + ' / ' + TOTAL;
+  document.getElementById('prog-bar').setAttribute('aria-valuenow', done);
+}
+
+function toggleRead(cardId, moduleId, topicId) {
+  const card = document.getElementById(cardId);
+  const btn = card.querySelector('.mark-read-btn');
+  const icon = btn.querySelector('.read-icon');
+  const isNowRead = markTopicComplete(moduleId, topicId);
+  card.classList.toggle('read', isNowRead);
+  icon.textContent = isNowRead ? '✓' : '○';
+  btn.setAttribute('aria-label', (isNowRead ? 'Unmark' : 'Mark') + ' ' + cardId.replace('card-', 'topic ') + ' as read');
+  updateProgress();
+}
+
+function toggleDeepDive(btn) {
+  const contentId = btn.getAttribute('aria-controls');
+  const content = document.getElementById(contentId);
+  const isOpen = content.classList.toggle('open');
+  btn.classList.toggle('open', isOpen);
+  btn.setAttribute('aria-expanded', isOpen);
+  btn.querySelector('span:first-child').textContent = (isOpen ? '▼' : '▶') + btn.querySelector('span:first-child').textContent.slice(1);
+}
+
+function toggleCheatSheet() {
+  const panel = document.getElementById('cheat-sheet');
+  const btn = document.getElementById('cs-btn');
+  const isOpen = panel.classList.toggle('open');
+  btn.setAttribute('aria-expanded', isOpen);
+  btn.textContent = (isOpen ? '✕ Close' : '📋 Cheat Sheet');
+}
+
+// Restore read state on load
+document.addEventListener('DOMContentLoaded', () => {
+  const state = getReadState();
+  for (let i = 1; i <= TOTAL; i++) {
+    const topicKey = 'topic-' + i;
+    if (state[topicKey]) {
+      const card = document.getElementById('card-' + i);
+      if (card) {
+        card.classList.add('read');
+        const icon = card.querySelector('.read-icon');
+        if (icon) icon.textContent = '✓';
+      }
+    }
+  }
+  updateProgress();
+
+  // Fade-up intersection observer
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('visible'); observer.unobserve(e.target); } });
+  }, { threshold: 0.06 });
+  document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+});
+</script>
+</body>
+</html>
