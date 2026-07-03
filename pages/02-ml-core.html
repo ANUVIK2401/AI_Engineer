@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>02 · ML Core — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css">
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>02 · ML Core</h1>
+      <div class="tag-row">
+        <span class="tag">7 topics</span>
+        <span class="tag">~55 min deep-read</span>
+        <span class="tag">Foundational</span>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <p class="why-line">Interviewers ask about this because classic ML questions filter for people who understand tradeoffs (bias/variance, precision/recall) rather than people who only know how to call .fit() on a deep net.</p>
+    </div>
+
+    <div class="card" data-topic-id="learning-paradigms">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Supervised / Unsupervised / RL</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Supervised learning maps labeled inputs to outputs; unsupervised learning finds structure in unlabeled data; reinforcement learning learns a policy that maximizes cumulative reward through trial-and-error interaction with an environment.</li>
+            <li>These paradigms exist because the type of signal available (labels vs. no labels vs. delayed reward) constrains what algorithms are even possible.</li>
+            <li class="insight"><strong>The insight:</strong> RLHF sits at the intersection of all three — a reward model is trained supervised on human preference data, then used to fine-tune an LLM via RL — so "which paradigm" questions about modern LLMs often have a "more than one" answer.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
+            <rect x="20" y="20" width="140" height="160" rx="8" fill="none" stroke="#1e2d45"/>
+            <text x="35" y="45" font-family="JetBrains Mono" font-size="11" fill="#3b82f6">SUPERVISED</text>
+            <text x="35" y="70" font-family="Inter" font-size="11" fill="#6b80a0">Labeled data</text>
+            <text x="35" y="88" font-family="Inter" font-size="11" fill="#6b80a0">→ predict label</text>
+            <rect x="180" y="20" width="140" height="160" rx="8" fill="none" stroke="#1e2d45"/>
+            <text x="195" y="45" font-family="JetBrains Mono" font-size="11" fill="#10b981">UNSUPERVISED</text>
+            <text x="195" y="70" font-family="Inter" font-size="11" fill="#6b80a0">Unlabeled data</text>
+            <text x="195" y="88" font-family="Inter" font-size="11" fill="#6b80a0">→ find structure</text>
+            <rect x="340" y="20" width="140" height="160" rx="8" fill="none" stroke="#1e2d45"/>
+            <text x="355" y="45" font-family="JetBrains Mono" font-size="11" fill="#f59e0b">REINFORCEMENT</text>
+            <text x="355" y="70" font-family="Inter" font-size="11" fill="#6b80a0">Reward signal</text>
+            <text x="355" y="88" font-family="Inter" font-size="11" fill="#6b80a0">→ learn policy</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How would you decide between supervised and unsupervised approaches for a new problem?"</div>
+          <div class="interview-weak">"If I have labels I use supervised, otherwise unsupervised."</div>
+          <div class="interview-strong">It starts with whether labels exist or are feasible to obtain — but the deeper question is what labels would cost versus what value they add. If labeling is expensive or the categories aren't known in advance (e.g., discovering customer segments), unsupervised methods like clustering surface structure you can act on or use to bootstrap weak labels. I'd also consider semi-supervised or self-supervised approaches as a middle ground — pretraining unsupervised on cheap unlabeled data, then fine-tuning supervised on a small labeled set, which is exactly the pattern behind most modern foundation models.</div>
+          <div class="interview-followup">Follow-up: <strong>"Where does self-supervised learning fit in this taxonomy?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="linear-regression">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Linear Regression</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Linear regression models a continuous target as a weighted sum of input features plus bias, fit by minimizing squared error between predictions and actual values.</li>
+            <li>It exists as the simplest possible model connecting inputs to a continuous output, giving a baseline every other regression method is measured against.</li>
+            <li class="insight"><strong>The insight:</strong> the normal equation gives an exact closed-form solution, but it's rarely used in practice because inverting X^TX is O(n³) and numerically unstable for high-dimensional or collinear features — which is exactly why gradient descent is preferred at scale.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ \hat{y} = X\beta, \quad \mathcal{L} = \frac{1}{n}\sum_{i=1}^n (y_i - \hat{y}_i)^2, \quad \beta = (X^TX)^{-1}X^Ty $$
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"When would the normal equation fail or be a bad choice?"</div>
+          <div class="interview-weak">"When there's too much data."</div>
+          <div class="interview-strong">It fails numerically when X^TX is singular or near-singular — which happens with perfectly or highly collinear features — because the matrix inverse becomes unstable or undefined. It's also a bad choice computationally at scale: the O(n³) matrix inversion becomes intractable well before gradient-based methods would struggle, and gradient descent handles regularization (ridge/lasso) and streaming data naturally where the closed form doesn't.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does ridge regression fix the collinearity problem mathematically?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="logistic-regression">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Logistic Regression</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Logistic regression models the probability of a binary outcome by passing a linear combination of features through a sigmoid function, trained with cross-entropy loss.</li>
+            <li>It exists because linear regression's unbounded output is a poor fit for probabilities, which must lie in [0,1] — sigmoid squashes the linear score into that range.</li>
+            <li class="insight"><strong>The insight:</strong> cross-entropy loss isn't an arbitrary choice — it's the negative log-likelihood under a Bernoulli distribution, so "logistic regression" is really maximum likelihood estimation for a Bernoulli model, which is why the loss surface is convex and well-behaved unlike arbitrary loss choices.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ \sigma(z) = \frac{1}{1+e^{-z}}, \quad \mathcal{L} = -\frac{1}{n}\sum_i \left[ y_i \log\hat{y}_i + (1-y_i)\log(1-\hat{y}_i) \right] $$
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why not just use mean squared error for a classification problem?"</div>
+          <div class="interview-weak">"Because cross-entropy is the standard for classification."</div>
+          <div class="interview-strong">MSE combined with sigmoid produces a non-convex loss surface with flat regions where gradients vanish, since the sigmoid's derivative shrinks near 0 and 1 and MSE doesn't correct for that — training becomes slow and can get stuck. Cross-entropy's gradient with respect to the pre-sigmoid logit simplifies to (prediction − label), which stays large exactly when the model is confidently wrong, giving a much stronger and more stable training signal. It's also the theoretically correct loss under maximum likelihood for a Bernoulli-distributed target, not just an empirically convenient one.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you handle severe class imbalance in a logistic regression setup?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="trees-forests">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Decision Trees & Random Forests</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A decision tree splits data recursively on feature thresholds that maximize purity gain (Gini impurity or entropy reduction); a random forest averages many trees trained on bootstrapped samples with random feature subsets.</li>
+            <li>Ensembling exists because a single deep tree overfits badly (high variance) — averaging many decorrelated trees cancels out individual errors while preserving low bias.</li>
+            <li class="insight"><strong>The insight:</strong> random feature subsampling at each split isn't just for speed — it's what decorrelates the trees. Without it, all trees would find the same dominant feature first and the ensemble would barely reduce variance at all.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Method</th><th>Bias</th><th>Variance</th><th>Interpretability</th></tr>
+          <tr><td>Single deep tree</td><td>low</td><td>high</td><td>high</td></tr>
+          <tr><td>Random forest</td><td>low</td><td>medium-low</td><td>low</td></tr>
+          <tr><td>Gradient boosted trees</td><td>very low</td><td>medium</td><td>low</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How does a random forest reduce variance compared to a single decision tree?"</div>
+          <div class="interview-weak">"It uses more trees so it's more accurate."</div>
+          <div class="interview-strong">Variance reduction from averaging only works if the individual trees' errors are decorrelated — random forests force that decorrelation via two mechanisms: bootstrap sampling (each tree sees a different data subset) and random feature selection at each split (each tree can't always split on the globally best feature). Mathematically, averaging N identically-distributed but correlated estimators reduces variance by a factor that depends on their pairwise correlation, not just N — so decorrelation is the actual lever, and just averaging more correlated trees quickly hits diminishing returns.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why does gradient boosting typically outperform random forests on tabular data, and what's the cost?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="svm">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Support Vector Machines</h3></div>
+        <span class="badge badge-advanced">[ADVANCED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>SVMs find the hyperplane that maximizes the margin — the distance to the nearest points of each class (the support vectors) — rather than just any separating boundary.</li>
+            <li>Maximizing margin exists because it improves generalization: a boundary that barely separates classes is more likely to misclassify new points near the boundary than one with a wide buffer.</li>
+            <li class="insight"><strong>The insight:</strong> the kernel trick lets SVMs operate in an implicit, possibly infinite-dimensional feature space without ever computing coordinates in that space explicitly — you only ever need the kernel function (a similarity measure), not the transformed vectors themselves.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Explain the kernel trick in one or two sentences."</div>
+          <div class="interview-weak">"It maps data to higher dimensions so it's separable."</div>
+          <div class="interview-strong">The kernel trick replaces the need to explicitly compute a high-dimensional (or infinite-dimensional) feature mapping with a kernel function that directly computes the dot product two points would have had in that space, without ever materializing the transformed vectors. This makes otherwise computationally infeasible feature spaces — like the RBF kernel's implicit infinite-dimensional mapping — usable, since the SVM optimization only ever needs pairwise dot products, never the coordinates themselves.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why don't SVMs scale well to very large datasets?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="eval-metrics">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Evaluation Metrics</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Accuracy measures overall correctness; precision measures how many predicted positives are truly positive; recall measures how many actual positives were caught; F1 is their harmonic mean; AUC-ROC measures ranking quality across all thresholds.</li>
+            <li>Multiple metrics exist because "correct" means different things depending on the cost of false positives versus false negatives — a single number can't capture that asymmetry.</li>
+            <li class="insight"><strong>The insight:</strong> accuracy is actively misleading on imbalanced data — a model predicting the majority class every time scores high accuracy while being useless, which is exactly why fraud, medical, and rare-event models are evaluated on precision/recall/AUC instead.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Metric</th><th>Formula</th><th>Use when</th></tr>
+          <tr><td>Precision</td><td>TP/(TP+FP)</td><td>false positives are costly (spam filters)</td></tr>
+          <tr><td>Recall</td><td>TP/(TP+FN)</td><td>false negatives are costly (cancer screening)</td></tr>
+          <tr><td>F1</td><td>2PR/(P+R)</td><td>need balance, no clear FP/FN priority</td></tr>
+          <tr><td>AUC-ROC</td><td>area under TPR/FPR curve</td><td>comparing rankers across thresholds</td></tr>
+        </table>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">99% class imbalance + accuracy metric</div><div>Model can score 99% while catching 0 positives</div>
+          <div class="tf-row-tradeoff tf-situation">Optimizing recall aggressively</div><div>Precision drops — more false alarms, alert fatigue</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You're building a cancer screening model. Which metric do you optimize for and why?"</div>
+          <div class="interview-weak">"Accuracy, since we want the model to be right."</div>
+          <div class="interview-strong">I'd prioritize recall, because a false negative (missed cancer) is far more costly than a false positive (an unnecessary follow-up test) — accuracy is actively dangerous here since the healthy class dominates the dataset. In practice I'd tune the classification threshold using a precision-recall curve to hit a target recall (e.g., 99%) and report the resulting precision, rather than picking a single blended metric like F1 that hides the asymmetry. I'd also watch for distribution shift — a model tuned on one population's disease prevalence can silently drift if deployed elsewhere.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would AUC-ROC mislead you in this same scenario?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="cross-validation">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Cross Validation</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>K-fold cross validation splits data into K folds, trains on K-1 and validates on the remaining fold, rotating K times, then averages the results.</li>
+            <li>It exists because a single train/holdout split gives a noisy, sample-dependent performance estimate — averaging over K folds gives a lower-variance estimate of generalization.</li>
+            <li class="insight"><strong>The insight:</strong> cross-validation only estimates generalization correctly if the fold split respects the real deployment distribution — time-series data needs time-based splits (not random k-fold) or you leak future information into training, silently inflating your reported metrics.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why is a single holdout split sometimes insufficient, and when is k-fold still the wrong tool?"</div>
+          <div class="interview-weak">"K-fold is always better because it uses more data."</div>
+          <div class="interview-strong">A single holdout split gives one noisy sample of performance that can look great or terrible purely from which rows landed in the split, especially with small datasets — k-fold averages over K such splits to reduce that variance. But standard k-fold assumes exchangeability across rows, which breaks for time-series (you'd train on future data to predict the past) or grouped data (same user's rows split across train and validation, leaking identity). In those cases you need time-based splits or group k-fold instead, or cross-validation gives you a confidently wrong number.</div>
+          <div class="interview-followup">Follow-up: <strong>"What's the difference between k-fold CV and nested cross-validation, and when do you need the nested version?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — ML Core</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — ML Core</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>Bootstrap sampling</dt><dd>Sampling with replacement to create diverse training sets for ensembles.</dd></div>
+        <div class="cheat-term"><dt>Gini impurity</dt><dd>Measures node purity in decision trees; lower is more pure.</dd></div>
+        <div class="cheat-term"><dt>Support vectors</dt><dd>The closest points to the decision boundary that define the margin.</dd></div>
+        <div class="cheat-term"><dt>Kernel trick</dt><dd>Computes dot products in implicit high-dim space without transforming data.</dd></div>
+        <div class="cheat-term"><dt>Precision</dt><dd>Of predicted positives, fraction that are actually positive.</dd></div>
+        <div class="cheat-term"><dt>Recall</dt><dd>Of actual positives, fraction the model caught.</dd></div>
+        <div class="cheat-term"><dt>AUC-ROC</dt><dd>Area under the true-positive vs. false-positive rate curve.</dd></div>
+        <div class="cheat-term"><dt>K-fold CV</dt><dd>Rotate K train/validation splits and average results.</dd></div>
+        <div class="cheat-term"><dt>Cross-entropy loss</dt><dd>Negative log-likelihood under a Bernoulli/categorical model.</dd></div>
+        <div class="cheat-term"><dt>Normal equation</dt><dd>Closed-form OLS solution; O(n³), numerically unstable at scale.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Why does gradient boosting typically require more careful hyperparameter tuning than random forests?', a: 'Random forest trees are built independently and in parallel, and averaging naturally controls variance regardless of how deep individual trees are, so it\'s fairly robust to default settings. Gradient boosting builds trees sequentially, each correcting the previous ensemble\'s residual errors, which means it can overfit if the learning rate is too high or too many boosting rounds are run — there\'s no averaging effect to protect you. This is why boosting libraries expose learning rate, number of estimators, and early stopping as first-class controls that materially change outcomes.', level: 'Mid' },
+    { q: 'A model achieves 95% accuracy on your test set but performs poorly in production. What do you check first?', a: 'The first suspect is train/serve skew — the features computed at training time (often batch, from a data warehouse) don\'t match what\'s computed at inference time (often real-time, from a different pipeline), causing subtle distributional mismatch invisible in offline eval. Second, I\'d check whether the test set is actually representative of production traffic — if it was sampled from historical data, a shift in user behavior or input distribution since then would explain the gap. Third, I\'d verify there\'s no leakage in the offline test set — a feature that\'s only available post-hoc in training data but not at prediction time in production is a classic silent bug.', level: 'Senior' },
+    { q: 'Explain the bias-variance tradeoff using a concrete example from linear vs. polynomial regression.', a: 'A linear model fit to genuinely nonlinear data has high bias — it systematically underpredicts or overpredicts across regions of input space regardless of how much data you add, because its functional form simply can\'t represent the true relationship. A high-degree polynomial can fit the training data almost perfectly, driving bias to near zero, but it has high variance — small changes in training data produce wildly different fitted curves, especially at the extremes. The practical implication is that model selection isn\'t about finding the "most powerful" model, it\'s about matching model flexibility to the amount of data and noise you actually have.', level: 'Junior' },
+    { q: 'Why would you choose F1 score over accuracy, and when does even F1 fail to capture what you care about?', a: 'F1 is the harmonic mean of precision and recall, so it penalizes models that sacrifice one for the other and is far more informative than accuracy on imbalanced datasets where a trivial majority-class predictor scores deceptively high. But F1 assumes precision and recall matter equally, which is rarely true in practice — for fraud detection, missing fraud (recall) is usually far more costly than a false alarm (precision), so a business-weighted metric like F-beta (weighting recall higher) or a cost-based utility function reflects the actual tradeoff better than a metric that treats both error types as equally bad.', level: 'Mid' },
+    { q: 'Design an evaluation strategy for a fraud detection model that will be retrained monthly.', a: 'I\'d use time-based (not random) cross-validation splits, since fraud patterns evolve and random splits would leak future fraud tactics into training, inflating offline metrics relative to real deployment performance. I\'d track precision/recall at a fixed threshold tied to the operational cost of manual review capacity, plus AUC-PR (not ROC, since the positive class is rare) to catch ranking degradation independent of threshold choice. Critically, I\'d also monitor for concept drift between retraining cycles — a sudden drop in recall on recent transactions before the next scheduled retrain is a leading indicator that fraud patterns have shifted faster than the retraining cadence can handle.', level: 'Senior' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

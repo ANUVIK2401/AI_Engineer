@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>01 · Foundations — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css">
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>01 · Foundations</h1>
+      <div class="tag-row">
+        <span class="tag">6 topics</span>
+        <span class="tag">~45 min deep-read</span>
+        <span class="tag">Foundational</span>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <p class="why-line">Interviewers ask about this to check whether you can reason from first principles instead of pattern-matching APIs — it separates people who can debug a model from people who can only call one.</p>
+    </div>
+
+    <!-- TOPIC 1 -->
+    <div class="card" data-topic-id="hierarchy">
+      <div class="card-header">
+        <div class="card-header-left">
+          <span class="card-read-dot"></span>
+          <h3>AI vs ML vs DL vs GenAI</h3>
+        </div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>AI is the broad goal of building systems that perform tasks requiring human-like intelligence; ML is a subset that learns patterns from data instead of following hardcoded rules; DL is a subset of ML using layered neural networks; GenAI is a subset of DL focused on generating new content rather than just predicting labels.</li>
+            <li>This hierarchy exists because each layer solves a limitation of the one above it — ML replaced brittle rule engines, DL replaced manual feature engineering, GenAI replaced discriminative-only outputs with generative ones.</li>
+            <li class="insight"><strong>The insight:</strong> every GenAI system is still just ML underneath — the "magic" is scale and objective (next-token prediction), not a new paradigm. Someone who "gets it" can explain an LLM in terms of loss functions and gradients, not buzzwords.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 260" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="10" width="500" height="240" rx="8" fill="none" stroke="#1e2d45"/>
+            <text x="30" y="34" font-family="JetBrains Mono" font-size="12" fill="#6b80a0">ARTIFICIAL INTELLIGENCE</text>
+            <rect x="40" y="50" width="450" height="180" rx="8" fill="none" stroke="#1e2d45"/>
+            <text x="60" y="74" font-family="JetBrains Mono" font-size="12" fill="#6b80a0">MACHINE LEARNING</text>
+            <rect x="70" y="90" width="390" height="120" rx="8" fill="none" stroke="#1e2d45"/>
+            <text x="90" y="114" font-family="JetBrains Mono" font-size="12" fill="#6b80a0">DEEP LEARNING</text>
+            <rect x="100" y="130" width="330" height="60" rx="8" fill="none" stroke="#3b82f6"/>
+            <text x="120" y="165" font-family="JetBrains Mono" font-size="13" fill="#3b82f6">GENERATIVE AI</text>
+          </svg>
+        </div>
+        <div class="interview-toggle">
+          <span class="chevron">▸</span> How this shows up in interviews
+        </div>
+        <div class="interview-content">
+          <div class="interview-q">"Walk me through the difference between AI, ML, and deep learning."</div>
+          <div class="interview-weak">"AI is robots, ML is when computers learn, deep learning is neural networks."</div>
+          <div class="interview-strong">Each is a strict subset of the last, defined by how the mapping from input to output is obtained. AI includes hand-coded rule systems that never learn anything. ML restricts that to systems that fit parameters from data — but classic ML still relies on hand-engineered features. Deep learning removes that requirement by learning hierarchical representations directly, which is why it scales so well with data and compute. Generative AI is deep learning applied to modeling a full data distribution (e.g., next-token or next-pixel) so it can sample new outputs, not just classify.</div>
+          <div class="interview-followup">Follow-up: <strong>"Give an example task where classic ML would beat deep learning."</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOPIC 2 -->
+    <div class="card" data-topic-id="vectors-embeddings">
+      <div class="card-header">
+        <div class="card-header-left">
+          <span class="card-read-dot"></span>
+          <h3>Vectors and Embeddings</h3>
+        </div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A vector is an ordered list of numbers representing a point in space; an embedding is a learned vector where geometric distance encodes semantic similarity.</li>
+            <li>Embeddings exist because raw data (words, images, users) isn't naturally numeric or comparable — you need a representation where "similar things are close together" so math (dot products, distances) becomes meaningful.</li>
+            <li class="insight"><strong>The insight:</strong> embedding spaces are learned, not designed — the geometry (what "close" means) emerges entirely from the training objective, so two embedding models trained on different tasks are not interchangeable or comparable, even at the same dimensionality.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 480 220" xmlns="http://www.w3.org/2000/svg">
+            <line x1="40" y1="190" x2="440" y2="190" stroke="#1e2d45"/>
+            <line x1="40" y1="190" x2="40" y2="20" stroke="#1e2d45"/>
+            <circle cx="120" cy="120" r="4" fill="#3b82f6"/>
+            <text x="128" y="118" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">king</text>
+            <circle cx="150" cy="150" r="4" fill="#3b82f6"/>
+            <text x="158" y="148" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">queen</text>
+            <circle cx="340" cy="60" r="4" fill="#10b981"/>
+            <text x="348" y="58" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">apple</text>
+            <circle cx="360" cy="90" r="4" fill="#10b981"/>
+            <text x="368" y="88" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">banana</text>
+            <line x1="120" y1="120" x2="150" y2="150" stroke="#3b82f6" stroke-dasharray="3,3"/>
+            <text x="230" y="205" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">semantically related terms cluster together</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"What makes an embedding 'good'?"</div>
+          <div class="interview-weak">"It has a high dimension so it captures more information."</div>
+          <div class="interview-strong">A good embedding is one where distance in the vector space correlates with task-relevant similarity — not dimensionality for its own sake. Higher dimensions can capture finer distinctions but also cost more memory and search latency, and past a point add noise rather than signal (curse of dimensionality). Quality is measured empirically against a downstream task or benchmark (like MTEB for text), because embeddings are only "good" relative to what you use the similarity for.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why can't you mix embeddings from two different models in one vector index?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOPIC 3 -->
+    <div class="card" data-topic-id="matmul">
+      <div class="card-header">
+        <div class="card-header-left">
+          <span class="card-read-dot"></span>
+          <h3>Matrix Multiplication & Dot Products</h3>
+        </div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>The dot product of two vectors measures how much they point in the same direction — high when aligned, near zero when orthogonal, negative when opposed.</li>
+            <li>It matters because nearly every neural network operation (linear layers, attention scores, similarity search) is fundamentally "how much does this input align with this learned direction."</li>
+            <li class="insight"><strong>The insight:</strong> attention is just dot products between queries and keys, scaled and softmaxed — if you understand dot product as "similarity score," multi-head attention stops looking like magic and becomes "weighted average based on relevance."</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ \mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^n a_i b_i = |\mathbf{a}||\mathbf{b}|\cos\theta $$
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why does attention use a dot product between Q and K instead of, say, Euclidean distance?"</div>
+          <div class="interview-weak">"Because that's how the paper defined it."</div>
+          <div class="interview-strong">Dot product is cheap — a single matrix multiplication computes all pairwise scores at once, which is critical given GPUs are optimized for matmul throughput. It also naturally captures directional alignment, which is what "relevance" means in a learned embedding space, whereas distance metrics conflate magnitude and direction in ways that complicate learning. In practice, some variants (additive attention) do use other scoring functions, but scaled dot-product wins because it's both expressive and hardware-friendly.</div>
+          <div class="interview-followup">Follow-up: <strong>"What's the computational complexity of computing all pairwise attention scores for a sequence of length n?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOPIC 4 -->
+    <div class="card" data-topic-id="probability">
+      <div class="card-header">
+        <div class="card-header-left">
+          <span class="card-read-dot"></span>
+          <h3>Probability Essentials</h3>
+        </div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Conditional probability P(A|B) is the likelihood of A given that B already happened; Bayes' theorem lets you flip that around to infer P(B|A) from known priors and likelihoods.</li>
+            <li>LLMs exist because language modeling is defined as learning P(next token | previous tokens) — the entire training objective is a probability distribution over vocabulary, nothing more.</li>
+            <li class="insight"><strong>The insight:</strong> "hallucination" isn't a bug bolted onto a fact-retrieval system — it's the expected behavior of a model whose only job is to sample from a learned probability distribution. There is no separate "truth check" layer unless you build one.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ P(A \mid B) = \frac{P(B \mid A)\,P(A)}{P(B)} $$
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"In what sense is an LLM 'just' a probability distribution?"</div>
+          <div class="interview-weak">"It predicts the next word based on patterns it saw in training."</div>
+          <div class="interview-strong">Formally, the model parameterizes P(token_t | token_1...token_{t-1}) over the entire vocabulary at every position, trained via maximum likelihood (cross-entropy) on next-token prediction. Generation is sampling from that conditional distribution, repeatedly, autoregressively — which is exactly why decoding strategy (temperature, top-p) meaningfully changes output even with identical model weights. This framing also explains why RLHF works: it reshapes the distribution's shape (via a reward signal) rather than adding any new "reasoning module."</div>
+          <div class="interview-followup">Follow-up: <strong>"If it's just a distribution, why does chain-of-thought prompting improve accuracy on reasoning tasks?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOPIC 5 -->
+    <div class="card" data-topic-id="gradient-descent">
+      <div class="card-header">
+        <div class="card-header-left">
+          <span class="card-read-dot"></span>
+          <h3>Gradient Descent</h3>
+        </div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Gradient descent iteratively updates parameters in the direction that most reduces the loss, using the gradient (slope) of the loss function with respect to each parameter.</li>
+            <li>It exists because most models have no closed-form solution for their optimal parameters — the loss landscape is too complex, so we search it numerically instead.</li>
+            <li class="insight"><strong>The insight:</strong> the learning rate isn't just a speed knob — it determines whether you converge at all. Too high and updates overshoot and diverge; too low and you get stuck in flat regions or take impractically long; this is why LR schedules and warmup exist.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ \theta_{t+1} = \theta_t - \eta \nabla_\theta \mathcal{L}(\theta_t) $$
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-tradeoff tf-situation">Learning rate too high</div><div>Loss oscillates or diverges instead of converging</div>
+          <div class="tf-row-failure tf-situation">Deep, narrow local minima / saddle points</div><div>Training stalls; gradients near zero make progress slow</div>
+          <div class="tf-row-tradeoff tf-situation">Very large batch size</div><div>Smoother gradients but worse generalization and higher memory cost</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why do we use stochastic/mini-batch gradient descent instead of full-batch?"</div>
+          <div class="interview-weak">"It's faster because you use less data per step."</div>
+          <div class="interview-strong">Mini-batches make each update cheap enough to fit in memory and give noisy gradient estimates that actually help escape sharp local minima and saddle points, which full-batch gradient descent gets stuck in more easily. There's a real tradeoff though: too small a batch adds so much noise that convergence becomes unstable, while too large a batch smooths the noise away and can generalize worse — this is why batch size is tuned jointly with learning rate rather than picked independently.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does Adam differ from vanilla SGD, mechanically?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOPIC 6 -->
+    <div class="card" data-topic-id="overfitting">
+      <div class="card-header">
+        <div class="card-header-left">
+          <span class="card-read-dot"></span>
+          <h3>Overfitting vs Underfitting</h3>
+        </div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Overfitting means the model memorizes training data noise and fails to generalize; underfitting means the model is too simple to capture the underlying pattern at all.</li>
+            <li>The bias-variance tradeoff exists because model error decomposes into bias (systematic error from oversimplifying) and variance (sensitivity to training data specifics) — you can't minimize both simultaneously without more data or better inductive bias.</li>
+            <li class="insight"><strong>The insight:</strong> regularization isn't "making the model dumber" — it's trading a small amount of bias for a large reduction in variance, which lowers total generalization error even though training loss gets worse.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Regime</th><th>Train loss</th><th>Val loss</th><th>Fix</th></tr>
+          <tr><td>Underfitting</td><td>high</td><td>high</td><td>bigger model, more features, less regularization</td></tr>
+          <tr><td>Good fit</td><td>low</td><td>low</td><td>—</td></tr>
+          <tr><td>Overfitting</td><td>low</td><td>high</td><td>more data, regularization, dropout, early stopping</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your validation loss is much higher than training loss. Walk me through how you'd debug it."</div>
+          <div class="interview-weak">"I'd add dropout and more data."</div>
+          <div class="interview-strong">First I'd confirm it's actually overfitting and not a data leak or distribution mismatch between train/val splits, since that produces the same symptom. Then I'd check the gap's severity relative to dataset size — with limited data, I'd add regularization (L2, dropout), early stopping, or data augmentation before reaching for a bigger dataset. I'd also sanity-check the split itself: temporal leakage, duplicate rows across train/val, or improperly correlated features are common causes that look like overfitting but aren't fixed by regularization at all.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why does L2 regularization reduce variance mechanically, not just empirically?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — Foundations</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — Foundations</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>Embedding</dt><dd>Learned vector representation where distance encodes semantic similarity.</dd></div>
+        <div class="cheat-term"><dt>Dot product</dt><dd>Measure of directional alignment between two vectors; basis of attention scores.</dd></div>
+        <div class="cheat-term"><dt>Bayes' theorem</dt><dd>Flips a conditional probability using priors and likelihoods.</dd></div>
+        <div class="cheat-term"><dt>Gradient descent</dt><dd>Iterative parameter update in the direction that reduces loss.</dd></div>
+        <div class="cheat-term"><dt>Learning rate</dt><dd>Step size for each gradient update; too high diverges, too low stalls.</dd></div>
+        <div class="cheat-term"><dt>Overfitting</dt><dd>Model memorizes training noise; low train loss, high val loss.</dd></div>
+        <div class="cheat-term"><dt>Underfitting</dt><dd>Model too simple to capture the pattern; high loss on both sets.</dd></div>
+        <div class="cheat-term"><dt>Bias-variance tradeoff</dt><dd>Total error = bias² + variance + irreducible noise; can't zero both.</dd></div>
+        <div class="cheat-term"><dt>Regularization</dt><dd>Penalizes model complexity to trade bias for lower variance.</dd></div>
+        <div class="cheat-term"><dt>Curse of dimensionality</dt><dd>Distance metrics lose discriminative power as dimensions grow.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Why is cosine similarity often preferred over raw dot product for comparing embeddings?', a: 'Cosine similarity normalizes by vector magnitude, so it measures pure directional alignment regardless of vector length — important because embedding norms can vary with token frequency or sentence length in ways unrelated to semantic content. Raw dot product conflates magnitude and direction, which can bias similarity rankings toward longer or more "confident" vectors. Most embedding models are trained with a contrastive objective that specifically optimizes cosine similarity, so using anything else at inference is inconsistent with training.', level: 'Mid' },
+    { q: 'Explain why the softmax function is used at the output of a classifier instead of just picking the max logit.', a: 'Softmax converts arbitrary real-valued logits into a valid probability distribution that sums to 1, which is required for computing cross-entropy loss during training — you need a differentiable, probabilistic output to backpropagate through. It also preserves relative confidence information (how much more likely class A is versus B) which raw argmax destroys. At inference you can still take the argmax of the softmax output, but training requires the full distribution.', level: 'Junior' },
+    { q: 'Why do we typically initialize neural network weights randomly instead of to zero?', a: 'If all weights start at zero (or any identical value), every neuron in a layer computes the same output and receives the same gradient during backprop, so they update identically forever — this is the symmetry problem, and it means the network can never learn distinct features. Random initialization (Xavier, He, etc.) breaks that symmetry so different neurons specialize, and the specific scheme matters because too-large initial weights cause exploding activations/gradients while too-small ones cause vanishing ones.', level: 'Mid' },
+    { q: 'You have a model with 99% training accuracy and 60% validation accuracy on a binary classification task. What are three distinct hypotheses you would test, in order?', a: 'First, check for data leakage or a broken train/val split — duplicate rows, target leakage through a feature, or a non-random split are more common than true overfitting and are cheaper to rule out. Second, if the split is clean, check whether the model capacity vastly exceeds the dataset size, which is classic overfitting fixable with regularization, dropout, or more data. Third, check for class imbalance combined with a naive accuracy metric — if one class dominates validation but not training, accuracy alone can mask a much subtler generalization problem than raw overfitting.', level: 'Senior' },
+    { q: 'What is the relationship between the loss landscape and why transformers use residual connections?', a: 'Deep networks without residual connections suffer from vanishing gradients — as you backpropagate through many layers, the chain rule multiplies many small derivatives together and the gradient signal shrinks toward zero at early layers, making the loss landscape effectively flat and hard to optimize. Residual connections add an identity shortcut (x + F(x)) so gradients have a direct path backward that doesn\'t get attenuated by intermediate layers, which is what makes training 96-layer transformers tractable at all rather than just a theoretical possibility.', level: 'Senior' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

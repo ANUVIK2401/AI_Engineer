@@ -1,156 +1,203 @@
+/* ============================================================
+   AI Eng Prep — shared nav, progress tracking, card interactions
+   ============================================================ */
+
 const NAV_MODULES = [
-  { id: 'fundamentals',  label: 'Fundamentals',   icon: '🔢', path: 'pages/fundamentals.html',   topics: 8  },
-  { id: 'ml-core',       label: 'ML Core',         icon: '📐', path: 'pages/ml-core.html',        topics: 10 },
-  { id: 'deep-learning', label: 'Deep Learning',   icon: '🧠', path: 'pages/deep-learning.html',  topics: 12 },
-  { id: 'llms',          label: 'LLMs',            icon: '💬', path: 'pages/llms.html',           topics: 9  },
-  { id: 'rag',           label: 'RAG Systems',     icon: '🔍', path: 'pages/rag.html',            topics: 7  },
-  { id: 'agents',        label: 'AI Agents',       icon: '🤖', path: 'pages/agents.html',         topics: 8  },
-  { id: 'mlops',         label: 'MLOps',           icon: '⚙️',  path: 'pages/mlops.html',          topics: 9  },
+  { id: '01', slug: 'foundations',           label: 'Foundations',            path: 'pages/01-foundations.html',            topics: 6  },
+  { id: '02', slug: 'ml-core',               label: 'ML Core',                 path: 'pages/02-ml-core.html',                topics: 7  },
+  { id: '03', slug: 'deep-learning',         label: 'Deep Learning',           path: 'pages/03-deep-learning.html',          topics: 8  },
+  { id: '04', slug: 'transformers-llms',     label: 'Transformers & LLMs',     path: 'pages/04-transformers-llms.html',      topics: 10 },
+  { id: '05', slug: 'rag-vectordb',          label: 'RAG & Vector DBs',        path: 'pages/05-rag-vectordb.html',           topics: 10 },
+  { id: '06', slug: 'agents-langchain',      label: 'Agents & LangChain',      path: 'pages/06-agents-langchain.html',       topics: 8  },
+  { id: '07', slug: 'inference-optimization',label: 'Inference Optimization',  path: 'pages/07-inference-optimization.html', topics: 8  },
+  { id: '08', slug: 'mlops-production',      label: 'MLOps & Production',      path: 'pages/08-mlops-production.html',       topics: 9  },
 ];
 
+const PROGRESS_KEY = 'ai_eng_progress_v2';
+
 function getBasePath() {
-  const depth = window.location.pathname.split('/').filter(Boolean).length;
-  if (window.location.pathname.includes('/pages/')) return '../';
-  return './';
+  return window.location.pathname.includes('/pages/') ? '../' : './';
 }
 
-function getCurrentModule() {
+function getCurrentModuleSlug() {
   const path = window.location.pathname;
   for (const mod of NAV_MODULES) {
-    if (path.includes(mod.id)) return mod.id;
+    if (path.includes(mod.slug)) return mod.slug;
   }
   return null;
 }
 
-function getModuleProgress(moduleId) {
-  const data = JSON.parse(localStorage.getItem('ai_eng_progress') || '{}');
-  return data[moduleId] || { completed: 0, total: 0 };
+function loadProgress() {
+  try {
+    return JSON.parse(localStorage.getItem(PROGRESS_KEY) || '{}');
+  } catch {
+    return {};
+  }
+}
+
+function saveProgress(data) {
+  localStorage.setItem(PROGRESS_KEY, JSON.stringify(data));
+}
+
+function getModuleCompletedCount(slug) {
+  const data = loadProgress();
+  const mod = data[slug];
+  if (!mod) return 0;
+  return Object.values(mod).filter(Boolean).length;
+}
+
+function isTopicRead(slug, topicId) {
+  const data = loadProgress();
+  return !!(data[slug] && data[slug][topicId]);
+}
+
+function toggleTopicRead(slug, topicId) {
+  const data = loadProgress();
+  if (!data[slug]) data[slug] = {};
+  data[slug][topicId] = !data[slug][topicId];
+  saveProgress(data);
+  return data[slug][topicId];
+}
+
+function getOverallProgress() {
+  let total = 0;
+  let completed = 0;
+  NAV_MODULES.forEach(m => {
+    total += m.topics;
+    completed += getModuleCompletedCount(m.slug);
+  });
+  return { total, completed, pct: total ? Math.round((completed / total) * 100) : 0 };
+}
+
+function getModulesCompleteCount() {
+  return NAV_MODULES.filter(m => getModuleCompletedCount(m.slug) >= m.topics).length;
 }
 
 function buildSidebar() {
   const base = getBasePath();
-  const current = getCurrentModule();
+  const current = getCurrentModuleSlug();
 
-  const html = `
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-logo">
-        <a href="${base}index.html">
-          <div class="logo-icon">⚡</div>
-          <div class="logo-text">AI Engineer<span>Learning Path</span></div>
+  const links = NAV_MODULES.map(m => {
+    const done = getModuleCompletedCount(m.slug);
+    const pct = Math.round((done / m.topics) * 100);
+    const isActive = m.slug === current;
+    return `
+      <li>
+        <a href="${base}${m.path}" class="${isActive ? 'active' : ''}">
+          <span class="nav-num">${m.id}</span>
+          <span style="flex:1">${m.label}</span>
         </a>
-      </div>
-      <nav class="sidebar-nav">
-        <div class="nav-section-label">Modules</div>
-        ${NAV_MODULES.map(m => {
-          const prog = getModuleProgress(m.id);
-          const done = prog.completed || 0;
-          const total = prog.total || m.topics;
-          const isActive = m.id === current;
-          return `
-            <a href="${base}${m.path}"
-               class="nav-link ${isActive ? 'active' : ''}"
-               data-module="${m.id}">
-              <span class="nav-link-icon">${m.icon}</span>
-              <span>${m.label}</span>
-              <span class="nav-link-num">${done}/${total}</span>
-            </a>
-          `;
-        }).join('')}
-      </nav>
-      <div class="sidebar-footer">
-        <a href="${base}index.html" class="back-home-btn">
-          <span>🏠</span>
-          <span>Back to Home</span>
-        </a>
-      </div>
-    </aside>
+        <div class="sidebar-progress-mini"><div style="width:${pct}%"></div></div>
+      </li>
+    `;
+  }).join('');
+
+  return `
+    <nav class="sidebar" id="sidebar">
+      <a href="${base}index.html" class="sidebar-brand">AI Eng <span>Prep</span></a>
+      <ul class="sidebar-nav">${links}</ul>
+    </nav>
   `;
-  return html;
 }
 
 function buildBottomNav() {
   const base = getBasePath();
-  const current = getCurrentModule();
-  const isHome = !current;
+  const current = getCurrentModuleSlug();
+  const homeActive = !current;
 
-  const homeLink = `
-    <a href="${base}index.html" class="bottom-nav-link ${isHome ? 'active' : ''}">
-      <span class="icon">🏠</span>
-      <span>Home</span>
-    </a>
-  `;
-
-  const moduleLinks = NAV_MODULES.map(m => `
-    <a href="${base}${m.path}"
-       class="bottom-nav-link ${m.id === current ? 'active' : ''}">
-      <span class="icon">${m.icon}</span>
-      <span>${m.label.split(' ')[0]}</span>
-    </a>
+  const links = NAV_MODULES.map(m => `
+    <a href="${base}${m.path}" class="${m.slug === current ? 'active' : ''}">${m.id}</a>
   `).join('');
 
   return `
     <nav class="bottom-nav" id="bottom-nav">
-      <div class="bottom-nav-inner">
-        ${homeLink}
-        ${moduleLinks}
-      </div>
+      <a href="${base}index.html" class="${homeActive ? 'active' : ''}">HOME</a>
+      ${links}
     </nav>
   `;
 }
 
 function injectNav() {
-  const layout = document.querySelector('.app-layout');
-  if (!layout) return;
-
-  layout.insertAdjacentHTML('afterbegin', buildSidebar());
-
-  const body = document.body;
-  body.insertAdjacentHTML('beforeend', buildBottomNav());
+  const shell = document.querySelector('.app-shell');
+  if (!shell) return;
+  shell.insertAdjacentHTML('afterbegin', buildSidebar());
+  document.body.insertAdjacentHTML('beforeend', buildBottomNav());
 }
 
-function markTopicComplete(moduleId, topicId) {
-  const data = JSON.parse(localStorage.getItem('ai_eng_progress') || '{}');
-  if (!data[moduleId]) data[moduleId] = { completed: 0, total: 0, topics: {} };
-  if (!data[moduleId].topics) data[moduleId].topics = {};
+/* ── Topic card read-tracking ────────────────────────────── */
 
-  const wasComplete = !!data[moduleId].topics[topicId];
+function initTopicCards() {
+  const slug = getCurrentModuleSlug();
+  if (!slug) return;
 
-  if (!wasComplete) {
-    data[moduleId].topics[topicId] = true;
-    data[moduleId].completed = Object.values(data[moduleId].topics).filter(Boolean).length;
-  } else {
-    data[moduleId].topics[topicId] = false;
-    data[moduleId].completed = Object.values(data[moduleId].topics).filter(Boolean).length;
-  }
+  document.querySelectorAll('.card[data-topic-id]').forEach(card => {
+    const topicId = card.getAttribute('data-topic-id');
+    if (isTopicRead(slug, topicId)) card.classList.add('is-read');
 
-  localStorage.setItem('ai_eng_progress', JSON.stringify(data));
-  updateNavCounts();
-  return !wasComplete;
-}
-
-function updateNavCounts() {
-  NAV_MODULES.forEach(m => {
-    const prog = getModuleProgress(m.id);
-    const count = document.querySelector(`.nav-link[data-module="${m.id}"] .nav-link-num`);
-    if (count) {
-      const total = prog.total || m.topics;
-      count.textContent = `${prog.completed || 0}/${total}`;
+    const header = card.querySelector('.card-header');
+    if (header) {
+      header.addEventListener('click', (e) => {
+        if (e.target.closest('.interview-toggle')) return;
+        const nowRead = toggleTopicRead(slug, topicId);
+        card.classList.toggle('is-read', nowRead);
+        updateModuleProgressUI();
+      });
     }
   });
+
+  updateModuleProgressUI();
 }
 
-function getOverallProgress() {
-  let totalTopics = 0;
-  let completedTopics = 0;
-  const data = JSON.parse(localStorage.getItem('ai_eng_progress') || '{}');
-  NAV_MODULES.forEach(m => {
-    totalTopics += m.topics;
-    const prog = data[m.id];
-    if (prog) completedTopics += prog.completed || 0;
+function updateModuleProgressUI() {
+  const slug = getCurrentModuleSlug();
+  if (!slug) return;
+  const mod = NAV_MODULES.find(m => m.slug === slug);
+  if (!mod) return;
+  const done = getModuleCompletedCount(slug);
+
+  const counter = document.getElementById('module-progress-counter');
+  if (counter) counter.textContent = `${done} / ${mod.topics} read`;
+
+  const bar = document.getElementById('module-progress-bar');
+  if (bar) bar.style.width = `${Math.round((done / mod.topics) * 100)}%`;
+
+  const navLink = document.querySelector(`.sidebar-nav a[href*="${mod.slug}"]`);
+  if (navLink) {
+    const miniBar = navLink.parentElement.querySelector('.sidebar-progress-mini > div');
+    if (miniBar) miniBar.style.width = `${Math.round((done / mod.topics) * 100)}%`;
+  }
+}
+
+/* ── Interview section toggles ───────────────────────────── */
+
+function initInterviewToggles() {
+  document.querySelectorAll('.interview-toggle').forEach(toggle => {
+    toggle.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const content = toggle.nextElementSibling;
+      const open = toggle.classList.toggle('open');
+      if (content) content.classList.toggle('open', open);
+    });
   });
-  return { total: totalTopics, completed: completedTopics, pct: totalTopics ? Math.round((completedTopics / totalTopics) * 100) : 0 };
+}
+
+/* ── Interview Simulator show/hide ───────────────────────── */
+
+function initSimulator() {
+  document.querySelectorAll('.sim-show-btn').forEach(btn => {
+    if (btn.dataset.bound) return;
+    btn.dataset.bound = 'true';
+    btn.addEventListener('click', () => {
+      const answer = btn.closest('.sim-card').querySelector('.sim-answer');
+      const open = answer.classList.toggle('open');
+      btn.textContent = open ? 'Hide Answer' : 'Show Answer';
+    });
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   injectNav();
+  initTopicCards();
+  initInterviewToggles();
+  initSimulator();
 });

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>07 · Inference Optimization — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>07 · Inference Optimization</h1>
+      <div class="tag-row">
+        <span class="tag">8 topics</span>
+        <span class="tag">~65 min deep-read</span>
+        <span class="tag">Advanced</span>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <p class="why-line">Companies serving LLMs at scale (NVIDIA especially) ask about this to check whether you understand that inference cost and latency are engineering problems with real tradeoffs, not just "buy more GPUs."</p>
+    </div>
+
+    <div class="card" data-topic-id="quantization">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Quantization (INT8, INT4, FP16, BF16)</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Quantization reduces the numeric precision used to store model weights (and sometimes activations) — from 32-bit floats down to 16-bit, 8-bit, or 4-bit representations — trading some numerical precision for smaller memory footprint and faster compute.</li>
+            <li>It exists because model memory footprint and memory bandwidth (not raw FLOPs) are usually the bottleneck in serving large models — halving or quartering the bytes per weight directly cuts memory movement, letting you fit bigger models on the same hardware or serve at higher throughput.</li>
+            <li class="insight"><strong>The insight:</strong> quantization isn't uniformly lossy across a model — outlier weight values (a small number of unusually large magnitude weights) disproportionately hurt naive quantization schemes, which is why modern quantization methods (like GPTQ, AWQ) specifically identify and handle outliers rather than uniformly rounding every weight.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Precision</th><th>Bits/weight</th><th>Relative quality</th><th>Relative speed/memory</th></tr>
+          <tr><td>FP32</td><td>32</td><td>baseline</td><td>1x (slowest, most memory)</td></tr>
+          <tr><td>FP16 / BF16</td><td>16</td><td>~lossless</td><td>~2x faster, half memory</td></tr>
+          <tr><td>INT8</td><td>8</td><td>small quality drop</td><td>~4x faster, quarter memory</td></tr>
+          <tr><td>INT4</td><td>4</td><td>noticeable drop without care</td><td>~8x faster, eighth memory</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why does quantizing a model to INT4 sometimes barely hurt quality, and other times destroy it?"</div>
+          <div class="interview-weak">"It depends on the model."</div>
+          <div class="interview-strong">The impact depends heavily on the distribution of weight magnitudes and how the quantization scheme handles outliers — a small number of unusually large-magnitude weights, if naively quantized alongside everything else using a single uniform scale, force the quantization grid to be coarse everywhere to accommodate the outliers, destroying precision for the vast majority of "normal" weights. Modern quantization methods like GPTQ or AWQ specifically detect and preserve precision for these outlier-sensitive weights (or channels) while aggressively quantizing the rest, which is why naive round-to-nearest INT4 quantization can badly degrade a model while a properly outlier-aware INT4 scheme stays close to FP16 quality. This is also why quantization quality is architecture and even layer-dependent, not a single fixed number you can assume.</div>
+          <div class="interview-followup">Follow-up: <strong>"What's the difference between post-training quantization and quantization-aware training?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="kv-cache-inf">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>KV Cache & Paged Attention</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>The KV cache stores per-token Key/Value vectors across all layers so autoregressive generation doesn't recompute attention over the full prior sequence at every step; paged attention manages this cache in fixed-size non-contiguous memory blocks, similar to OS virtual memory paging.</li>
+            <li>Paged attention exists because naive KV cache allocation reserves a contiguous memory block sized for the maximum possible sequence length per request, wasting huge amounts of memory when actual generations are much shorter — that waste directly limits how many requests you can batch concurrently.</li>
+            <li class="insight"><strong>The insight:</strong> the KV cache, not model weights, is often the actual memory bottleneck in high-throughput serving — weights are fixed size regardless of traffic, but KV cache memory scales with the number of concurrent requests × their sequence lengths, meaning serving capacity is fundamentally a memory management problem, which is exactly what vLLM's paged attention was built to solve.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why does memory fragmentation matter for LLM serving throughput specifically?"</div>
+          <div class="interview-weak">"Fragmentation wastes memory in general."</div>
+          <div class="interview-strong">Naive KV cache allocation reserves a contiguous chunk of GPU memory sized for the worst-case (maximum) sequence length for every request, even if that particular request only generates a short response — this over-allocation means much of the reserved memory sits unused but unavailable to other requests, directly capping how many requests you can serve concurrently. Paged attention (as in vLLM) breaks the cache into small fixed-size blocks allocated on demand, similar to virtual memory paging in an OS, so memory is only consumed as actually needed and can be shared or reused across requests far more efficiently — this directly translates to serving more concurrent users on the same GPU, which is the actual throughput lever, not a minor implementation detail.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does paged attention enable efficient prefix sharing across requests with a common system prompt?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="batching">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Batching Strategies</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Static batching groups a fixed set of requests and waits for all to finish before starting new ones; dynamic batching adjusts batch composition between requests; continuous (in-flight) batching evicts completed sequences and admits new ones at every single decoding step.</li>
+            <li>These strategies exist because GPU utilization for LLM inference is maximized by keeping the batch full — but request lengths vary wildly, so a naive fixed batch wastes compute on padding once shorter sequences finish while longer ones continue.</li>
+            <li class="insight"><strong>The insight:</strong> continuous batching is what actually made high-throughput LLM serving practical — treating batching as a per-token decision rather than a per-request decision means a single slow, long-running request no longer blocks the GPU from picking up new, shorter requests, which is the core throughput unlock behind vLLM and similar serving frameworks.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Strategy</th><th>GPU utilization</th><th>Tradeoff</th></tr>
+          <tr><td>Static batching</td><td>low — wastes cycles on padding</td><td>simple, but poor throughput on variable-length outputs</td></tr>
+          <tr><td>Dynamic batching</td><td>moderate</td><td>better, but still batch-boundary bound</td></tr>
+          <tr><td>Continuous batching</td><td>high</td><td>best throughput, more complex scheduler</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why does continuous batching improve throughput so much more than dynamic batching?"</div>
+          <div class="interview-weak">"It processes more requests at once."</div>
+          <div class="interview-strong">Even dynamic batching still operates at request granularity — once a batch is formed, the GPU processes it and typically doesn't add new requests mid-flight until enough of the current batch completes or a scheduling boundary is hit. Continuous batching operates at token/step granularity instead: at every single decoding step, any sequence that finished generating is evicted and a new waiting request is immediately admitted into the batch, so the GPU almost never sits idle waiting for a long-running sequence in the batch to finish. This matters enormously for LLM workloads specifically because output length is highly variable and unpredictable in advance — a single unusually long generation in a static or dynamic batch can bottleneck the throughput of an entire batch of otherwise-short requests, which continuous batching structurally prevents.</div>
+          <div class="interview-followup">Follow-up: <strong>"What new scheduling complexity does continuous batching introduce compared to static batching?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="speculative-decoding">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Speculative Decoding</h3></div>
+        <span class="badge badge-advanced">[ADVANCED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A small, fast "draft" model generates several candidate tokens ahead of time; the large target model verifies all of them in a single forward pass, accepting the ones that match what it would have generated and rejecting/regenerating from the first mismatch.</li>
+            <li>It exists because autoregressive decoding is inherently memory-bandwidth bound (generating one token requires one full forward pass through the entire model) — verifying multiple draft tokens in a single pass amortizes that fixed per-step cost across several tokens instead of one.</li>
+            <li class="insight"><strong>The insight:</strong> speculative decoding produces mathematically identical output distributions to standard decoding — it's not an approximation that trades quality for speed, it's a verification scheme that only ever accepts tokens the large model would have generated anyway, which is why it's one of the rare "free" speedups in LLM serving.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Doesn't using a smaller, less accurate model to draft tokens hurt output quality?"</div>
+          <div class="interview-weak">"A little, but it's much faster so it's worth it."</div>
+          <div class="interview-strong">It doesn't hurt quality at all, which is the key insight people often miss — the large target model still verifies every draft token against what it would have generated itself, and only accepts tokens that match; anything the draft model got wrong is rejected and regenerated by the target model directly. So the final output distribution is mathematically identical to what standard autoregressive decoding from the large model alone would have produced — the speedup comes purely from amortizing the large model's fixed per-forward-pass cost across multiple tokens when the draft model happens to guess correctly, not from any approximation or shortcut in the output itself.</div>
+          <div class="interview-followup">Follow-up: <strong>"What characteristics make a draft model a good choice for a given target model?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="model-parallelism">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Model Parallelism</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Tensor parallelism splits individual weight matrices across GPUs, requiring communication within every layer's forward pass; pipeline parallelism splits different layers across different GPUs, passing activations between stages; data parallelism replicates the full model on each GPU and splits the batch of inputs across them.</li>
+            <li>These strategies exist because a single model can exceed a single GPU's memory capacity, and even when it fits, splitting work across GPUs can increase throughput — but each parallelism strategy has a different communication pattern and bottleneck.</li>
+            <li class="insight"><strong>The insight:</strong> tensor parallelism requires very high-bandwidth, low-latency interconnects (like NVLink) because it communicates within every single layer's forward pass — this is why tensor parallelism is typically limited to GPUs within the same node, while pipeline parallelism (communicating only between stage boundaries) tolerates slower interconnects and can span across nodes.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Strategy</th><th>Splits</th><th>Communication frequency</th><th>Interconnect need</th></tr>
+          <tr><td>Data parallel</td><td>batch across replicas</td><td>once per step (gradient sync)</td><td>moderate</td></tr>
+          <tr><td>Pipeline parallel</td><td>layers across GPUs</td><td>at stage boundaries</td><td>moderate</td></tr>
+          <tr><td>Tensor parallel</td><td>weight matrices across GPUs</td><td>within every layer</td><td>very high (NVLink)</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You have a model too large for one GPU. How do you decide between tensor and pipeline parallelism?"</div>
+          <div class="interview-weak">"I'd use whichever framework supports it more easily."</div>
+          <div class="interview-strong">The decision hinges heavily on interconnect bandwidth between the GPUs available — tensor parallelism requires communication within every single layer's forward and backward pass, so it needs very high-bandwidth, low-latency links like NVLink within a single node, and degrades badly over slower inter-node networking. Pipeline parallelism only communicates activations at the boundary between pipeline stages, so it tolerates slower interconnects and can span multiple nodes more gracefully, at the cost of "pipeline bubbles" — idle time while later stages wait for earlier ones to produce their first output. In practice, large-scale training and serving often combine both — tensor parallelism within a node where NVLink is available, pipeline parallelism across nodes — plus data parallelism on top for training throughput.</div>
+          <div class="interview-followup">Follow-up: <strong>"What is a 'pipeline bubble' and how do techniques like micro-batching mitigate it?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="vllm">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>vLLM</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>vLLM is an open-source LLM serving engine built around paged attention (block-based, on-demand KV cache management) and continuous batching, designed specifically to maximize throughput and memory efficiency for high-concurrency serving.</li>
+            <li>It exists because before paged attention, KV cache memory management was the dominant inefficiency in LLM serving — vLLM's specific contribution was applying an OS-style virtual memory paging concept to this problem, unlocking dramatically higher throughput on the same hardware.</li>
+            <li class="insight"><strong>The insight:</strong> vLLM's biggest wins come specifically from memory efficiency, not raw compute speed — it doesn't make the model's forward pass mathematically faster, it lets you fit far more concurrent requests in the same GPU memory by eliminating KV cache fragmentation and waste, which is a fundamentally different kind of optimization than quantization or kernel fusion.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"What specific problem does vLLM solve that a naive HuggingFace Transformers serving loop doesn't?"</div>
+          <div class="interview-weak">"vLLM is just faster and more optimized."</div>
+          <div class="interview-strong">A naive serving loop typically allocates a contiguous KV cache block sized for the maximum sequence length per request, which wastes enormous amounts of GPU memory when actual generations are much shorter than the worst case — this memory waste directly limits how many concurrent requests you can serve. vLLM's paged attention breaks the KV cache into small fixed-size blocks allocated on demand, analogous to OS virtual memory paging, essentially eliminating that waste and letting you pack dramatically more concurrent sequences into the same GPU memory. Combined with continuous batching, which keeps the GPU fed with new requests as soon as any sequence in the current batch finishes, vLLM's throughput advantage over naive serving comes primarily from memory efficiency and scheduling, not from making the underlying model computation itself faster.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does vLLM handle a shared system prompt across many concurrent requests to save memory?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="serving-frameworks">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Serving Frameworks (vLLM vs TGI vs Triton)</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>vLLM focuses on high-throughput LLM-specific serving via paged attention; TGI (Text Generation Inference, Hugging Face) offers similarly optimized LLM serving tightly integrated with the HF ecosystem; NVIDIA Triton is a general-purpose multi-framework model server supporting arbitrary model types beyond LLMs, with more configurable deployment options.</li>
+            <li>Multiple frameworks exist because teams have different constraints: some need the highest raw LLM throughput, some need tight integration with an existing model hub/ecosystem, and some need a single unified serving layer across many model types (not just LLMs) in a broader ML platform.</li>
+            <li class="insight"><strong>The insight:</strong> the "best" serving framework depends on organizational scope as much as raw benchmarks — a team serving only LLMs typically gets the most throughput-per-dollar from vLLM specifically, but a platform team serving dozens of heterogeneous model types (vision, tabular, LLM) often standardizes on Triton for one consistent operational surface even at some LLM-specific throughput cost.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Framework</th><th>Scope</th><th>Best for</th></tr>
+          <tr><td>vLLM</td><td>LLM-specific</td><td>maximum LLM throughput</td></tr>
+          <tr><td>TGI</td><td>LLM-specific</td><td>HF ecosystem integration</td></tr>
+          <tr><td>Triton</td><td>general multi-framework</td><td>unified serving across many model types</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your company already serves vision and tabular models on Triton. Would you still introduce vLLM just for the new LLM feature?"</div>
+          <div class="interview-weak">"Yes, always use the best tool for each specific job."</div>
+          <div class="interview-strong">It depends on how much the LLM-specific throughput gain actually matters for the use case versus the operational cost of maintaining a second serving stack — if the LLM feature has serious latency/cost requirements at meaningful scale, vLLM's paged attention and continuous batching can offer a large enough throughput advantage to justify the added operational surface of running two serving systems. But if the LLM workload is lower-volume or latency-tolerant, I'd lean toward keeping everything on the existing Triton deployment (which does support LLM backends) purely to avoid duplicating monitoring, deployment pipelines, and on-call expertise across two systems — the "best tool per job" instinct has to be weighed against real operational fragmentation cost, not applied automatically.</div>
+          <div class="interview-followup">Follow-up: <strong>"What operational costs specifically come from running two separate model-serving stacks?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="latency-throughput">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Latency vs Throughput (TTFT, TBT)</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Time to First Token (TTFT) measures how long a user waits before seeing any output; Time Between Tokens (TBT, or inter-token latency) measures the streaming generation speed after that; throughput measures total tokens generated per second across all concurrent requests on the system.</li>
+            <li>These are distinct metrics because optimizing for one can directly hurt another — maximizing system-wide throughput via large batches can increase individual-request TTFT, since a request might wait for a batch slot or share compute with many concurrent requests.</li>
+            <li class="insight"><strong>The insight:</strong> users experience latency (TTFT, TBT) but the business pays for throughput (tokens/sec/GPU) — these two are frequently in tension, and the "right" operating point is a product decision about acceptable user-perceived latency, not a pure engineering optimization target.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-tradeoff tf-situation">Maximizing batch size for throughput</div><div>Individual request TTFT increases — user-perceived latency suffers</div>
+          <div class="tf-row-tradeoff tf-situation">Minimizing latency via small batches</div><div>GPU underutilized — throughput and cost-per-token both worsen</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your product team wants both lower latency and lower cost per request. How do you explain the tension?"</div>
+          <div class="interview-weak">"We just need better hardware."</div>
+          <div class="interview-strong">Lower cost per request generally comes from higher GPU utilization, which means larger batches and more concurrent requests sharing the same compute — but that same batching is exactly what increases individual-request latency, since a request may need to wait for a batch slot or share forward-pass compute with many others. Continuous batching and paged attention push this Pareto frontier outward (better throughput at the same latency, or vice versa) but they don't eliminate the fundamental tradeoff — at some point, further throughput gains require accepting worse tail latency for individual users. The real conversation with product is about defining an acceptable latency SLA (e.g., "TTFT under 500ms for 95% of requests") and then optimizing cost-per-token within that constraint, rather than treating latency and cost as independently optimizable targets.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why might TTFT and TBT have very different optimization levers even though both are 'latency'?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — Inference Optimization</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — Inference Optimization</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>Quantization</dt><dd>Reducing numeric precision of weights/activations to save memory.</dd></div>
+        <div class="cheat-term"><dt>GPTQ / AWQ</dt><dd>Outlier-aware quantization schemes preserving key weight precision.</dd></div>
+        <div class="cheat-term"><dt>Paged attention</dt><dd>Block-based on-demand KV cache memory management.</dd></div>
+        <div class="cheat-term"><dt>Continuous batching</dt><dd>Admits/evicts requests at every decoding step, not per-batch.</dd></div>
+        <div class="cheat-term"><dt>Speculative decoding</dt><dd>Small draft model proposes tokens; large model verifies in one pass.</dd></div>
+        <div class="cheat-term"><dt>Tensor parallelism</dt><dd>Splits weight matrices across GPUs; needs high-bandwidth interconnect.</dd></div>
+        <div class="cheat-term"><dt>Pipeline parallelism</dt><dd>Splits layers across GPUs; communicates only at stage boundaries.</dd></div>
+        <div class="cheat-term"><dt>TTFT</dt><dd>Time to first token — user-perceived initial response latency.</dd></div>
+        <div class="cheat-term"><dt>TBT</dt><dd>Time between tokens — streaming generation speed.</dd></div>
+        <div class="cheat-term"><dt>Throughput</dt><dd>Total tokens/sec served across all concurrent requests.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Your inference costs have grown linearly with user traffic. What levers would you evaluate to break that linear relationship?', a: 'The first lever is batching efficiency — if you\'re not already on continuous batching, moving to it typically yields a large one-time throughput jump for the same hardware, since idle GPU cycles from padding/waiting are largely eliminated. Second, I\'d evaluate quantization (INT8 or a well-tuned INT4 scheme) to reduce memory footprint per request, which directly increases how many concurrent requests fit per GPU. Third, for workloads with predictable, shorter generations, speculative decoding can meaningfully reduce the number of expensive large-model forward passes needed per token. None of these are mutually exclusive — production systems typically stack quantization, continuous batching, and paged attention together, and the linear cost-scaling problem usually indicates one or more of these isn\'t yet in place rather than needing fundamentally new hardware.', level: 'Senior' },
+    { q: 'Explain why increasing batch size doesn\'t indefinitely improve throughput on the same GPU.', a: 'Throughput scales with batch size only while the GPU has spare compute and memory capacity to absorb more concurrent work — once the KV cache and activation memory for the batch approach the GPU\'s memory limit, you either can\'t grow the batch further or you\'re forced to evict/reject requests, capping throughput. Even before hitting a hard memory wall, very large batches can shift the bottleneck from compute-bound to memory-bandwidth-bound, since the volume of KV cache reads/writes per step grows with batch size — at that point adding more requests to the batch doesn\'t proportionally increase tokens/sec because the GPU is now waiting on memory movement, not idle compute. This is why serving systems have a real optimal batch size for a given model and hardware, not "bigger is strictly better."', level: 'Mid' },
+    { q: 'A customer wants sub-100ms time-to-first-token for a 70B parameter model on a single GPU. Is this realistic, and what would you tell them?', a: 'For a 70B model, a single consumer or even single datacenter GPU often can\'t even hold the weights at full precision, let alone serve with very low TTFT, so I\'d first clarify hardware assumptions — this typically requires either aggressive quantization (INT4/INT8) to fit on fewer/smaller GPUs, or accepting multi-GPU tensor parallelism, which itself adds some latency from inter-GPU communication during the forward pass. I\'d be direct that sub-100ms TTFT for a model this size, especially with a nontrivial prompt length (prefill cost scales with prompt length), is an aggressive target that likely requires quantization, a well-tuned serving engine (vLLM/TGI), and possibly falling back to a smaller distilled model for latency-critical paths — setting the expectation early is more useful than promising a number and missing it in production.', level: 'Senior' },
+    { q: 'Why is prefill (processing the input prompt) handled differently from decode (generating output tokens) in optimized serving systems?', a: 'Prefill processes the entire input prompt in parallel in a single forward pass, since all prompt tokens are already known, making it highly parallelizable and compute-bound — it can efficiently use the GPU\'s full matrix-multiply throughput. Decode, by contrast, generates one token at a time autoregressively, where each step depends on the previous step\'s output, making it inherently sequential and memory-bandwidth-bound rather than compute-bound, since each step now involves comparatively little compute relative to the KV cache memory movement required. Because these two phases have opposite bottleneck profiles, some serving architectures explicitly separate prefill and decode onto different hardware or scheduling paths ("disaggregated serving") to optimize each independently rather than treating the whole request as one uniform workload.', level: 'Senior' },
+    { q: 'How would you decide whether a latency problem should be solved with speculative decoding versus quantization?', a: 'I\'d first profile where the bottleneck actually is — if it\'s primarily inter-token latency (TBT) on a model that\'s otherwise fitting comfortably in memory with room to spare, speculative decoding directly targets the sequential per-token generation cost by amortizing forward passes across multiple tokens, without touching model size or memory footprint. If the bottleneck is instead that the model barely fits in GPU memory, forcing small batch sizes and poor concurrency (hurting both TTFT under load and overall throughput), quantization is the more relevant lever since it directly frees up memory to support larger batches and more concurrent requests. In practice they\'re complementary, not competing — a well-optimized serving stack often uses both, but understanding which one addresses which specific bottleneck avoids wasting engineering effort on the wrong lever first.', level: 'Senior' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

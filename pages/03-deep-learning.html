@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>03 · Deep Learning — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css">
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>03 · Deep Learning</h1>
+      <div class="tag-row">
+        <span class="tag">8 topics</span>
+        <span class="tag">~65 min deep-read</span>
+        <span class="tag">Core</span>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <p class="why-line">Interviewers ask about this to verify you understand what's actually happening inside the black box — backprop, normalization, and architecture choices are where "I used PyTorch" candidates get separated from engineers.</p>
+    </div>
+
+    <div class="card" data-topic-id="forward-pass">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Neural Net Forward Pass</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A forward pass computes layer outputs sequentially: each layer applies a linear transform (weights + bias) followed by a nonlinear activation function, feeding into the next layer.</li>
+            <li>Stacking layers exists because a single linear layer can only represent linear functions — nonlinear activations between layers are what let deep networks approximate arbitrary functions.</li>
+            <li class="insight"><strong>The insight:</strong> without a nonlinearity between layers, stacking any number of linear layers collapses mathematically into a single linear layer — depth without nonlinearity buys you nothing.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="40" cy="60" r="14" fill="none" stroke="#3b82f6"/>
+            <circle cx="40" cy="110" r="14" fill="none" stroke="#3b82f6"/>
+            <circle cx="40" cy="160" r="14" fill="none" stroke="#3b82f6"/>
+            <circle cx="180" cy="40" r="14" fill="none" stroke="#1e2d45"/>
+            <circle cx="180" cy="90" r="14" fill="none" stroke="#1e2d45"/>
+            <circle cx="180" cy="140" r="14" fill="none" stroke="#1e2d45"/>
+            <circle cx="180" cy="190" r="14" fill="none" stroke="#1e2d45" opacity="0"/>
+            <circle cx="320" cy="70" r="14" fill="none" stroke="#1e2d45"/>
+            <circle cx="320" cy="120" r="14" fill="none" stroke="#1e2d45"/>
+            <circle cx="440" cy="95" r="14" fill="none" stroke="#10b981"/>
+            <g stroke="#1e2d45" stroke-width="1">
+              <line x1="54" y1="60" x2="166" y2="40"/><line x1="54" y1="60" x2="166" y2="90"/><line x1="54" y1="60" x2="166" y2="140"/>
+              <line x1="54" y1="110" x2="166" y2="40"/><line x1="54" y1="110" x2="166" y2="90"/><line x1="54" y1="110" x2="166" y2="140"/>
+              <line x1="54" y1="160" x2="166" y2="40"/><line x1="54" y1="160" x2="166" y2="90"/><line x1="54" y1="160" x2="166" y2="140"/>
+              <line x1="194" y1="40" x2="306" y2="70"/><line x1="194" y1="90" x2="306" y2="70"/><line x1="194" y1="140" x2="306" y2="70"/>
+              <line x1="194" y1="40" x2="306" y2="120"/><line x1="194" y1="90" x2="306" y2="120"/><line x1="194" y1="140" x2="306" y2="120"/>
+              <line x1="334" y1="70" x2="426" y2="95"/><line x1="334" y1="120" x2="426" y2="95"/>
+            </g>
+            <text x="20" y="20" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">INPUT</text>
+            <text x="160" y="20" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">HIDDEN 1</text>
+            <text x="300" y="20" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">HIDDEN 2</text>
+            <text x="415" y="20" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">OUTPUT</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why do we need nonlinear activation functions between layers?"</div>
+          <div class="interview-weak">"To make the network more powerful."</div>
+          <div class="interview-strong">Composing linear transformations is still linear — W2(W1x + b1) + b2 simplifies to a single effective weight matrix and bias, so a 100-layer network without nonlinearities has the exact same representational capacity as one layer. Nonlinear activations break that collapse, letting each layer carve the input space in a genuinely new way, which is what allows deep networks to approximate complex, non-linear decision boundaries or functions. This is also why activation choice matters for trainability, not just expressivity — some (sigmoid) saturate and kill gradients, others (ReLU) don't.</div>
+          <div class="interview-followup">Follow-up: <strong>"What would happen if you used a linear activation function throughout an entire deep network?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="backprop">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Backpropagation & Chain Rule</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Backprop computes the gradient of the loss with respect to every parameter by applying the chain rule backward through the computation graph, layer by layer.</li>
+            <li>It exists because computing each parameter's gradient independently from scratch would be exponentially expensive — backprop reuses intermediate results, making gradient computation roughly as cheap as the forward pass.</li>
+            <li class="insight"><strong>The insight:</strong> backprop is just reverse-mode automatic differentiation applied to a specific graph shape — there's no separate "learning algorithm," it's mechanical calculus plus dynamic programming to avoid redundant computation.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ \frac{\partial \mathcal{L}}{\partial w^{(1)}} = \frac{\partial \mathcal{L}}{\partial a^{(L)}} \cdot \frac{\partial a^{(L)}}{\partial a^{(L-1)}} \cdots \frac{\partial a^{(2)}}{\partial w^{(1)}} $$
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Explain backprop to someone who understands calculus but not deep learning."</div>
+          <div class="interview-weak">"It sends the error backward through the network to update weights."</div>
+          <div class="interview-strong">Backprop is the chain rule applied systematically: to know how much the loss changes if you nudge an early-layer weight, you multiply the local derivatives along the path from that weight to the final loss, layer by layer, working backward. The reason this is efficient rather than exponential is that we cache each layer's local gradient once and reuse it for every weight that feeds into it, rather than recomputing the whole chain from scratch per parameter — this reuse is the actual algorithmic insight, not the calculus itself.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why does the vanishing gradient problem get worse with more layers, mechanically?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="activations">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Activation Functions</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>ReLU, GELU, sigmoid, and tanh are nonlinear functions applied after each linear layer, each with different gradient behavior and saturation properties.</li>
+            <li>Multiple activations exist because each makes a different tradeoff between gradient flow, computational cost, and output range needs.</li>
+            <li class="insight"><strong>The insight:</strong> ReLU's "dying neuron" problem (gradient is exactly zero for negative inputs) is a feature as much as a bug — it induces sparsity — but GELU's smooth, probabilistic gating avoids the hard cutoff entirely, which is why transformers (BERT, GPT) use GELU instead of ReLU.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Function</th><th>Range</th><th>Saturates?</th><th>Typical use</th></tr>
+          <tr><td>Sigmoid</td><td>(0,1)</td><td>yes, both ends</td><td>binary output layer</td></tr>
+          <tr><td>Tanh</td><td>(-1,1)</td><td>yes, both ends</td><td>RNN gates</td></tr>
+          <tr><td>ReLU</td><td>[0,∞)</td><td>negative side only</td><td>CNNs, default MLP</td></tr>
+          <tr><td>GELU</td><td>≈(-0.17,∞)</td><td>smooth, no hard cutoff</td><td>transformers</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why did transformers move from ReLU to GELU?"</div>
+          <div class="interview-weak">"GELU just performs better empirically."</div>
+          <div class="interview-strong">ReLU has a hard, non-differentiable kink at zero and completely zeroes out negative inputs, which can cause "dead neurons" that never recover since their gradient is permanently zero. GELU weights inputs by their value under the standard normal CDF, giving a smooth, differentiable curve that still allows some signal through small negative inputs — this smoother gradient landscape empirically helps optimization in very deep, wide architectures like transformers. It's a small architectural choice, but at transformer scale small consistent gradient improvements compound significantly over training.</div>
+          <div class="interview-followup">Follow-up: <strong>"What's the 'dying ReLU' problem and how does Leaky ReLU address it?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="normalization">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Batch Norm vs Layer Norm</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Batch norm normalizes activations across the batch dimension per feature; layer norm normalizes across the feature dimension per individual sample.</li>
+            <li>Normalization exists to stabilize the distribution of activations flowing through the network, which reduces internal covariate shift and lets you use higher learning rates.</li>
+            <li class="insight"><strong>The insight:</strong> batch norm's statistics depend on other examples in the batch, which breaks down for variable-length sequences and small/streaming batches (like autoregressive generation) — that's precisely why transformers use layer norm, which normalizes independently per token regardless of batch size or sequence position.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Batch norm with batch size 1 (inference/streaming)</div><div>Statistics become unstable or meaningless</div>
+          <div class="tf-row-tradeoff tf-situation">Layer norm vs. batch norm compute cost</div><div>Layer norm is per-sample, batch norm needs running stats tracked across training</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why do transformers use layer norm instead of batch norm?"</div>
+          <div class="interview-weak">"Because it works better for sequences."</div>
+          <div class="interview-strong">Batch norm computes mean and variance across the batch dimension for each feature, which requires a reasonably large, consistent batch to get stable statistics — but during autoregressive generation you often decode one token at a time with batch size 1, where batch statistics are meaningless. Layer norm instead normalizes across the feature dimension within a single token's representation, so it works identically regardless of batch size or sequence length, which is exactly the flexibility transformer training and inference need. There's also a variable-length sequence problem: padded tokens would corrupt batch statistics in batch norm, whereas layer norm sidesteps this entirely.</div>
+          <div class="interview-followup">Follow-up: <strong>"What is RMSNorm and why do some modern LLMs (LLaMA) use it instead of standard LayerNorm?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="dropout">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Dropout</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Dropout randomly zeroes a fraction of neurons during each training step, forcing the network to not rely on any single neuron or co-adapted group of neurons.</li>
+            <li>It exists as a cheap regularization technique that approximates training an ensemble of exponentially many thinned sub-networks and averaging them.</li>
+            <li class="insight"><strong>The insight — the classic interview gotcha:</strong> dropout must be disabled at inference time, and the remaining activations must be rescaled (inverted dropout divides by keep-probability during training) so that expected activation magnitude matches between train and inference — forgetting this silently degrades model output without throwing any error.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"What happens if you forget to disable dropout at inference time?"</div>
+          <div class="interview-weak">"The model would still work but be a bit less accurate."</div>
+          <div class="interview-strong">You'd get nondeterministic outputs for the same input — because dropout randomly zeroes different neurons each forward pass — which is immediately disqualifying for any production system expecting reproducible predictions. Beyond nondeterminism, the network was trained expecting a certain fraction of neurons active, and randomly zeroing more of them at inference systematically shifts the activation distribution the downstream layers were calibrated for, degrading accuracy in a way that won't throw an error, just silently worse predictions. This is a real production bug class — frameworks separate train()/eval() modes specifically to prevent it, and forgetting to call model.eval() is a common and hard-to-notice mistake.</div>
+          <div class="interview-followup">Follow-up: <strong>"How is inverted dropout different from vanilla dropout, and why does it matter for inference?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="cnns">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Convolutional Neural Networks</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A convolution slides a small learnable filter across the input, computing local dot products to detect spatial patterns like edges or textures; pooling downsamples to reduce spatial resolution and add translation invariance.</li>
+            <li>Parameter sharing (the same filter applied everywhere) exists because a pattern like "vertical edge" is useful regardless of where it appears in the image — reusing weights drastically cuts parameter count versus a fully connected layer.</li>
+            <li class="insight"><strong>The insight:</strong> CNNs encode a strong inductive bias — locality and translation invariance — which is exactly right for images but exactly wrong for tasks without spatial locality, which is part of why attention-based architectures (with no such bias) generalize better across modalities.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why does parameter sharing in convolutions matter beyond just saving memory?"</div>
+          <div class="interview-weak">"It reduces the number of weights so training is faster."</div>
+          <div class="interview-strong">Parameter sharing encodes the assumption that a feature detector (like an edge or texture detector) is useful regardless of its position in the image, so the same filter weights are reused at every spatial location instead of learning position-specific weights. This is what gives CNNs translation invariance — a cat detected in the top-left uses the same learned filter as a cat in the bottom-right — and it also means the effective sample efficiency is much higher, since every patch of every image contributes to training the same shared filter rather than one image only training weights for its exact position.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why do CNNs eventually lose to vision transformers on very large datasets?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="rnn-lstm">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>RNNs / LSTMs</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>RNNs process sequences step by step, carrying a hidden state forward; LSTMs add gating mechanisms (forget, input, output gates) to control what information persists in that hidden state over time.</li>
+            <li>Gating exists because vanilla RNNs suffer from vanishing/exploding gradients across long sequences — repeatedly multiplying the same recurrent weight matrix during backprop-through-time shrinks or blows up gradients exponentially with sequence length.</li>
+            <li class="insight"><strong>The insight:</strong> transformers didn't replace RNNs because attention is inherently "smarter" — they replaced RNNs because sequential recurrence can't be parallelized across time steps during training, while attention computes all pairwise interactions simultaneously, making transformers dramatically more efficient to train at scale on modern hardware.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Vanilla RNN on long sequences</div><div>Vanishing/exploding gradients; can't learn long-range dependencies</div>
+          <div class="tf-row-tradeoff tf-situation">RNN/LSTM training vs. transformer training</div><div>Sequential dependency prevents parallelization across time steps</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why exactly did transformers replace RNNs, mechanistically?"</div>
+          <div class="interview-weak">"Transformers are just better at understanding language."</div>
+          <div class="interview-strong">The core bottleneck wasn't modeling quality alone — it was that RNNs process tokens sequentially, so computing the hidden state at position t requires the hidden state at t-1, making training inherently non-parallelizable across the sequence dimension. Transformers replace recurrence with self-attention, which computes relationships between all token pairs simultaneously via matrix multiplication, so the entire sequence can be processed in parallel on a GPU. This unlocked training on far larger datasets within practical time budgets, which is arguably the single largest reason LLMs became possible — not that attention understands language better in principle, but that it scales.</div>
+          <div class="interview-followup">Follow-up: <strong>"If attention scales so well, why do some architectures still combine it with recurrence (e.g., in state-space models)?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="transfer-learning">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Transfer Learning</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Transfer learning reuses a model pretrained on a large, general dataset and adapts it to a new, usually smaller and more specific task, either by fine-tuning some/all layers or using it as a frozen feature extractor.</li>
+            <li>It exists because training from scratch requires enormous labeled data and compute that most tasks don't have — pretrained representations already encode broadly useful features (edges, syntax, semantics) that transfer across tasks.</li>
+            <li class="insight"><strong>The insight:</strong> which layers to freeze depends on how similar the new task is to the pretraining task — early layers learn generic, broadly transferable features (edges, low-level syntax) while later layers specialize toward the original task, so the more dissimilar your target task, the more layers you should unfreeze and retrain.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You have a small labeled dataset for a niche image classification task. How do you decide what to freeze?"</div>
+          <div class="interview-weak">"I'd freeze most layers since I don't have much data."</div>
+          <div class="interview-strong">The decision hinges on two axes: dataset size and similarity to the pretraining domain. With a small dataset and a task similar to the pretraining data, I'd freeze most of the backbone and only fine-tune the final classifier layer to avoid overfitting on limited examples. If the task is dissimilar to the pretraining domain (e.g., medical imaging vs. ImageNet's natural photos) even with limited data, I'd unfreeze more of the later layers since the pretrained features may not transfer well, accepting some overfitting risk mitigated by a low learning rate and strong regularization — freezing everything in that case would just underfit.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why do you typically use a much lower learning rate when fine-tuning versus training from scratch?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — Deep Learning</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — Deep Learning</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>Backpropagation</dt><dd>Reverse-mode autodiff computing gradients via the chain rule.</dd></div>
+        <div class="cheat-term"><dt>Vanishing gradient</dt><dd>Gradients shrink toward zero across many layers/time steps.</dd></div>
+        <div class="cheat-term"><dt>ReLU</dt><dd>max(0, x); simple, fast, can "die" on negative inputs.</dd></div>
+        <div class="cheat-term"><dt>GELU</dt><dd>Smooth, probabilistic gating activation used in transformers.</dd></div>
+        <div class="cheat-term"><dt>Batch norm</dt><dd>Normalizes activations across the batch dimension per feature.</dd></div>
+        <div class="cheat-term"><dt>Layer norm</dt><dd>Normalizes across features per sample; used in transformers.</dd></div>
+        <div class="cheat-term"><dt>Dropout</dt><dd>Randomly zeroes neurons in training only, to regularize.</dd></div>
+        <div class="cheat-term"><dt>Parameter sharing</dt><dd>Same filter weights reused across spatial positions in CNNs.</dd></div>
+        <div class="cheat-term"><dt>LSTM gates</dt><dd>Forget/input/output gates controlling what persists in hidden state.</dd></div>
+        <div class="cheat-term"><dt>Fine-tuning</dt><dd>Adapting a pretrained model's weights to a new task.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Walk through what specifically causes vanishing gradients in a deep vanilla RNN.', a: 'Backpropagation through time multiplies the same recurrent weight matrix (and the derivative of the activation function) once per time step as the gradient flows backward through the sequence. If the largest eigenvalue of that weight matrix is less than 1, repeated multiplication shrinks the gradient exponentially with sequence length; if greater than 1, it explodes exponentially instead. This is why LSTMs introduce a separate cell state with an additive (not multiplicative) update path gated by the forget gate — additive updates don\'t suffer the same exponential decay, giving gradients a much more direct path back through time.', level: 'Senior' },
+    { q: 'Why does adding more layers to a network sometimes make training worse, not better, even with enough data?', a: 'Beyond the vanishing gradient problem, very deep networks without architectural aids (residual connections, normalization) suffer from what the ResNet paper called the "degradation problem" — training accuracy itself gets worse with depth, which isn\'t explained by overfitting since it shows up on the training set too. This suggests the optimization problem itself becomes harder, not that the model lacks capacity. Residual connections fix this by letting each block learn a residual correction to the identity function rather than the full transformation from scratch, which makes it much easier for optimization to find good solutions even at extreme depth.', level: 'Senior' },
+    { q: 'What is the difference between L1 and L2 regularization in terms of the solutions they produce?', a: 'L2 regularization (weight decay) adds a penalty proportional to the sum of squared weights, which shrinks all weights smoothly toward zero without necessarily eliminating any of them — it\'s effective against large individual weights but rarely produces exact zeros. L1 regularization penalizes the sum of absolute weight values, which has a geometric property (a non-differentiable corner at zero) that tends to drive some weights to exactly zero, producing sparse solutions useful for implicit feature selection. In deep learning, L2/weight decay is far more common because sparsity isn\'t usually the goal and L2\'s smooth gradient plays better with gradient-based optimizers.', level: 'Mid' },
+    { q: 'Explain why batch size affects generalization, not just training speed.', a: 'Small batches introduce noisy gradient estimates, and that noise acts as an implicit regularizer, biasing training toward flatter minima in the loss landscape that tend to generalize better to unseen data. Large batches produce much more accurate gradient estimates, converging faster and more directly toward sharp minima that fit the training set well but can generalize worse — this is a well-documented empirical phenomenon, not just a theoretical concern, and it\'s why large-batch training typically requires learning rate scaling or warmup to recover generalization performance lost from reduced gradient noise.', level: 'Senior' },
+    { q: 'You\'re fine-tuning a pretrained CNN and validation accuracy is stuck far below the pretrained benchmark. What do you check?', a: 'First, I\'d verify the input preprocessing (normalization mean/std, resize, color channel order) exactly matches what the pretraining pipeline used — a mismatch here silently feeds the model out-of-distribution inputs and is one of the most common fine-tuning bugs. Second, I\'d check the learning rate — fine-tuning needs a much smaller learning rate than training from scratch, since large updates can catastrophically overwrite the useful pretrained weights before the new head has learned anything meaningful. Third, I\'d check whether batch norm layers are behaving correctly — if they\'re still in training mode with a very small fine-tuning batch size, their running statistics can become unstable and corrupt the very features you\'re trying to preserve from pretraining.', level: 'Mid' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

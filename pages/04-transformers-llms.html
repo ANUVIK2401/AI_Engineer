@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>04 · Transformers & LLMs — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css">
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>04 · Transformers & LLMs</h1>
+      <div class="tag-row">
+        <span class="tag">10 topics</span>
+        <span class="tag">~90 min deep-read</span>
+        <span class="tag">Core</span>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <p class="why-line">This is the single most-tested module in AI engineering interviews right now — attention, KV cache, and sampling internals are where companies filter people who understand LLMs from people who just call an API.</p>
+    </div>
+
+    <div class="card" data-topic-id="attention">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Attention Mechanism (Q/K/V)</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Each token produces a Query, Key, and Value vector; attention scores each token pair via the dot product of Query and Key, softmaxes those scores, and uses them to weight a sum of Value vectors.</li>
+            <li>This exists to let every token dynamically gather information from every other token in the sequence, weighted by relevance — solving the fixed-context bottleneck that plagued RNNs.</li>
+            <li class="insight"><strong>The insight:</strong> Q, K, and V are all linear projections of the same input embeddings using different learned weight matrices — the "roles" of query/key/value aren't inherent to the token, they're entirely learned during training to make retrieval-like lookups useful for the task.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ \text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V $$
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Walk me through scaled dot-product attention end to end."</div>
+          <div class="interview-weak">"It computes attention scores and applies them to the values."</div>
+          <div class="interview-strong">Each token's embedding is linearly projected into three vectors — Query, Key, Value — using separate learned weight matrices. For every pair of tokens, we compute the dot product of one token's Query with another's Key, producing a raw relevance score; we scale these by 1/√d_k to keep gradients stable, then softmax across each row so scores for a given token sum to 1. Finally, each token's output is a weighted sum of all tokens' Value vectors, weighted by those softmax scores — meaning the token "looks at" the rest of the sequence and pulls in information proportional to computed relevance.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why do we need separate Query and Key projections instead of just using the raw embeddings directly?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="multihead">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Multi-Head Attention</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Multi-head attention runs several attention operations in parallel, each with its own learned Q/K/V projections into a smaller subspace, then concatenates and projects the results back to full dimension.</li>
+            <li>It exists because a single attention head can only learn one type of relationship pattern per layer — multiple heads let the model attend to different relationships (syntax, coreference, position) simultaneously.</li>
+            <li class="insight"><strong>The insight:</strong> heads aren't explicitly assigned roles during training — interpretability research shows some heads emerge specializing in syntax, others in positional patterns, purely as a byproduct of gradient descent optimizing the loss, not by design.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why use multiple attention heads instead of one larger head?"</div>
+          <div class="interview-weak">"More heads means the model can learn more things."</div>
+          <div class="interview-strong">A single attention head produces one weighted average over the sequence per token, which forces every type of relationship (syntactic, semantic, positional) to be blended into a single attention pattern — that's a representational bottleneck. Splitting into multiple smaller-dimensional heads lets each specialize in a different relationship type and computes them in parallel at roughly the same total computational cost as one large head, since the per-head dimension shrinks proportionally. Empirically, some heads do specialize (e.g., attending to the previous token, or matching coreferent noun phrases) which validates the architectural intuition even though it emerges rather than being designed in.</div>
+          <div class="interview-followup">Follow-up: <strong>"Does adding more heads always help, or is there a point of diminishing returns?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="positional-encoding">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Positional Encoding</h3></div>
+        <span class="badge badge-advanced">[ADVANCED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Absolute positional encoding adds a fixed or learned vector per position to token embeddings; relative encoding injects position information into the attention computation itself; RoPE (Rotary Position Embedding) rotates Q/K vectors by an angle proportional to position.</li>
+            <li>Positional encoding exists because self-attention alone is permutation-invariant — without it, the model can't distinguish token order at all.</li>
+            <li class="insight"><strong>The insight:</strong> RoPE's rotation trick means relative position is naturally encoded in the dot product between rotated Q and K vectors — it extrapolates to longer sequences at inference than were seen during training far better than fixed absolute encodings, which is exactly why it's the default choice for modern long-context LLMs (LLaMA, GPT-NeoX).</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Method</th><th>Extrapolates to longer seqs?</th><th>Used by</th></tr>
+          <tr><td>Absolute (sinusoidal)</td><td>poorly</td><td>original Transformer</td></tr>
+          <tr><td>Learned absolute</td><td>no — fixed max length</td><td>BERT, GPT-2</td></tr>
+          <tr><td>RoPE</td><td>well, with scaling tricks</td><td>LLaMA, GPT-NeoX, most modern LLMs</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why does RoPE generalize to longer contexts better than learned absolute positional embeddings?"</div>
+          <div class="interview-weak">"It's a newer, better technique."</div>
+          <div class="interview-strong">Learned absolute positional embeddings are a fixed lookup table indexed by position, so any position beyond the max length seen in training simply has no learned embedding — it can't extrapolate at all without retraining. RoPE instead encodes position by rotating the Query and Key vectors by an angle proportional to their position, and crucially the attention score between two tokens ends up depending only on their relative distance, not absolute position, because the rotation is baked directly into the dot product math. This relative-distance property is what lets RoPE-based models handle longer sequences at inference than trained on, sometimes assisted by additional interpolation/scaling techniques for very large extensions.</div>
+          <div class="interview-followup">Follow-up: <strong>"What is position interpolation and why is it needed even with RoPE for very long context extension?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="transformer-block">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Transformer Block Anatomy</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Each transformer block runs: multi-head self-attention → residual add + layer norm → feed-forward network (two linear layers with a nonlinearity) → residual add + layer norm.</li>
+            <li>This specific structure exists because attention mixes information across tokens (a "communication" step) while the feed-forward network processes each token independently (a "computation" step) — alternating them lets the model both gather context and transform it.</li>
+            <li class="insight"><strong>The insight:</strong> the feed-forward network, not attention, holds the majority of a transformer's parameters (typically ~⅔) — most of what people call "the attention model" is actually per-token MLP computation, with attention serving mainly as the mechanism for moving information between positions.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
+            <rect x="40" y="10" width="220" height="50" rx="6" fill="none" stroke="#3b82f6"/>
+            <text x="70" y="40" font-family="JetBrains Mono" font-size="12" fill="#3b82f6">Multi-Head Attention</text>
+            <line x1="150" y1="60" x2="150" y2="85" stroke="#1e2d45"/>
+            <rect x="40" y="85" width="220" height="40" rx="6" fill="none" stroke="#1e2d45"/>
+            <text x="75" y="110" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">Add + LayerNorm</text>
+            <line x1="150" y1="125" x2="150" y2="150" stroke="#1e2d45"/>
+            <rect x="40" y="150" width="220" height="50" rx="6" fill="none" stroke="#f59e0b"/>
+            <text x="105" y="180" font-family="JetBrains Mono" font-size="12" fill="#f59e0b">FFN</text>
+            <line x1="150" y1="200" x2="150" y2="225" stroke="#1e2d45"/>
+            <rect x="40" y="225" width="220" height="40" rx="6" fill="none" stroke="#1e2d45"/>
+            <text x="75" y="250" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">Add + LayerNorm</text>
+            <path d="M 20 35 L 20 105 L 40 105" fill="none" stroke="#1e2d45" stroke-dasharray="3,3"/>
+            <path d="M 20 175 L 20 245 L 40 245" fill="none" stroke="#1e2d45" stroke-dasharray="3,3"/>
+            <text x="150" y="300" font-family="JetBrains Mono" font-size="10" fill="#6b80a0" text-anchor="middle">× N layers</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why is there a residual connection around both the attention and FFN sublayers?"</div>
+          <div class="interview-weak">"It helps with gradient flow."</div>
+          <div class="interview-strong">Residual connections let each sublayer learn a correction to the identity function rather than the entire transformation from scratch, which makes very deep stacks (dozens to over a hundred layers) actually trainable — without them, gradients would have to flow through every nonlinear transform at every layer, compounding vanishing gradient effects. Concretely, the output is x + Sublayer(LayerNorm(x)), so even if a particular sublayer contributes very little useful signal at some point in training, the residual path preserves the original information rather than losing it, which stabilizes training dramatically at transformer scale.</div>
+          <div class="interview-followup">Follow-up: <strong>"What's the difference between Pre-LN and Post-LN transformer variants, and why do most modern LLMs use Pre-LN?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="decoder-encoder">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Decoder-Only vs Encoder-Decoder</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Decoder-only models (GPT family) use causal (masked) self-attention so each token only attends to previous tokens, trained purely on next-token prediction; encoder-decoder models (T5) use a bidirectional encoder to process the full input, then a decoder that cross-attends to the encoder's output.</li>
+            <li>Both exist because different tasks benefit from different information flow — open-ended generation benefits from a single unified autoregressive objective, while tasks with a clear distinct input/output structure (translation, summarization) can benefit from an encoder that sees the full input bidirectionally first.</li>
+            <li class="insight"><strong>The insight:</strong> decoder-only architectures won out for general-purpose LLMs not because bidirectional context is useless, but because a single unified autoregressive objective scales more simply across arbitrarily many tasks framed as text generation — you don't need task-specific encoder/decoder architecture decisions, just more data and parameters.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why did GPT-style decoder-only models become the dominant architecture over encoder-decoder models like T5?"</div>
+          <div class="interview-weak">"Decoder-only is simpler."</div>
+          <div class="interview-strong">Decoder-only models unify every task — translation, summarization, question answering, chat — under a single training objective (next-token prediction), so scaling the model and data doesn't require redesigning an architecture per task, unlike encoder-decoder setups that need task-specific framing. This uniformity turned out to matter more than the theoretical benefit of bidirectional encoding for input understanding, because in-context learning and instruction-following emerged from scale on the decoder-only objective alone. Encoder-decoder models still have real advantages for tasks with clearly asymmetric input/output structure and fixed-length outputs (like classic machine translation), which is why they haven't disappeared entirely.</div>
+          <div class="interview-followup">Follow-up: <strong>"What does 'causal masking' actually do to the attention computation, mechanically?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="tokenization">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Tokenization (BPE, WordPiece)</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Byte-Pair Encoding (BPE) and WordPiece build a vocabulary by iteratively merging the most frequent adjacent character/subword pairs, producing subword units instead of full words or raw characters.</li>
+            <li>Subword tokenization exists to balance vocabulary size against sequence length — word-level tokenization can't handle unseen words (out-of-vocabulary), while character-level tokenization makes sequences impractically long.</li>
+            <li class="insight"><strong>The insight:</strong> vocabulary size is a direct tradeoff against sequence length and embedding table size — a larger vocab means shorter sequences per input (cheaper attention, which scales quadratically) but a bigger embedding/output matrix, so vocab size is a deliberate engineering choice, not just "bigger is better."</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why do LLMs struggle with tasks like counting letters in a word or reversing a string?"</div>
+          <div class="interview-weak">"Because they're language models, not calculators."</div>
+          <div class="interview-strong">The model never actually sees individual characters — tokenization collapses common words and subwords into single tokens, so a word like "strawberry" might be a single opaque token or split into two or three chunks that don't align with individual letters at all. Since the model's entire input representation operates at the token level, it has no direct access to character-level structure unless that structure happened to be reflected in how the tokenizer split similar words during its own training — this is a tokenization artifact, not a reasoning limitation, and it's why prompting tricks like spelling a word letter-by-letter with spaces can improve performance on these tasks.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does vocabulary size affect training and inference cost?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="kv-cache">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Context Window & KV Cache</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>The context window is the maximum number of tokens a model can attend to at once; the KV cache stores each generated token's Key and Value vectors so they don't need to be recomputed for every new token during autoregressive generation.</li>
+            <li>The KV cache exists because without it, generating each new token would require recomputing attention over the entire prior sequence from scratch — caching turns that into an incremental append.</li>
+            <li class="insight"><strong>The insight:</strong> attention cost scales quadratically with sequence length (every token attends to every other token), which is why context window increases are far more expensive than linear — doubling context roughly quadruples the attention compute and KV cache memory footprint, which is the real bottleneck behind long-context serving costs.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-tradeoff tf-situation">Longer context window</div><div>Quadratic attention compute + linearly growing KV cache memory</div>
+          <div class="tf-row-failure tf-situation">KV cache exceeds GPU memory</div><div>Must evict, truncate context, or reduce batch size — serving throughput collapses</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why is serving a 100K-token context so much more expensive than a 10K-token one — isn't it just 10x?"</div>
+          <div class="interview-weak">"Longer context needs more memory."</div>
+          <div class="interview-strong">It's worse than linear on two fronts: attention computation scales quadratically with sequence length since every token must compute a score against every other token, so 10x the tokens means roughly 100x the attention FLOPs for that operation. Additionally, the KV cache itself grows linearly with sequence length per request, and since it must be held in GPU memory for the duration of generation, longer contexts directly reduce how many concurrent requests you can batch — hurting both compute cost and serving throughput simultaneously, which compounds why long-context serving is disproportionately expensive.</div>
+          <div class="interview-followup">Follow-up: <strong>"What is paged attention and what specific inefficiency does it solve?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="sampling">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Temperature, Top-p, Top-k Sampling</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Temperature rescales logits before softmax to control randomness; top-k restricts sampling to the k highest-probability tokens; top-p (nucleus sampling) restricts to the smallest set of tokens whose cumulative probability exceeds p.</li>
+            <li>These exist because always picking the single most likely token (greedy decoding) produces repetitive, low-diversity text, while pure random sampling from the full distribution produces incoherent text by occasionally picking very low-probability tokens.</li>
+            <li class="insight"><strong>The insight — the classic gotcha:</strong> greedy decoding is deterministic and often produces worse quality output than sampling with a moderate temperature, because always taking the locally most-probable token can lead down a path that's globally suboptimal — it's a form of exposure bias, not a "safe default."</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why wouldn't you always use greedy decoding if you want the 'best' possible output?"</div>
+          <div class="interview-weak">"Greedy decoding is more repetitive."</div>
+          <div class="interview-strong">Greedy decoding picks the single highest-probability token at each step, which is a locally optimal but not globally optimal strategy — an early token choice can lock the model into a lower-quality continuation it can't recover from, since there's no lookahead or backtracking. It's also degenerate in a specific way: it tends to produce repetitive loops, because once a phrase becomes locally likely, greedy decoding gets stuck re-selecting it. This is why techniques like beam search (limited lookahead) or sampling with temperature/top-p (controlled randomness) generally produce more natural, higher-quality text than pure greedy decoding despite being the "safe-looking" deterministic choice.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you tune temperature and top-p differently for a code-generation task versus a creative-writing task?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="rlhf">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>RLHF</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>RLHF trains a reward model on human preference comparisons between model outputs, then uses that reward model to fine-tune the LLM via reinforcement learning (typically PPO), optimizing generations to score highly under the learned reward.</li>
+            <li>It exists because "good response" isn't a label you can directly supervise — there's no ground truth token sequence for "be helpful and harmless," so you instead learn a proxy reward function from relative human judgments and optimize against that.</li>
+            <li class="insight"><strong>The insight:</strong> RLHF doesn't teach the model new knowledge or capabilities — pretraining already encodes that. It reshapes which parts of the model's existing distribution get sampled, steering output style, refusals, and helpfulness — which is why RLHF'd models can still hallucinate confidently on facts they were never taught to verify.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 480 140" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="45" width="120" height="50" rx="6" fill="none" stroke="#1e2d45"/>
+            <text x="25" y="75" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">SFT Model</text>
+            <path d="M130 70 L 170 70" stroke="#1e2d45" marker-end="url(#arrow)"/>
+            <rect x="170" y="20" width="140" height="50" rx="6" fill="none" stroke="#3b82f6"/>
+            <text x="185" y="50" font-family="JetBrains Mono" font-size="11" fill="#3b82f6">Reward Model</text>
+            <text x="180" y="10" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">trained on human prefs</text>
+            <path d="M240 70 L 240 95" stroke="#1e2d45" marker-end="url(#arrow)"/>
+            <rect x="170" y="95" width="140" height="40" rx="6" fill="none" stroke="#f59e0b"/>
+            <text x="205" y="120" font-family="JetBrains Mono" font-size="11" fill="#f59e0b">PPO Update</text>
+            <path d="M310 115 L 400 115 L 400 80" stroke="#1e2d45" marker-end="url(#arrow)" fill="none"/>
+            <rect x="350" y="45" width="120" height="35" rx="6" fill="none" stroke="#10b981"/>
+            <text x="365" y="67" font-family="JetBrains Mono" font-size="11" fill="#10b981">Aligned LLM</text>
+            <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#1e2d45"/></marker></defs>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"What problem does RLHF actually solve that supervised fine-tuning alone doesn't?"</div>
+          <div class="interview-weak">"It makes the model more aligned with human values."</div>
+          <div class="interview-strong">Supervised fine-tuning requires a fixed target sequence to imitate, but for open-ended qualities like "helpful, harmless, and honest" there's often no single correct response — instead there's a preference ranking between candidate responses that's much easier for humans to provide than writing a gold-standard answer. RLHF converts that pairwise preference signal into a learned reward model, then optimizes the policy (the LLM) against it via PPO, which lets you optimize for a nuanced, hard-to-specify objective that pure supervised learning on fixed targets can't directly express. In practice it also introduces real risks — reward hacking, where the policy finds ways to score high on the reward model without actually being better, which is why techniques like KL-penalty regularization against the original SFT model are used to keep the policy from drifting too far.</div>
+          <div class="interview-followup">Follow-up: <strong>"What is reward hacking and how does the KL penalty in PPO help prevent it?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="finetuning-types">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Fine-Tuning Types (LoRA, QLoRA)</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Full fine-tuning updates all model parameters; LoRA freezes the base model and injects small trainable low-rank matrices into attention layers; QLoRA does the same but on a quantized (4-bit) frozen base model; prefix tuning prepends trainable "virtual tokens" without touching model weights at all.</li>
+            <li>Parameter-efficient methods exist because full fine-tuning of a multi-billion parameter model requires prohibitive GPU memory (for both weights and optimizer states) that most teams can't afford for every downstream task.</li>
+            <li class="insight"><strong>The insight:</strong> LoRA works because weight updates during fine-tuning empirically have low "intrinsic rank" — the actual change needed to adapt a pretrained model to a new task lives in a much lower-dimensional subspace than the full parameter space, so you can approximate it with two small matrices instead of updating the whole weight matrix.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Method</th><th>Trainable params</th><th>Memory need</th><th>Best for</th></tr>
+          <tr><td>Full fine-tune</td><td>100%</td><td>very high</td><td>large distribution shift, max quality</td></tr>
+          <tr><td>LoRA</td><td>~0.1-1%</td><td>moderate</td><td>most task adaptation</td></tr>
+          <tr><td>QLoRA</td><td>~0.1-1%</td><td>low (4-bit base)</td><td>single-GPU fine-tuning of large models</td></tr>
+          <tr><td>Prefix tuning</td><td>&lt;0.1%</td><td>lowest</td><td>lightweight task steering</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"When would you choose full fine-tuning over LoRA despite the cost?"</div>
+          <div class="interview-weak">"When you have enough GPU budget."</div>
+          <div class="interview-strong">LoRA assumes the needed weight update has low intrinsic rank — true for most task adaptation, like teaching a model a new tone or domain vocabulary — but if the target task requires a substantial distributional shift from the pretraining data (a wildly different language, or a completely different modality-adjacent task), the low-rank approximation may not have enough capacity to represent the needed change, and full fine-tuning captures higher-rank updates LoRA structurally cannot. In practice, I'd start with LoRA/QLoRA as the default given the massive cost savings, and only justify full fine-tuning with an ablation showing LoRA underperforms by a meaningful margin on held-out eval — not assume it upfront.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does QLoRA's 4-bit quantization avoid destroying the frozen base model's quality?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — Transformers & LLMs</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — Transformers & LLMs</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>Query/Key/Value</dt><dd>Learned projections used to compute and apply attention scores.</dd></div>
+        <div class="cheat-term"><dt>Causal masking</dt><dd>Prevents a token from attending to future tokens during generation.</dd></div>
+        <div class="cheat-term"><dt>RoPE</dt><dd>Rotary positional encoding; encodes relative position via rotation.</dd></div>
+        <div class="cheat-term"><dt>KV cache</dt><dd>Stores past Key/Value vectors to avoid recomputing attention.</dd></div>
+        <div class="cheat-term"><dt>BPE</dt><dd>Byte-Pair Encoding; builds subword vocab via frequency merges.</dd></div>
+        <div class="cheat-term"><dt>Top-p sampling</dt><dd>Samples from smallest token set whose cumulative prob exceeds p.</dd></div>
+        <div class="cheat-term"><dt>Temperature</dt><dd>Rescales logits pre-softmax to control output randomness.</dd></div>
+        <div class="cheat-term"><dt>RLHF</dt><dd>Fine-tunes LLM via PPO against a human-preference reward model.</dd></div>
+        <div class="cheat-term"><dt>LoRA</dt><dd>Low-rank trainable matrices injected into frozen model layers.</dd></div>
+        <div class="cheat-term"><dt>QLoRA</dt><dd>LoRA applied on top of a 4-bit quantized frozen base model.</dd></div>
+        <div class="cheat-term"><dt>Reward hacking</dt><dd>Policy exploits reward model flaws instead of genuinely improving.</dd></div>
+        <div class="cheat-term"><dt>Intrinsic rank</dt><dd>Low-dimensional subspace where useful fine-tuning updates live.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Why does attention have O(n²) complexity with respect to sequence length, and what are two distinct approaches to reducing it?', a: 'Every token must compute an attention score against every other token to know how much to weight each one, so for a sequence of length n you compute n² pairwise scores per attention layer — this is inherent to the full self-attention formulation. Two distinct mitigation approaches are sparse/local attention patterns (only attending to a fixed window or strided subset of tokens, trading some global context for linear-ish complexity) and linear attention approximations (reformulating attention to avoid materializing the full n×n score matrix, using kernel tricks, at some cost to exact equivalence). FlashAttention takes a third, orthogonal approach — it doesn\'t reduce the FLOP count but reduces memory movement, since the n² matrix is never fully materialized in slow GPU memory, making it much faster in practice without changing the underlying math.', level: 'Senior' },
+    { q: 'A user complains that your chatbot repeats the same phrase over and over in long responses. What decoding-level and training-level fixes would you consider?', a: 'At the decoding level, I\'d check whether greedy or low-temperature decoding is in use, since low randomness makes the model prone to getting stuck in repetitive loops once a phrase becomes locally probable — increasing temperature or top-p slightly, or adding a repetition penalty that downweights recently-generated tokens, directly targets this symptom. At the training level, repetition can also stem from exposure bias in maximum-likelihood training (the model never saw its own errors during training, so small early mistakes compound during autoregressive generation) — RLHF or additional fine-tuning on preference data that penalizes repetitive outputs addresses the root cause rather than papering over it at decode time. I\'d diagnose which layer the problem lives in by testing the same prompt across different decoding configs before assuming it needs a training fix.', level: 'Mid' },
+    { q: 'Explain why increasing model context length from 8K to 128K tokens is not simply a config change.', a: 'Positional encodings trained only up to 8K tokens often don\'t generalize to 128K without additional techniques (RoPE scaling, position interpolation, or continued pretraining on longer sequences), since the model never learned representations for those position ranges. Beyond the architecture, attention compute scales quadratically and KV cache memory scales linearly with sequence length, so serving 128K contexts requires fundamentally different memory management (paged attention, cache eviction strategies) and much more GPU memory per request — throughput at 128K context is a different engineering problem than at 8K, not just "the same model with a bigger number."', level: 'Senior' },
+    { q: 'What is the practical difference between few-shot prompting and fine-tuning, and when would you pick one over the other?', a: 'Few-shot prompting includes a handful of examples directly in the context window at inference time, requiring no training but consuming context budget on every single request and being limited by what fits in-context and what in-context learning can actually achieve for the task. Fine-tuning bakes the pattern into the model weights once, so inference requests are cheaper (no repeated examples needed) and can achieve more robust task performance, but it costs upfront training time/compute and requires maintaining a separate model artifact. I\'d default to few-shot prompting for prototyping or low-volume use cases, and switch to fine-tuning (often via LoRA) once request volume or quality requirements justify the upfront training investment and lower per-request context cost.', level: 'Mid' },
+    { q: 'Why can a model with a very low training loss still hallucinate confidently on factual questions?', a: 'Training loss (next-token cross-entropy) measures how well the model predicts tokens matching its training distribution, not whether the content of its statements is factually verified against ground truth — a model can be extremely good at producing fluent, plausible-sounding token sequences while having no internal mechanism distinguishing "confidently recalled fact" from "confidently generated plausible-sounding text." This is compounded by RLHF, which optimizes for outputs humans rate as helpful and confident-sounding, which can inadvertently reward confident phrasing regardless of factual accuracy unless the preference data specifically penalizes unsupported claims. This is precisely the gap RAG architectures are designed to close — grounding generation in retrieved, verifiable source documents rather than relying purely on parametric memory.', level: 'Senior' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>08 · MLOps & Production — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>08 · MLOps & Production</h1>
+      <div class="tag-row">
+        <span class="tag">9 topics</span>
+        <span class="tag">~70 min deep-read</span>
+        <span class="tag">Advanced</span>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <p class="why-line">Interviewers ask about this because a model that works in a notebook and a model that survives production for a year are entirely different engineering problems — this module is where "can you ship and maintain this" gets tested.</p>
+    </div>
+
+    <div class="card" data-topic-id="ml-lifecycle">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>ML Lifecycle</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>The ML lifecycle runs data collection/preparation → training → evaluation → deployment → monitoring, then feeds monitoring signals back into retraining — it's a loop, not a one-way pipeline.</li>
+            <li>It exists as a structured process because each stage has distinct failure modes and tooling needs, and skipping the loop-back (monitoring informing retraining) is exactly how models silently degrade in production without anyone noticing.</li>
+            <li class="insight"><strong>The insight:</strong> most of the actual engineering effort in a mature ML system goes into the "boring" stages — data pipelines, monitoring, retraining automation — not model architecture; teams that only invest in the training/eval steps end up with models that work once and degrade silently afterward.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="45" width="80" height="45" rx="6" fill="none" stroke="#1e2d45"/>
+            <text x="22" y="72" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">Data</text>
+            <path d="M90 67 L 115 67" stroke="#1e2d45" marker-end="url(#a3)"/>
+            <rect x="115" y="45" width="80" height="45" rx="6" fill="none" stroke="#3b82f6"/>
+            <text x="125" y="72" font-family="JetBrains Mono" font-size="10" fill="#3b82f6">Train</text>
+            <path d="M195 67 L 220 67" stroke="#1e2d45" marker-end="url(#a3)"/>
+            <rect x="220" y="45" width="80" height="45" rx="6" fill="none" stroke="#10b981"/>
+            <text x="228" y="72" font-family="JetBrains Mono" font-size="10" fill="#10b981">Evaluate</text>
+            <path d="M300 67 L 325 67" stroke="#1e2d45" marker-end="url(#a3)"/>
+            <rect x="325" y="45" width="80" height="45" rx="6" fill="none" stroke="#f59e0b"/>
+            <text x="335" y="72" font-family="JetBrains Mono" font-size="10" fill="#f59e0b">Deploy</text>
+            <path d="M405 67 L 430 67" stroke="#1e2d45" marker-end="url(#a3)"/>
+            <rect x="430" y="45" width="80" height="45" rx="6" fill="none" stroke="#ef4444"/>
+            <text x="435" y="72" font-family="JetBrains Mono" font-size="10" fill="#ef4444">Monitor</text>
+            <path d="M470 90 L 470 110 L 50 110 L 50 90" fill="none" stroke="#1e2d45" stroke-dasharray="3,3" marker-end="url(#a3)"/>
+            <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#1e2d45"/></marker></defs>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"A model performed great in evaluation but degrades after a few months in production. Walk me through why this happens and how you'd design against it."</div>
+          <div class="interview-weak">"I'd retrain the model periodically."</div>
+          <div class="interview-strong">The root cause is almost always that the offline evaluation captured a snapshot of the world that has since shifted — either the input data distribution changed (data drift) or the underlying relationship between inputs and the target changed (concept drift) — and without production monitoring, this degradation is invisible until someone notices business metrics slipping. I'd design the lifecycle as a closed loop from the start: instrument production predictions and (where available) eventual ground truth outcomes, track distributional statistics of incoming features against the training distribution, and set concrete alerting thresholds that trigger investigation or automated retraining rather than relying on a fixed retraining calendar that might be too slow or wasteful depending on how fast the underlying data actually shifts.</div>
+          <div class="interview-followup">Follow-up: <strong>"What's the difference between scheduled retraining and triggered retraining, and when would you use each?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="model-versioning">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Model Versioning</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Model versioning tracks not just model weights but the training data snapshot, hyperparameters, code version, and evaluation metrics associated with each trained artifact.</li>
+            <li>It's harder than software versioning because model behavior depends on data and randomness in training, not just code — two runs of "the same" training script can produce meaningfully different models, and reproducing a specific model requires pinning data, code, and often random seeds together as one unit.</li>
+            <li class="insight"><strong>The insight:</strong> a model version without its associated training data snapshot and eval results is nearly useless for debugging — if a production issue traces back to a specific model version, you need to know exactly what data and code produced it to understand and fix the root cause, not just roll back to a different weights file.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why is versioning a model harder than versioning a regular software artifact?"</div>
+          <div class="interview-weak">"Because models are bigger files."</div>
+          <div class="interview-strong">Software versioning is fundamentally about code, which is deterministic — the same commit always produces the same binary. Model versioning has to account for the training data snapshot (which can change independently of code), hyperparameters, and often non-determinism from random initialization or data shuffling, meaning the same code and even the same data can produce meaningfully different model weights across runs. A complete model version therefore needs to bundle the weights with the exact data snapshot, code version, hyperparameters, and evaluation results as one traceable unit — without that, if a production issue surfaces, you can't reliably reproduce or root-cause which factor (data change vs. code change vs. random variation) actually caused the behavior difference.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you version a fine-tuned LLM when the base model itself also gets updated periodically?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="feature-stores">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Feature Stores</h3></div>
+        <span class="badge badge-advanced">[ADVANCED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A feature store is a centralized system for computing, storing, and serving features consistently for both training (offline, batch) and inference (online, low-latency) use cases.</li>
+            <li>It exists to solve training/serving skew — the problem where features are computed differently (different code paths, different timing) between the offline training pipeline and the online serving path, causing subtle, hard-to-detect prediction quality issues.</li>
+            <li class="insight"><strong>The insight:</strong> training/serving skew is one of the most common and hardest-to-detect production ML bugs precisely because it doesn't throw an error — the model just silently performs worse than its offline evaluation suggested, because the online features it's actually receiving are computed slightly differently than the ones it was trained and evaluated on.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"What specific problem does a feature store solve that you couldn't solve with good documentation and code review alone?"</div>
+          <div class="interview-weak">"It keeps features organized and easy to find."</div>
+          <div class="interview-strong">The core problem is training/serving skew — even with perfect documentation, if your training pipeline computes a feature via a batch SQL job and your serving path computes the "same" feature via a different real-time code path, subtle differences (timing windows, null-handling, rounding) will inevitably creep in over time as each path is maintained independently by potentially different people. A feature store enforces a single feature definition used by both the offline training pipeline and the online serving path, so the exact same computation logic produces both the training data and the inference-time features, structurally eliminating the skew rather than relying on developers remembering to keep two implementations in sync. This is a systems/architecture fix for a class of bug that code review alone reliably fails to catch, since the two code paths are often in entirely different services.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does a feature store handle a feature that requires real-time computation, like 'transactions in the last 5 minutes'?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="drift">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Data Drift vs Concept Drift vs Model Decay</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Data drift is a shift in the input feature distribution while the input-output relationship stays the same; concept drift is a shift in the input-output relationship itself; model decay is the resulting degradation in model performance from either (or from staleness generally).</li>
+            <li>These distinctions exist because they require different detection methods and different fixes — data drift can sometimes be detected without labels (comparing feature distributions), while concept drift requires tracking actual prediction accuracy against ground truth over time.</li>
+            <li class="insight"><strong>The insight:</strong> data drift can be detected without waiting for ground-truth labels (by monitoring input feature distributions directly), but concept drift often can't be detected until labels arrive — which means for tasks with delayed labels (like loan default prediction, resolved months later), concept drift can be silently accumulating for a long time before you have any direct evidence of it.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Type</th><th>What changes</th><th>Detectable without labels?</th></tr>
+          <tr><td>Data drift</td><td>input feature distribution</td><td>yes — compare feature stats over time</td></tr>
+          <tr><td>Concept drift</td><td>input→output relationship</td><td>no — needs ground truth labels</td></tr>
+          <tr><td>Model decay</td><td>overall performance (either cause)</td><td>only if labels or proxy metrics available</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How would you detect concept drift in a system where ground-truth labels arrive 3 months after prediction?"</div>
+          <div class="interview-weak">"I'd just wait for the labels and check accuracy."</div>
+          <div class="interview-strong">Waiting passively for delayed labels means you're always 3 months behind on detecting an actual problem, which is too slow for many production risk profiles — instead I'd build proxy signals that correlate with concept drift without needing the true label: monitoring input feature distributions for drift (a leading indicator, even though it's technically a different phenomenon), tracking the model's prediction distribution itself for unexpected shifts, and where possible, using a faster-arriving weak label or human-reviewed sample to get an early, noisier signal on accuracy well before the full 3-month ground truth resolves. I'd treat the 3-month labels as the authoritative signal for triggering retraining decisions, but use the faster proxy signals as an early-warning system to flag investigation before waiting for full confirmation.</div>
+          <div class="interview-followup">Follow-up: <strong>"What statistical test would you use to detect a distribution shift in a single numeric feature?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="ab-testing">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>A/B Testing for Models</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Shadow mode runs a new model alongside production without serving its predictions to users, comparing outputs offline; canary deployment routes a small percentage of real traffic to the new model; full A/B testing splits traffic between model versions and measures the business metric difference statistically.</li>
+            <li>This staged rollout process exists because offline evaluation metrics don't always predict real-world business impact, and deploying untested changes directly to 100% of traffic risks a broad, immediate negative impact if something was missed in evaluation.</li>
+            <li class="insight"><strong>The insight:</strong> shadow mode catches technical/operational failures (crashes, latency, wildly wrong outputs) safely with zero user risk, but it can't measure actual business impact, since shadow predictions never affect real user behavior — you need a real canary or A/B test specifically to validate the metric that actually matters, and skipping straight from shadow mode to full rollout skips that validation entirely.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your new model passed shadow mode with no errors. Is that enough to roll out to 100% of traffic?"</div>
+          <div class="interview-weak">"Yes, if it ran without errors in shadow mode it's safe to deploy fully."</div>
+          <div class="interview-strong">Shadow mode only validates that the new model runs correctly and produces outputs in a similar range to the old model — it never actually influences real user behavior, so it can't tell you anything about the metric you actually care about, like conversion rate or user satisfaction. I'd follow shadow mode with a canary deployment to a small percentage of real traffic, measuring the actual business metric with statistical rigor (accounting for sample size and variance) before considering a full rollout, since real user response to model changes can differ in ways that never show up when the model's predictions have zero real-world consequence. Skipping from shadow mode straight to 100% rollout conflates "doesn't crash" with "actually improves the metric," which are very different bars.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you determine the right traffic percentage and duration for a canary deployment?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="containerization">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Containerization for ML</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>An ML serving container typically bundles the model weights, inference code, exact library versions (especially deep learning framework and CUDA versions), and a runtime environment, packaged to run identically regardless of the host machine.</li>
+            <li>Containerization exists because ML dependency environments are notoriously fragile — CUDA version, framework version, and even specific driver versions can silently change numerical behavior or break compatibility, and containers pin the entire environment as one reproducible unit.</li>
+            <li class="insight"><strong>The insight:</strong> for ML specifically, "it works on my machine" is a much deeper problem than in typical software — GPU driver/CUDA version mismatches can cause a model to run without any error but produce subtly different numerical outputs, which is a much scarier failure mode than a container that simply fails to start.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why is 'it works on my machine' a more dangerous problem for ML systems than for typical software?"</div>
+          <div class="interview-weak">"Because ML has more dependencies to manage."</div>
+          <div class="interview-strong">In typical software, a dependency mismatch usually causes an obvious crash or import error — annoying but easy to detect. In ML specifically, a CUDA version mismatch, a different BLAS backend, or even a different GPU architecture can cause the model to run successfully and produce numerically slightly different outputs without any error at all, since floating-point operations aren't perfectly deterministic across all hardware/library combinations. That means a silently different environment can degrade model quality in production in a way that's invisible until someone notices worse business metrics, which is exactly why pinning the full environment (framework version, CUDA version, even specific driver compatibility) inside a container matters more for ML than for typical stateless web services.</div>
+          <div class="interview-followup">Follow-up: <strong>"What specifically goes into an ML serving Docker image beyond the model weights?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="observability">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Observability</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>ML observability logs inputs, outputs, prediction confidence/latency, token counts (for LLMs), and errors, in addition to standard system metrics like CPU/memory/request rate.</li>
+            <li>This exists because standard software monitoring (uptime, latency, error rate) tells you the system is running, but says nothing about whether the model's predictions are still good — you need model-specific signals layered on top of infra monitoring.</li>
+            <li class="insight"><strong>The insight:</strong> a model can have perfect infrastructure health (100% uptime, low latency, zero 500 errors) while silently producing garbage predictions — infra monitoring and model quality monitoring are almost entirely orthogonal, and teams that only instrument the former have no visibility into the failure mode that actually matters most.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your dashboards show 100% uptime and low latency, but users are complaining the model's outputs are bad. What's missing from your monitoring?"</div>
+          <div class="interview-weak">"We should add more logging."</div>
+          <div class="interview-strong">What's missing is model-quality-specific observability layered on top of infrastructure monitoring — uptime and latency confirm the service is running, but say nothing about whether predictions are accurate, well-calibrated, or even reasonable, since a model can serve confidently wrong outputs at perfect infra health. I'd instrument prediction distributions (are outputs drifting from historical patterns), confidence/uncertainty scores where available, and for LLMs specifically, things like token usage, refusal rates, and sampled output review — plus, where feasible, a feedback loop capturing implicit or explicit user signals (thumbs down, retry rate, session abandonment) as a proxy for quality when ground truth labels aren't immediately available. This is the layer most teams under-invest in because it's harder to instrument than standard infra metrics, but it's the layer that actually explains user-reported quality complaints.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you monitor for hallucination rate in a production LLM system without manual review of every response?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="cicd-ml">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>CI/CD for ML</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>ML CI/CD extends standard software CI/CD (test, build, deploy) with model-specific stages: data validation, model evaluation against a held-out benchmark, and often a staged rollout (shadow/canary) rather than instant full deployment.</li>
+            <li>It differs from software CI/CD because "does this pass unit tests" isn't sufficient — a model can pass all code tests while still being a worse model than the one it's replacing, so an explicit evaluation gate comparing against the current production model's metrics is required before promoting.</li>
+            <li class="insight"><strong>The insight:</strong> in software CI/CD, passing tests is usually a reliable signal to deploy; in ML CI/CD, passing tests only proves the code runs — the actual "does this improve things" question requires a separate evaluation gate against real metrics, meaning ML CI/CD pipelines need an additional decision point that pure software pipelines don't.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How is a CI/CD pipeline for an ML model fundamentally different from one for a typical microservice?"</div>
+          <div class="interview-weak">"It just has an extra step to train the model."</div>
+          <div class="interview-strong">A microservice's CI/CD pipeline treats passing tests as sufficient evidence to deploy, because code behavior is deterministic given the same inputs — if tests pass, the service does what it's supposed to. An ML pipeline can't rely on that same logic: code can pass every unit test (the training script runs, the API returns valid JSON) while producing a model that's measurably worse than the current production model on the metric that actually matters. This means ML CI/CD needs an explicit evaluation gate — running the newly trained model against a fixed benchmark and comparing to the current production model's performance — as a distinct decision point before promotion, which most standard software CI/CD pipelines have no equivalent for. Staged rollout (shadow/canary) is also far more standard in ML pipelines specifically because offline evaluation doesn't always predict production impact reliably.</div>
+          <div class="interview-followup">Follow-up: <strong>"What would you do if a newly trained model passes the evaluation gate but a stakeholder is still uneasy about deploying it?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="cloud-ai">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Cloud AI Services</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>SageMaker (AWS), Vertex AI (Google Cloud), and Azure ML are managed platforms bundling training infrastructure, model registries, deployment endpoints, and monitoring into one ecosystem, reducing the operational burden of building these systems from scratch.</li>
+            <li>They exist because building and maintaining the full MLOps stack (feature stores, training orchestration, serving infra, monitoring) in-house is a significant, ongoing engineering investment that most teams don't need to reinvent when a managed option covers their needs.</li>
+            <li class="insight"><strong>The insight:</strong> the right time to reach for a managed platform is a team-size and workload-maturity decision, not a technical superiority question — small teams benefit enormously from offloading undifferentiated MLOps infrastructure work, but teams with very specific performance requirements or existing heavy investment in open-source tooling (vLLM, MLflow, Kubernetes) can find managed platforms constraining rather than helpful past a certain scale.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Platform</th><th>Provider</th><th>One-line positioning</th></tr>
+          <tr><td>SageMaker</td><td>AWS</td><td>broad, mature, deeply integrated with AWS ecosystem</td></tr>
+          <tr><td>Vertex AI</td><td>Google Cloud</td><td>strong on Google's own foundation models + AutoML</td></tr>
+          <tr><td>Azure ML</td><td>Microsoft Azure</td><td>strong enterprise/compliance integration, OpenAI access</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"When would you NOT recommend using a managed platform like SageMaker or Vertex AI?"</div>
+          <div class="interview-weak">"When it's too expensive."</div>
+          <div class="interview-strong">Cost is one factor, but the more fundamental case is when your requirements are specific enough that the managed platform's abstractions get in the way rather than help — for example, if you need a specific serving optimization like vLLM's paged attention that isn't well-supported inside the platform's serving abstraction, or your team already has significant investment and expertise in open-source tooling (Kubernetes, MLflow, Ray) that a managed platform would partially duplicate or conflict with. I'd also be cautious recommending a managed platform for a team planning to scale into very high-volume, cost-sensitive serving, since the convenience premium on managed compute can become a significant line item at scale compared to a well-run in-house or open-source-based stack — the right call depends on team size, in-house MLOps maturity, and how standard versus specialized the workload is.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you evaluate the true cost tradeoff between a managed platform and self-hosted infrastructure?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — MLOps & Production</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — MLOps & Production</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>Training/serving skew</dt><dd>Mismatch between offline and online feature computation.</dd></div>
+        <div class="cheat-term"><dt>Feature store</dt><dd>Centralized feature computation shared by training and serving.</dd></div>
+        <div class="cheat-term"><dt>Data drift</dt><dd>Input feature distribution shift; relationship to target unchanged.</dd></div>
+        <div class="cheat-term"><dt>Concept drift</dt><dd>Shift in the input-output relationship itself.</dd></div>
+        <div class="cheat-term"><dt>Shadow mode</dt><dd>New model runs alongside prod without affecting real users.</dd></div>
+        <div class="cheat-term"><dt>Canary deployment</dt><dd>New model served to a small % of real traffic before full rollout.</dd></div>
+        <div class="cheat-term"><dt>Model registry</dt><dd>Versioned store of trained model artifacts and metadata.</dd></div>
+        <div class="cheat-term"><dt>Evaluation gate</dt><dd>CI/CD check comparing new model metrics against production baseline.</dd></div>
+        <div class="cheat-term"><dt>Observability (ML)</dt><dd>Monitoring model-quality signals beyond standard infra metrics.</dd></div>
+        <div class="cheat-term"><dt>Model decay</dt><dd>Performance degradation over time from drift or staleness.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Design a monitoring system for a production LLM-powered support chatbot. What would you track and why?', a: 'Beyond standard infra metrics (latency, error rate, uptime), I\'d track token usage per request (cost driver and a proxy for verbosity drift), retrieval quality signals if it\'s RAG-based (which chunks were retrieved, confidence/similarity scores), and explicit or implicit user feedback (thumbs up/down, whether the user had to rephrase or escalate to a human agent) as the closest available proxy for actual answer quality without manual review of every conversation. I\'d also sample a small percentage of conversations for periodic human or LLM-judge review specifically checking for hallucination and policy violations, since aggregate metrics like "average session length" can mask individual bad responses that a sampling-based qualitative review would catch. The key design principle is combining cheap, always-on proxy signals with more expensive but higher-fidelity sampled review, rather than relying on either alone.', level: 'Senior' },
+    { q: 'A stakeholder asks why you can\'t just retrain the model every night to avoid drift entirely. What are the real costs and risks of doing that?', a: 'Nightly retraining isn\'t free — it costs compute, and more importantly it means every day\'s model change needs to pass through evaluation and rollout safety checks (shadow mode, canary) to avoid deploying a regression, or you\'re trading drift risk for deployment-risk exposure at a much higher frequency. There\'s also a subtler risk: if your labels have any delay or noise, nightly retraining on the most recent data can actually make the model worse by overfitting to recent noise or partial/incomplete labels that haven\'t fully resolved yet, especially for tasks where "ground truth" takes time to materialize (like fraud confirmed after a dispute window). The better default is usually retraining triggered by measured drift or on a cadence matched to how fast the underlying data actually changes, validated by tracking whether retraining frequency correlates with actual performance improvement, not retraining maximally just because compute allows it.', level: 'Senior' },
+    { q: 'Why would a model\'s offline evaluation metrics look great while its production A/B test shows no improvement or even regression?', a: 'The most common cause is that offline evaluation used a static, historical dataset that doesn\'t reflect the current or the specific slice of production traffic — the model can be genuinely better on the benchmark distribution while being no better or worse on the live traffic distribution the A/B test actually measures. Another common cause is a mismatch between the offline metric and the actual business metric — improving log-loss or F1 on a held-out set doesn\'t automatically translate to improving conversion rate, user satisfaction, or whatever the A/B test is actually measuring, especially if the offline metric wasn\'t carefully chosen to correlate with the downstream business outcome. This gap is exactly why A/B testing exists as a required step rather than trusting offline evaluation alone — it validates the metric that actually matters under real, current traffic conditions.', level: 'Mid' },
+    { q: 'How would you structure a rollback plan for a newly deployed model that starts showing quality issues in production?', a: 'I\'d ensure the previous model version remains fully deployed and ready to receive traffic (not deleted or decommissioned) for a defined grace period after any new deployment, with the ability to shift traffic back via the same routing mechanism used for canary rollout, ideally as a fast, automated action rather than a manual redeployment. I\'d also define concrete automatic rollback triggers upfront — specific metric thresholds (error rate spike, a proxy quality metric dropping beyond a set bound) that trigger an automatic revert without waiting for a human to notice and decide, since manual-only rollback processes are often too slow for issues that compound quickly. Critically, the rollback plan needs to be tested before it\'s needed — an untested rollback path is a common reason incidents last far longer than they should, because the "safety net" turns out to have its own bugs when actually exercised under pressure.', level: 'Senior' },
+    { q: 'Explain why a feature computed correctly in your training pipeline can still cause a production bug.', a: 'The classic case is training/serving skew — the same feature (say, "average order value in the last 30 days") might be computed via a batch SQL job with access to a full historical table during training, but at serving time computed via a real-time service with a different, possibly incomplete or differently-windowed view of the same underlying data, producing subtly different values for what\'s conceptually "the same" feature. Another case is temporal leakage in the training pipeline itself — a feature that used information not actually available at prediction time (e.g., accidentally including same-day future data) can make the model appear to perform excellently in training/evaluation while being fundamentally miscalibrated once deployed, since production will never have access to that "future" information the training pipeline leaked in. Both bugs are invisible in code review of either pipeline alone — they only surface by explicitly comparing feature values computed by both pipelines against the same underlying raw data.', level: 'Senior' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

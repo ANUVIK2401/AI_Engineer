@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>05 · RAG & Vector DBs — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>05 · RAG & Vector DBs</h1>
+      <div class="tag-row">
+        <span class="tag">10 topics</span>
+        <span class="tag">~85 min deep-read</span>
+        <span class="tag">Core</span>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <p class="why-line">RAG is the most commonly deployed LLM architecture in production, so interviewers ask about it to check whether you understand the entire pipeline's failure modes, not just "it retrieves then generates."</p>
+    </div>
+
+    <div class="card" data-topic-id="rag-pipeline">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>RAG Pipeline End-to-End</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A user query is embedded into a vector, used to search a vector store for the most similar document chunks, which are then inserted into the LLM's prompt as context alongside the original query for generation.</li>
+            <li>RAG exists because LLMs have a fixed, frozen knowledge cutoff and finite parametric memory — retrieval lets you ground generation in current, private, or domain-specific information without retraining the model.</li>
+            <li class="insight"><strong>The insight:</strong> RAG doesn't make a model "know" anything — it changes what's in the context window at generation time. The model is still just predicting the next token, now conditioned on retrieved text; if retrieval fails, generation quality degrades exactly as if that context never existed.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 560 140" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="45" width="90" height="45" rx="6" fill="none" stroke="#1e2d45"/>
+            <text x="25" y="72" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">Query</text>
+            <path d="M100 67 L 130 67" stroke="#1e2d45" marker-end="url(#a1)"/>
+            <rect x="130" y="45" width="90" height="45" rx="6" fill="none" stroke="#3b82f6"/>
+            <text x="140" y="72" font-family="JetBrains Mono" font-size="11" fill="#3b82f6">Embed</text>
+            <path d="M220 67 L 250 67" stroke="#1e2d45" marker-end="url(#a1)"/>
+            <rect x="250" y="45" width="100" height="45" rx="6" fill="none" stroke="#10b981"/>
+            <text x="260" y="72" font-family="JetBrains Mono" font-size="11" fill="#10b981">Vector Search</text>
+            <path d="M350 67 L 380 67" stroke="#1e2d45" marker-end="url(#a1)"/>
+            <rect x="380" y="45" width="90" height="45" rx="6" fill="none" stroke="#f59e0b"/>
+            <text x="390" y="72" font-family="JetBrains Mono" font-size="11" fill="#f59e0b">Augment</text>
+            <path d="M470 67 L 500 67" stroke="#1e2d45" marker-end="url(#a1)"/>
+            <rect x="500" y="45" width="55" height="45" rx="6" fill="none" stroke="#1e2d45"/>
+            <text x="508" y="72" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">LLM</text>
+            <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#1e2d45"/></marker></defs>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Design a RAG system for a company's internal documentation. What are the key components?"</div>
+          <div class="interview-weak">"I'd chunk the docs, embed them, store them in a vector DB, and retrieve at query time."</div>
+          <div class="interview-strong">Beyond the basic pipeline, I'd specify the chunking strategy up front based on document structure (semantic or hierarchical chunking for structured docs rather than fixed-size), choose an embedding model validated against a benchmark relevant to the domain (not just the highest MTEB score), and add hybrid search combining dense retrieval with BM25 for exact term matches like product names or error codes. I'd also plan for evaluation from day one — a small labeled set of query/expected-answer pairs to measure retrieval recall and answer faithfulness — because without that, you can't tell if a prompt change or embedding model swap actually improved anything versus just changed behavior.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you handle documents that get updated or deleted after being indexed?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="chunking">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Chunking Strategies</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Fixed-size chunking splits text by token/character count; semantic chunking splits at natural meaning boundaries (detected via embedding similarity shifts); hierarchical chunking preserves document structure (sections, subsections); sliding window chunking overlaps adjacent chunks to avoid cutting context at boundaries.</li>
+            <li>Chunking exists because embeddings and context windows both have size limits — you can't embed or retrieve an entire document as one unit, so it must be split into retrievable units small enough to be precise but large enough to retain context.</li>
+            <li class="insight"><strong>The insight:</strong> chunk size is a precision/recall tradeoff, not just a technical constraint — smaller chunks improve retrieval precision (less irrelevant text per chunk) but risk losing context needed to answer the question, while larger chunks preserve context but dilute the embedding's semantic focus and can bury the relevant sentence in irrelevant surrounding text.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Strategy</th><th>Preserves context?</th><th>Cost</th></tr>
+          <tr><td>Fixed-size</td><td>no — can cut mid-thought</td><td>cheapest, simplest</td></tr>
+          <tr><td>Sliding window</td><td>partial, via overlap</td><td>more storage (duplication)</td></tr>
+          <tr><td>Semantic</td><td>yes — splits at meaning shifts</td><td>requires embedding pass to chunk</td></tr>
+          <tr><td>Hierarchical</td><td>yes — respects doc structure</td><td>needs structured source docs</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your RAG system retrieves technically relevant chunks but the LLM still gives incomplete answers. What's your first hypothesis?"</div>
+          <div class="interview-weak">"I'd try a bigger embedding model."</div>
+          <div class="interview-strong">My first hypothesis would be chunking, not embeddings — if the answer requires information that was split across two adjacent chunks (say, a definition in one chunk and its exception in the next), retrieval can return the technically most-similar chunk while missing the complementary information the model needed. I'd inspect the actual retrieved chunks against the ground-truth answer location in the source document, and if I find split answers I'd test adding overlap (sliding window) or switching to semantic/hierarchical chunking that keeps logically connected content together, rather than assuming the embedding model is the bottleneck.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does chunk overlap trade off against storage and retrieval cost?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="embedding-models">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Embedding Models</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Embedding models are trained (often contrastively) to map semantically similar text to nearby vectors; quality is benchmarked on MTEB (Massive Text Embedding Benchmark) across retrieval, clustering, and classification tasks.</li>
+            <li>Open vs. API-based embedding models exist because teams trade off cost, latency, data privacy, and the ability to fine-tune the embedding model itself against the convenience of a managed API.</li>
+            <li class="insight"><strong>The insight:</strong> a model that tops the overall MTEB leaderboard isn't automatically the best choice — MTEB averages across many task types, so a model with a middling average score can still be the best specifically at retrieval (the sub-task RAG actually needs) — always check the task-specific score, not the aggregate.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How would you choose an embedding model for a RAG system?"</div>
+          <div class="interview-weak">"I'd pick the top model on the MTEB leaderboard."</div>
+          <div class="interview-strong">I'd look specifically at the retrieval sub-scores on MTEB, not the overall average, since RAG cares about retrieval quality specifically, not clustering or classification performance the aggregate score also folds in. Beyond the benchmark, I'd weigh practical constraints: embedding dimensionality (affects vector DB storage and search latency), whether the domain is specialized enough to need fine-tuning (medical/legal text often benefits from a domain-adapted model), and whether an API dependency is acceptable given latency and data privacy requirements. Ultimately I'd validate on a held-out set of real queries from the target domain, because public benchmarks don't always predict performance on your specific data distribution.</div>
+          <div class="interview-followup">Follow-up: <strong>"What's the tradeoff of using a higher-dimensional embedding model?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="similarity-search">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Vector Similarity Search</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Cosine similarity measures the angle between two vectors (direction only); dot product measures both angle and magnitude; L2 (Euclidean) distance measures straight-line distance between vector endpoints.</li>
+            <li>Multiple metrics exist because different embedding training objectives produce vectors where different notions of "similar" are meaningful — a model trained with cosine-based contrastive loss should be queried with cosine similarity, not L2.</li>
+            <li class="insight"><strong>The insight:</strong> using the wrong similarity metric for how a model was trained silently degrades retrieval quality without throwing any error — if an embedding model's training objective normalized vectors and optimized cosine similarity, querying with raw dot product or L2 distance can return a meaningfully different, worse-ranked result set.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Metric</th><th>Sensitive to magnitude?</th><th>Use when</th></tr>
+          <tr><td>Cosine similarity</td><td>no</td><td>model trained with normalized/cosine objective</td></tr>
+          <tr><td>Dot product</td><td>yes</td><td>model trained with unnormalized dot-product objective</td></tr>
+          <tr><td>L2 distance</td><td>yes</td><td>geometric distance matters (e.g., clustering)</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You swapped your vector DB's similarity metric from cosine to dot product and retrieval quality dropped. Why?"</div>
+          <div class="interview-weak">"Dot product and cosine are basically the same thing."</div>
+          <div class="interview-strong">They're only equivalent when vectors are normalized to unit length — dot product then reduces exactly to cosine similarity. If the embedding model wasn't trained with normalized outputs, raw dot product conflates vector magnitude with similarity, and magnitude often correlates with unrelated properties like text length or token frequency, not semantic relevance — so ranking by dot product on unnormalized vectors can surface longer or more "extreme" vectors regardless of true similarity. The fix is either to normalize vectors before indexing (making dot product and cosine equivalent) or to just match whichever metric the embedding model's training objective actually optimized for.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why might dot product actually be preferred over cosine for certain retrieval tasks despite this risk?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="vector-dbs">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Vector DBs Comparison</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Pinecone, Weaviate, Chroma, pgvector, and Qdrant are all systems for storing embeddings and performing approximate nearest-neighbor search, differing in deployment model, scale, filtering capability, and operational overhead.</li>
+            <li>Multiple vector DBs exist because teams have different constraints: some need a fully-managed service with minimal ops burden, others need to keep data in an existing Postgres instance, others need massive scale with fine-grained metadata filtering.</li>
+            <li class="insight"><strong>The insight:</strong> pgvector isn't a "toy" option — for datasets under a few million vectors, running vector search inside your existing Postgres instance avoids an entirely new piece of infrastructure to operate, which is often the right tradeoff over a "purpose-built" vector DB that adds operational surface area for marginal performance gains at that scale.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>DB</th><th>Deployment</th><th>Best for</th></tr>
+          <tr><td>Pinecone</td><td>fully managed SaaS</td><td>teams wanting zero ops overhead, fast scale</td></tr>
+          <tr><td>Weaviate</td><td>self-host or managed</td><td>hybrid search + rich metadata filtering</td></tr>
+          <tr><td>Chroma</td><td>embedded / self-host</td><td>local dev, prototyping, small-scale apps</td></tr>
+          <tr><td>pgvector</td><td>Postgres extension</td><td>teams already on Postgres, moderate scale</td></tr>
+          <tr><td>Qdrant</td><td>self-host or managed</td><td>high-performance filtering at scale</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"When would you choose pgvector over a purpose-built vector database like Pinecone?"</div>
+          <div class="interview-weak">"pgvector is free and Pinecone costs money."</div>
+          <div class="interview-strong">If the team already operates Postgres and the dataset is in the low millions of vectors, pgvector avoids introducing an entirely new system to deploy, monitor, and secure — you get transactional consistency with your existing relational data, and joins between vector search results and relational metadata are trivial. The tradeoff shows up at larger scale or with very high query throughput requirements, where purpose-built vector DBs have more mature ANN index implementations and horizontal scaling built in — pgvector's HNSW support has improved a lot but still has real limits before index build time and query latency become bottlenecks that justify migrating.</div>
+          <div class="interview-followup">Follow-up: <strong>"What operational signal would tell you it's time to migrate off pgvector?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="hnsw">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>HNSW Indexing</h3></div>
+        <span class="badge badge-advanced">[ADVANCED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>HNSW (Hierarchical Navigable Small World) builds a multi-layer graph of vectors where higher layers have fewer, more widely-connected nodes for fast coarse navigation, and lower layers have dense connections for precise local search.</li>
+            <li>Approximate nearest neighbor (ANN) search exists because exact nearest-neighbor search requires comparing a query against every vector in the dataset — linear in dataset size, which becomes too slow at millions/billions of vectors.</li>
+            <li class="insight"><strong>The insight:</strong> HNSW trades a small amount of recall (you might miss the true nearest neighbor occasionally) for logarithmic-ish search time — this is a deliberate, tunable tradeoff (via parameters like ef_search), not an unavoidable flaw, and most production RAG systems never notice the approximation because top-k retrieval is already forgiving of small ranking errors.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why do we need approximate nearest neighbor search instead of just computing exact distances?"</div>
+          <div class="interview-weak">"It's faster."</div>
+          <div class="interview-strong">Exact nearest-neighbor search requires computing the distance from the query to every single vector in the index, which is O(n) per query — at a billion vectors that's computationally infeasible for real-time retrieval latency requirements. HNSW instead builds a navigable graph structure where search starts at a coarse, sparse top layer and progressively narrows into denser, more precise lower layers, achieving roughly logarithmic search complexity at the cost of occasionally missing the exact true nearest neighbor. In practice this approximation is tunable (via ef_search / ef_construction parameters) and the recall loss is negligible for top-k retrieval used in RAG, where being in the top 5 most relevant chunks matters more than being ranked exactly first.</div>
+          <div class="interview-followup">Follow-up: <strong>"What's the tradeoff between HNSW's ef_construction parameter and index build time?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="hybrid-search">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Hybrid Search</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Hybrid search combines dense vector retrieval (semantic similarity) with sparse retrieval like BM25 (exact term/keyword matching), then merges the two ranked lists (often via reciprocal rank fusion).</li>
+            <li>It exists because dense embeddings, trained on general semantic similarity, systematically underperform on queries containing rare terms, product codes, acronyms, or exact identifiers that never carried strong semantic signal during training.</li>
+            <li class="insight"><strong>The insight:</strong> pure dense retrieval failing on rare terms isn't a bug you can fix by picking a better embedding model — it's structural, because embeddings compress meaning and necessarily lose exact lexical identity; you need a fundamentally different retrieval mechanism (sparse/lexical) to recover it, not a better version of the same mechanism.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Query contains exact error code or SKU</div><div>Pure dense retrieval misses it — no strong semantic signal to key on</div>
+          <div class="tf-row-tradeoff tf-situation">Adding BM25 alongside dense search</div><div>Extra infrastructure + rank fusion tuning complexity</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your RAG system fails on queries containing specific error codes, but works fine on conceptual questions. What's the fix?"</div>
+          <div class="interview-weak">"I'd fine-tune the embedding model on more examples."</div>
+          <div class="interview-strong">This is a textbook signal for adding hybrid search — dense embeddings compress text into a semantic space that's excellent at capturing conceptual similarity but structurally weak at exact-match tasks like an alphanumeric error code, since the training objective never rewarded preserving exact token identity. I'd add a sparse retrieval path (BM25) running in parallel with dense retrieval, then merge results via reciprocal rank fusion or a learned reranker, so the exact-match strength of BM25 covers the failure case dense search structurally can't. Fine-tuning the embedding model could help marginally, but it's treating a structural retrieval-method gap as a training data problem, which is a slower and less reliable fix.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does reciprocal rank fusion combine two differently-scaled ranking lists?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="reranking">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Reranking</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A bi-encoder embeds query and documents separately and compares vectors, enabling fast precomputed search; a cross-encoder jointly processes the query and a candidate document together through a full transformer, producing a much more accurate but far slower relevance score.</li>
+            <li>Reranking exists to combine both strengths: use a fast bi-encoder to retrieve a broad candidate set (e.g., top 100), then apply a slow but accurate cross-encoder to rerank just that shortlist down to the final top-k shown to the LLM.</li>
+            <li class="insight"><strong>The insight:</strong> a cross-encoder can't be used for the initial retrieval step at all — it requires the query at scoring time, so document representations can't be precomputed and indexed, making it computationally impossible to run at index-wide scale. Reranking is the compromise that captures its accuracy benefit only where it's affordable.</li>
+          </ul>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why not just use a cross-encoder for retrieval directly and skip the bi-encoder step?"</div>
+          <div class="interview-weak">"Cross-encoders are too slow."</div>
+          <div class="interview-strong">It's more fundamental than speed — a cross-encoder needs both the query and the candidate document as joint input to compute a score, meaning you cannot precompute document representations ahead of time the way you can with a bi-encoder's independent embeddings. That means using a cross-encoder for full-index retrieval would require running a full transformer forward pass for every single document in the index, for every query, which is computationally infeasible at any meaningful scale. The two-stage pipeline — bi-encoder for cheap, precomputed, approximate retrieval over the whole index, cross-encoder only on the small shortlist — is the only way to get the cross-encoder's accuracy without paying its full cost.</div>
+          <div class="interview-followup">Follow-up: <strong>"How many candidates would you typically retrieve before reranking, and what determines that number?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="rag-failures">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>RAG Failure Modes</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>RAG can fail via hallucination despite correct retrieval (the model ignores or misreads context), retrieval misses (the right chunk was never surfaced), or context overflow (too many retrieved chunks exceed the context window or dilute attention over irrelevant text).</li>
+            <li>These failure modes exist because RAG has multiple independent stages (embedding, search, ranking, generation), each with its own failure surface — a single "it hallucinated" symptom can trace back to any of them.</li>
+            <li class="insight"><strong>The insight:</strong> most teams debug RAG failures by tweaking the prompt first, but the majority of RAG quality issues are retrieval failures, not generation failures — you have to isolate which stage failed (by manually inspecting what was actually retrieved) before you know which lever to pull.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Relevant chunk never retrieved</div><div>LLM answers from parametric memory or refuses — looks like a generation bug but isn't</div>
+          <div class="tf-row-failure tf-situation">Too many chunks stuffed into context</div><div>"Lost in the middle" — model under-attends to relevant content buried mid-context</div>
+          <div class="tf-row-tradeoff tf-situation">Retrieving more chunks "to be safe"</div><div>Higher token cost, higher latency, higher hallucination risk from noise</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your RAG chatbot gave a wrong answer. How do you debug it systematically?"</div>
+          <div class="interview-weak">"I'd look at the prompt and try to improve it."</div>
+          <div class="interview-strong">I'd start by isolating which pipeline stage actually failed rather than guessing — first checking what chunks were literally retrieved for that query, since if the correct information was never retrieved, no prompt engineering fixes it. If retrieval did surface the right chunk, I'd check whether it's a "lost in the middle" issue from too much or poorly-ordered context, versus a genuine faithfulness failure where the model had the right information but ignored or contradicted it. Each of those has a different fix — retrieval misses point to chunking/embedding/hybrid search issues, context overload points to reducing retrieved chunk count or reordering, and faithfulness failures point to prompt instructions or a different generation model — so diagnosis has to come before any fix.</div>
+          <div class="interview-followup">Follow-up: <strong>"What is the 'lost in the middle' phenomenon and why does it happen even in models with long context windows?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="rag-evaluation">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>RAG Evaluation (RAGAS)</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>RAGAS-style evaluation measures faithfulness (is the generated answer supported by the retrieved context), answer relevance (does the answer address the actual question), and context recall (did retrieval surface the necessary information).</li>
+            <li>These specific metrics exist because "the answer is wrong" is too coarse a signal to act on — you need to know whether the failure is in retrieval or generation, and faithfulness/relevance/recall decompose the pipeline into independently measurable, actionable components.</li>
+            <li class="insight"><strong>The insight:</strong> faithfulness and correctness are different things — a response can be perfectly faithful to retrieved context (never contradicting it) while the retrieved context itself was wrong or incomplete, so a high faithfulness score doesn't guarantee a factually correct final answer; you need context recall/precision evaluated separately.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Metric</th><th>Measures</th><th>Isolates failure in</th></tr>
+          <tr><td>Faithfulness</td><td>is answer grounded in retrieved context</td><td>generation stage</td></tr>
+          <tr><td>Answer relevance</td><td>does answer address the question asked</td><td>generation stage</td></tr>
+          <tr><td>Context recall</td><td>did retrieval surface needed information</td><td>retrieval stage</td></tr>
+          <tr><td>Context precision</td><td>how much retrieved context was actually relevant</td><td>retrieval / ranking stage</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How would you set up automated evaluation for a RAG system before it goes to production?"</div>
+          <div class="interview-weak">"I'd manually test it with some sample questions."</div>
+          <div class="interview-strong">I'd build a labeled evaluation set of representative queries paired with ground-truth answers and the source documents that should be retrieved, then compute retrieval-stage metrics (context recall/precision) separately from generation-stage metrics (faithfulness, answer relevance) using a framework like RAGAS, often with an LLM-as-judge for the generation metrics since they require semantic judgment rather than exact match. Separating the stages is the key design decision — it means when overall accuracy drops after a change, I can immediately tell whether the regression came from retrieval or generation instead of re-debugging the whole pipeline from scratch. I'd also track this over time as a regression suite, not just a one-time check before launch, since embedding model updates or prompt changes can silently regress either stage.</div>
+          <div class="interview-followup">Follow-up: <strong>"What are the risks of using an LLM-as-judge to evaluate faithfulness, and how would you mitigate them?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — RAG & Vector DBs</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — RAG & Vector DBs</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>Chunking</dt><dd>Splitting documents into retrievable units under size limits.</dd></div>
+        <div class="cheat-term"><dt>MTEB</dt><dd>Benchmark suite for evaluating embedding model quality by task.</dd></div>
+        <div class="cheat-term"><dt>Cosine similarity</dt><dd>Similarity by vector angle only, ignoring magnitude.</dd></div>
+        <div class="cheat-term"><dt>HNSW</dt><dd>Graph-based ANN index enabling fast approximate vector search.</dd></div>
+        <div class="cheat-term"><dt>BM25</dt><dd>Sparse lexical ranking algorithm based on term frequency.</dd></div>
+        <div class="cheat-term"><dt>Hybrid search</dt><dd>Combines dense (semantic) and sparse (lexical) retrieval.</dd></div>
+        <div class="cheat-term"><dt>Bi-encoder</dt><dd>Embeds query/doc separately; fast, precomputable.</dd></div>
+        <div class="cheat-term"><dt>Cross-encoder</dt><dd>Jointly scores query+doc; accurate but not precomputable.</dd></div>
+        <div class="cheat-term"><dt>Faithfulness</dt><dd>Whether a generated answer is supported by retrieved context.</dd></div>
+        <div class="cheat-term"><dt>Context recall</dt><dd>Whether retrieval surfaced the information needed to answer.</dd></div>
+        <div class="cheat-term"><dt>Lost in the middle</dt><dd>Models under-attend to info buried mid-context.</dd></div>
+        <div class="cheat-term"><dt>Reciprocal rank fusion</dt><dd>Merges multiple ranked lists into one combined ranking.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Design a RAG evaluation pipeline that would catch a silent regression after swapping to a cheaper embedding model.', a: 'I\'d maintain a fixed golden set of queries with known-correct source chunks and answers, run it against both embedding models, and compare context recall/precision before deploying the swap — this catches retrieval-stage regressions the aggregate MTEB score wouldn\'t reveal for our specific data distribution. I\'d also run it as a CI-style gate, not a one-time check, since embedding models and vector index configs can regress silently with any pipeline change. Critically, I\'d separate retrieval metrics from generation metrics in this suite, because a cheaper embedding model could hurt recall while faithfulness stays high (the model just answers well with worse or fewer chunks) — muddying the two would hide exactly the regression I\'m trying to catch.', level: 'Senior' },
+    { q: 'A stakeholder asks why the RAG chatbot sometimes contradicts itself across near-identical questions asked minutes apart. What\'s your explanation and fix?', a: 'This usually traces to non-deterministic retrieval or generation — if the vector search uses an approximate index (HNSW) near a decision boundary between two nearly-equally-relevant chunks, tiny differences in query embedding (from typos or phrasing) can retrieve a different chunk set, and separately, sampling-based decoding (non-zero temperature) means even identical context can produce different generated text. I\'d isolate which one is happening by logging retrieved chunk IDs per request — if they\'re identical across the "contradicting" calls, the issue is generation-side (lower temperature, or add self-consistency checks); if chunk sets differ, the issue is retrieval instability, which might mean tightening similarity thresholds or adding hybrid search to make retrieval less sensitive to superficial rephrasing.', level: 'Senior' },
+    { q: 'Why would you retrieve more candidates than you ultimately show to the LLM, instead of retrieving exactly top-k?', a: 'The initial retrieval stage (typically a bi-encoder over an ANN index) is optimized for speed and recall, not precision — it\'s good at surfacing a broad relevant set but its ranking within that set is coarser than what a cross-encoder reranker can achieve. By over-retrieving (say, top 50-100) and then reranking down to the final top 3-5 shown to the LLM, you get the best of both: fast, high-recall initial retrieval, plus the reranker\'s much more accurate relevance ordering on a shortlist small enough to make full cross-encoder scoring computationally feasible. Retrieving exactly top-k from the first stage risks the true best chunk being ranked 8th by the coarser bi-encoder and never making the cut.', level: 'Mid' },
+    { q: 'How would you handle a RAG use case where documents are updated frequently (e.g., every few minutes) and stale answers are unacceptable?', a: 'I\'d architect for incremental index updates rather than full reindexing — most vector DBs support upserts, so updating or deleting individual document embeddings on change events (via a change-data-capture or event-driven pipeline) keeps the index current without expensive full rebuilds. I\'d also add a metadata field for last-updated timestamp so retrieval or a post-filter step can deprioritize or exclude stale entries if the source system briefly falls behind, and log retrieval-to-generation latency against document freshness explicitly, since correctness requirements this strict usually mean the acceptable staleness window needs to be a defined SLA, not an assumption.', level: 'Senior' },
+    { q: 'Explain the tradeoff between chunk size and the number of chunks retrieved, holding total context budget fixed.', a: 'With a fixed token budget for retrieved context, smaller chunks let you include more distinct pieces of information (higher chunk count) at the cost of each chunk having less surrounding context, which can hurt the model\'s ability to interpret an isolated sentence correctly. Larger chunks preserve more local context per chunk but mean you can fit fewer distinct chunks into the same budget, risking missing a relevant piece of information that lives in a chunk you didn\'t have room to include. The right balance depends on the domain: dense technical documentation with self-contained facts favors more, smaller chunks, while narrative or highly contextual content favors fewer, larger chunks that don\'t fragment meaning.', level: 'Mid' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>
