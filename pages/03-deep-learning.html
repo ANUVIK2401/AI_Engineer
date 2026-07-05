@@ -20,6 +20,10 @@
         <span class="tag">Core</span>
         <span class="badge badge-critical">[CRITICAL]</span>
       </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
+      </div>
       <p class="why-line">Interviewers ask about this to verify you understand what's actually happening inside the black box — backprop, normalization, and architecture choices are where "I used PyTorch" candidates get separated from engineers.</p>
     </div>
 
@@ -41,14 +45,14 @@
             <circle cx="40" cy="60" r="14" fill="none" stroke="#3b82f6"/>
             <circle cx="40" cy="110" r="14" fill="none" stroke="#3b82f6"/>
             <circle cx="40" cy="160" r="14" fill="none" stroke="#3b82f6"/>
-            <circle cx="180" cy="40" r="14" fill="none" stroke="#1e2d45"/>
-            <circle cx="180" cy="90" r="14" fill="none" stroke="#1e2d45"/>
-            <circle cx="180" cy="140" r="14" fill="none" stroke="#1e2d45"/>
-            <circle cx="180" cy="190" r="14" fill="none" stroke="#1e2d45" opacity="0"/>
-            <circle cx="320" cy="70" r="14" fill="none" stroke="#1e2d45"/>
-            <circle cx="320" cy="120" r="14" fill="none" stroke="#1e2d45"/>
+            <circle cx="180" cy="40" r="14" fill="none" stroke="#46618c"/>
+            <circle cx="180" cy="90" r="14" fill="none" stroke="#46618c"/>
+            <circle cx="180" cy="140" r="14" fill="none" stroke="#46618c"/>
+            <circle cx="180" cy="190" r="14" fill="none" stroke="#46618c" opacity="0"/>
+            <circle cx="320" cy="70" r="14" fill="none" stroke="#46618c"/>
+            <circle cx="320" cy="120" r="14" fill="none" stroke="#46618c"/>
             <circle cx="440" cy="95" r="14" fill="none" stroke="#10b981"/>
-            <g stroke="#1e2d45" stroke-width="1">
+            <g stroke="#46618c" stroke-width="1">
               <line x1="54" y1="60" x2="166" y2="40"/><line x1="54" y1="60" x2="166" y2="90"/><line x1="54" y1="60" x2="166" y2="140"/>
               <line x1="54" y1="110" x2="166" y2="40"/><line x1="54" y1="110" x2="166" y2="90"/><line x1="54" y1="110" x2="166" y2="140"/>
               <line x1="54" y1="160" x2="166" y2="40"/><line x1="54" y1="160" x2="166" y2="90"/><line x1="54" y1="160" x2="166" y2="140"/>
@@ -56,10 +60,10 @@
               <line x1="194" y1="40" x2="306" y2="120"/><line x1="194" y1="90" x2="306" y2="120"/><line x1="194" y1="140" x2="306" y2="120"/>
               <line x1="334" y1="70" x2="426" y2="95"/><line x1="334" y1="120" x2="426" y2="95"/>
             </g>
-            <text x="20" y="20" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">INPUT</text>
-            <text x="160" y="20" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">HIDDEN 1</text>
-            <text x="300" y="20" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">HIDDEN 2</text>
-            <text x="415" y="20" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">OUTPUT</text>
+            <text x="20" y="20" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">INPUT</text>
+            <text x="160" y="20" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">HIDDEN 1</text>
+            <text x="300" y="20" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">HIDDEN 2</text>
+            <text x="415" y="20" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">OUTPUT</text>
           </svg>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -137,7 +141,7 @@
         <div class="card-core">
           <ul>
             <li>Batch norm normalizes activations across the batch dimension per feature; layer norm normalizes across the feature dimension per individual sample.</li>
-            <li>Normalization exists to stabilize the distribution of activations flowing through the network, which reduces internal covariate shift and lets you use higher learning rates.</li>
+            <li>Normalization exists to stabilize the distribution of activations flowing through the network, letting you use higher learning rates — historically attributed to reducing "internal covariate shift," though later work (Santurkar et al., 2018) showed the real mechanism is smoothing the loss landscape. Citing that correction is itself a senior-signal in interviews.</li>
             <li class="insight"><strong>The insight:</strong> batch norm's statistics depend on other examples in the batch, which breaks down for variable-length sequences and small/streaming batches (like autoregressive generation) — that's precisely why transformers use layer norm, which normalizes independently per token regardless of batch size or sequence position.</li>
           </ul>
         </div>
@@ -281,7 +285,7 @@
   const SIM_QUESTIONS = [
     { q: 'Walk through what specifically causes vanishing gradients in a deep vanilla RNN.', a: 'Backpropagation through time multiplies the same recurrent weight matrix (and the derivative of the activation function) once per time step as the gradient flows backward through the sequence. If the largest eigenvalue of that weight matrix is less than 1, repeated multiplication shrinks the gradient exponentially with sequence length; if greater than 1, it explodes exponentially instead. This is why LSTMs introduce a separate cell state with an additive (not multiplicative) update path gated by the forget gate — additive updates don\'t suffer the same exponential decay, giving gradients a much more direct path back through time.', level: 'Senior' },
     { q: 'Why does adding more layers to a network sometimes make training worse, not better, even with enough data?', a: 'Beyond the vanishing gradient problem, very deep networks without architectural aids (residual connections, normalization) suffer from what the ResNet paper called the "degradation problem" — training accuracy itself gets worse with depth, which isn\'t explained by overfitting since it shows up on the training set too. This suggests the optimization problem itself becomes harder, not that the model lacks capacity. Residual connections fix this by letting each block learn a residual correction to the identity function rather than the full transformation from scratch, which makes it much easier for optimization to find good solutions even at extreme depth.', level: 'Senior' },
-    { q: 'What is the difference between L1 and L2 regularization in terms of the solutions they produce?', a: 'L2 regularization (weight decay) adds a penalty proportional to the sum of squared weights, which shrinks all weights smoothly toward zero without necessarily eliminating any of them — it\'s effective against large individual weights but rarely produces exact zeros. L1 regularization penalizes the sum of absolute weight values, which has a geometric property (a non-differentiable corner at zero) that tends to drive some weights to exactly zero, producing sparse solutions useful for implicit feature selection. In deep learning, L2/weight decay is far more common because sparsity isn\'t usually the goal and L2\'s smooth gradient plays better with gradient-based optimizers.', level: 'Mid' },
+    { q: 'Your model has 10K features and you suspect 90% are noise. L1, L2, or dropout — pick one and defend the failure modes of the other two.', a: 'I\'d pick L1: its non-differentiable corner at zero drives noise-feature weights to exactly zero, giving implicit feature selection — which is precisely the structure of this problem. L2 fails here because it shrinks all weights smoothly but almost never zeroes any, so the 9K noise features keep contributing small correlated noise to every prediction; it\'s the right tool when most features carry some signal and you just want to bound magnitudes. Dropout fails differently — it regularizes co-adaptation between neurons, not feature relevance at the input, so it makes the network robust to noise without ever removing it, and you keep paying the compute and data-collection cost of all 10K features forever. In practice I\'d confirm with a cheap feature-importance pass first, and consider elastic net since pure L1 is unstable when noise features are correlated with real ones.', level: 'Senior' },
     { q: 'Explain why batch size affects generalization, not just training speed.', a: 'Small batches introduce noisy gradient estimates, and that noise acts as an implicit regularizer, biasing training toward flatter minima in the loss landscape that tend to generalize better to unseen data. Large batches produce much more accurate gradient estimates, converging faster and more directly toward sharp minima that fit the training set well but can generalize worse — this is a well-documented empirical phenomenon, not just a theoretical concern, and it\'s why large-batch training typically requires learning rate scaling or warmup to recover generalization performance lost from reduced gradient noise.', level: 'Senior' },
     { q: 'You\'re fine-tuning a pretrained CNN and validation accuracy is stuck far below the pretrained benchmark. What do you check?', a: 'First, I\'d verify the input preprocessing (normalization mean/std, resize, color channel order) exactly matches what the pretraining pipeline used — a mismatch here silently feeds the model out-of-distribution inputs and is one of the most common fine-tuning bugs. Second, I\'d check the learning rate — fine-tuning needs a much smaller learning rate than training from scratch, since large updates can catastrophically overwrite the useful pretrained weights before the new head has learned anything meaningful. Third, I\'d check whether batch norm layers are behaving correctly — if they\'re still in training mode with a very small fine-tuning batch size, their running statistics can become unstable and corrupt the very features you\'re trying to preserve from pretraining.', level: 'Mid' },
   ];
@@ -290,7 +294,7 @@
   container.innerHTML = SIM_QUESTIONS.map(item => `
     <div class="sim-card">
       <div class="sim-q-row">
-        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
         <button class="sim-show-btn">Show Answer</button>
       </div>
       <div class="sim-answer">${item.a}</div>

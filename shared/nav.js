@@ -8,9 +8,9 @@ const NAV_MODULES = [
   { id: '03', slug: 'deep-learning',         label: 'Deep Learning',           path: 'pages/03-deep-learning.html',          topics: 8  },
   { id: '04', slug: 'transformers-llms',     label: 'Transformers & LLMs',     path: 'pages/04-transformers-llms.html',      topics: 10 },
   { id: '05', slug: 'rag-vectordb',          label: 'RAG & Vector DBs',        path: 'pages/05-rag-vectordb.html',           topics: 10 },
-  { id: '06', slug: 'agents-langchain',      label: 'Agents & LangChain',      path: 'pages/06-agents-langchain.html',       topics: 8  },
-  { id: '07', slug: 'inference-optimization',label: 'Inference Optimization',  path: 'pages/07-inference-optimization.html', topics: 8  },
-  { id: '08', slug: 'mlops-production',      label: 'MLOps & Production',      path: 'pages/08-mlops-production.html',       topics: 9  },
+  { id: '06', slug: 'agents-langchain',      label: 'Agents & LangChain',      path: 'pages/06-agents-langchain.html',       topics: 10 },
+  { id: '07', slug: 'inference-optimization',label: 'Inference Optimization',  path: 'pages/07-inference-optimization.html', topics: 9  },
+  { id: '08', slug: 'mlops-production',      label: 'MLOps & Production',      path: 'pages/08-mlops-production.html',       topics: 10 },
 ];
 
 const PROGRESS_KEY = 'ai_eng_progress_v2';
@@ -85,7 +85,7 @@ function buildSidebar() {
       <li>
         <a href="${base}${m.path}" class="${isActive ? 'active' : ''}">
           <span class="nav-num">${m.id}</span>
-          <span style="flex:1">${m.label}</span>
+          <span class="nav-label">${m.label}</span>
         </a>
         <div class="sidebar-progress-mini"><div style="width:${pct}%"></div></div>
       </li>
@@ -132,15 +132,25 @@ function initTopicCards() {
 
   document.querySelectorAll('.card[data-topic-id]').forEach(card => {
     const topicId = card.getAttribute('data-topic-id');
+    if (!card.id) card.id = topicId; // anchor target for deep links (mindmap, sidebar)
     if (isTopicRead(slug, topicId)) card.classList.add('is-read');
 
-    const header = card.querySelector('.card-header');
-    if (header) {
-      header.addEventListener('click', (e) => {
-        if (e.target.closest('.interview-toggle')) return;
+    const dot = card.querySelector('.card-read-dot');
+    if (dot) {
+      dot.setAttribute('role', 'button');
+      dot.setAttribute('tabindex', '0');
+      const setTitle = () => dot.setAttribute('title',
+        card.classList.contains('is-read') ? 'Mark as unread' : 'Mark as read');
+      setTitle();
+      const toggle = () => {
         const nowRead = toggleTopicRead(slug, topicId);
         card.classList.toggle('is-read', nowRead);
+        setTitle();
         updateModuleProgressUI();
+      };
+      dot.addEventListener('click', toggle);
+      dot.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); }
       });
     }
   });
@@ -195,9 +205,19 @@ function initSimulator() {
   });
 }
 
+function scrollToHashCard() {
+  // card ids are assigned at runtime, so honor deep links (e.g. from the knowledge map) manually
+  if (!window.location.hash) return;
+  const target = document.getElementById(window.location.hash.slice(1));
+  if (target && target.classList.contains('card')) {
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   injectNav();
   initTopicCards();
   initInterviewToggles();
   initSimulator();
+  scrollToHashCard();
 });

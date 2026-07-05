@@ -26,6 +26,14 @@
     <div class="section-label" style="margin-top:0">Modules</div>
     <div class="module-grid" id="module-grid"></div>
 
+    <div class="section-label">Knowledge Map</div>
+    <div class="mindmap-wrap"><svg id="mindmap" role="img" aria-label="Interactive map of all modules and topics"></svg></div>
+    <div class="mindmap-legend">
+      <span><span class="dot dot-read"></span>READ</span>
+      <span><span class="dot dot-unread"></span>UNREAD</span>
+      <span>CLICK ANY TOPIC TO JUMP TO ITS CARD</span>
+    </div>
+
     <div class="section-label">Quick Fire — 5 Random Questions</div>
     <div id="quickfire-container"></div>
 
@@ -47,7 +55,7 @@
 
   const QUICKFIRE_BANK = [
     { q: 'Why does scaled dot-product attention divide by √d_k?', a: 'Without scaling, dot products grow large in magnitude as dimensionality increases, pushing the softmax into regions with vanishingly small gradients. Dividing by √d_k keeps the variance of the dot product roughly constant regardless of dimension, keeping softmax gradients well-behaved during training.' },
-    { q: 'Why does the KV cache make LLM inference memory-bound instead of compute-bound?', a: 'Every generated token requires storing its key and value vectors for every layer and every attention head so future tokens can attend to it. This cache grows linearly with sequence length and batch size, and moving it in and out of GPU memory dominates the cost of autoregressive decoding — the GPU spends more time waiting on memory bandwidth than doing matrix math.' },
+    { q: 'Why does the KV cache make LLM inference memory-bound instead of compute-bound?', a: 'Every generated token requires storing its key and value vectors for every layer and every attention head so future tokens can attend to it. This cache grows linearly with sequence length and batch size, and every decode step must re-read the model weights plus the accumulated KV cache from GPU memory to produce a single token — the GPU spends more time waiting on memory bandwidth than doing matrix math (weights dominate at small batch, KV cache at long context or large batch).' },
     { q: 'Why can RAG still hallucinate even when retrieval is perfect?', a: 'Retrieval only guarantees relevant context reaches the prompt — it does not guarantee the model uses it, weighs it correctly against parametric knowledge, or refuses to fill gaps with invented details. The generator can still ignore, misread, or overconfidently extrapolate beyond the retrieved passages.' },
     { q: 'What breaks when you use pure dense vector search instead of hybrid search?', a: 'Dense embeddings are trained to capture semantic similarity, so they underperform on rare tokens, exact IDs, acronyms, or out-of-distribution terms that never appeared meaningfully in training data. Sparse methods like BM25 handle exact lexical matches well, so combining both covers each other\'s blind spots.' },
     { q: 'Why is dropout disabled at inference time?', a: 'Dropout randomly zeroes activations during training to prevent co-adaptation of neurons and act as regularization. At inference we want a deterministic, full-capacity forward pass, so frameworks switch dropout layers to identity — but they also rescale training activations (inverted dropout) so no extra scaling is needed at test time.' },
@@ -102,7 +110,130 @@
     initSimulator();
   }
 
+  /* ── Knowledge Map ─────────────────────────────────────── */
+
+  const MINDMAP_TOPICS = {
+    'foundations': [
+      ['hierarchy', 'AI vs ML vs DL vs GenAI'], ['vectors-embeddings', 'Vectors & Embeddings'],
+      ['matmul', 'MatMul & Dot Products'], ['probability', 'Probability'],
+      ['gradient-descent', 'Gradient Descent'], ['overfitting', 'Over / Underfitting'],
+    ],
+    'ml-core': [
+      ['learning-paradigms', 'Learning Paradigms'], ['linear-regression', 'Linear Regression'],
+      ['logistic-regression', 'Logistic Regression'], ['trees-forests', 'Trees & Forests'],
+      ['svm', 'SVMs & Kernels'], ['eval-metrics', 'Eval Metrics'], ['cross-validation', 'Cross Validation'],
+    ],
+    'deep-learning': [
+      ['forward-pass', 'Forward Pass'], ['backprop', 'Backprop & Chain Rule'],
+      ['activations', 'Activations'], ['normalization', 'Batch vs Layer Norm'],
+      ['dropout', 'Dropout'], ['cnns', 'CNNs'], ['rnn-lstm', 'RNNs / LSTMs'],
+      ['transfer-learning', 'Transfer Learning'],
+    ],
+    'transformers-llms': [
+      ['attention', 'Attention Q/K/V'], ['multihead', 'Multi-Head Attention'],
+      ['positional-encoding', 'Positional Encoding'], ['transformer-block', 'Transformer Block'],
+      ['decoder-encoder', 'Decoder vs Enc-Dec'], ['tokenization', 'Tokenization'],
+      ['kv-cache', 'KV Cache & GQA'], ['sampling', 'Sampling'],
+      ['rlhf', 'RLHF & DPO'], ['finetuning-types', 'LoRA / QLoRA'],
+    ],
+    'rag-vectordb': [
+      ['rag-pipeline', 'RAG Pipeline'], ['chunking', 'Chunking'],
+      ['embedding-models', 'Embedding Models'], ['similarity-search', 'Similarity Search'],
+      ['vector-dbs', 'Vector DBs'], ['hnsw', 'HNSW / ANN'],
+      ['hybrid-search', 'Hybrid Search'], ['reranking', 'Reranking'],
+      ['rag-failures', 'RAG Failure Modes'], ['rag-evaluation', 'RAG Evaluation'],
+    ],
+    'agents-langchain': [
+      ['agent-architecture', 'Agent Loop'], ['react', 'ReAct'],
+      ['function-calling', 'Tool Calling'], ['langgraph', 'Cyclic Control Flow'],
+      ['multi-agent', 'Multi-Agent'], ['agent-memory', 'Memory Types'],
+      ['agent-failures', 'Failure Modes'], ['llm-security', 'LLM Security'],
+      ['guardrails', 'Guardrails'], ['agent-evals', 'Agent Evals'],
+    ],
+    'inference-optimization': [
+      ['quantization', 'Quantization'], ['kv-cache-inf', 'Paged Attention'],
+      ['batching', 'Batching'], ['speculative-decoding', 'Speculative Decoding'],
+      ['model-parallelism', 'Parallelism'], ['vllm', 'vLLM'],
+      ['serving-frameworks', 'Serving Frameworks'], ['latency-throughput', 'TTFT / TBT'],
+      ['cost-modeling', 'Cost Modeling'],
+    ],
+    'mlops-production': [
+      ['ml-lifecycle', 'ML Lifecycle'], ['model-versioning', 'Versioning'],
+      ['feature-stores', 'Feature Stores'], ['drift', 'Drift & Decay'],
+      ['ab-testing', 'A/B & Canary'], ['llm-evaluation', 'LLM Evaluation'],
+      ['containerization', 'Containers'], ['observability', 'Observability'],
+      ['cicd-ml', 'CI/CD for ML'], ['cloud-ai', 'Cloud AI'],
+    ],
+  };
+
+  function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  function renderMindmap() {
+    const W = 1240, ROW = 22, MOD_GAP = 34, PAD = 44;
+    const CX = W / 2;
+    const sides = [
+      { dir: -1, mods: NAV_MODULES.slice(0, 4) },
+      { dir: 1, mods: NAV_MODULES.slice(4) },
+    ];
+
+    const sideHeight = s => s.mods.reduce((h, m) => h + MINDMAP_TOPICS[m.slug].length * ROW, 0)
+      + (s.mods.length - 1) * MOD_GAP;
+    const H = Math.max(...sides.map(sideHeight)) + PAD * 2;
+    const CY = H / 2;
+
+    let out = [];
+    sides.forEach(side => {
+      const dir = side.dir;
+      const modX = CX + dir * 310;
+      const leafX = CX + dir * 470;
+      let y = CY - sideHeight(side) / 2 + ROW / 2;
+
+      side.mods.forEach(m => {
+        const topics = MINDMAP_TOPICS[m.slug];
+        const ys = topics.map((_, i) => y + i * ROW);
+        const my = (ys[0] + ys[ys.length - 1]) / 2;
+        y += topics.length * ROW + MOD_GAP;
+
+        const modLabel = `${m.id} · ${m.label.toUpperCase()}`;
+        const labelW = modLabel.length * 7.4; // approx mono width at 12px
+        // module label sits inboard of modX (toward the empty middle);
+        // trunk stops short of the text so nothing overlaps
+        out.push(`<path class="mm-branch-mod" d="M ${CX + dir * 90} ${CY} C ${CX + dir * 170} ${CY}, ${CX + dir * 150} ${my}, ${modX - dir * (labelW + 16)} ${my}"/>`);
+
+        const done = getModuleCompletedCount(m.slug);
+        const modAnchor = dir < 0 ? 'start' : 'end';
+        const leafAnchor = dir < 0 ? 'end' : 'start';
+        out.push(`<a class="mm-mod" href="${m.path}">
+          <text class="mm-mod-label" x="${modX}" y="${my - 2}" text-anchor="${modAnchor}">${esc(modLabel)}</text>
+          <text class="mm-mod-count" x="${modX}" y="${my + 12}" text-anchor="${modAnchor}">${done}/${topics.length} READ</text>
+        </a>`);
+
+        topics.forEach(([tid, label], i) => {
+          const ty = ys[i];
+          const read = isTopicRead(m.slug, tid);
+          // branch: module -> leaf (starts on the outboard side of the label)
+          out.push(`<path class="mm-branch" d="M ${modX + dir * 8} ${my + 14 * Math.sign(ty - my || 1)} C ${modX + dir * 80} ${my}, ${modX + dir * 80} ${ty}, ${leafX - dir * 10} ${ty}"/>`);
+          out.push(`<a class="mm-leaf${read ? ' is-read' : ''}" href="${m.path}#${tid}">
+            <circle class="mm-leaf-dot" cx="${leafX}" cy="${ty}" r="3.5"/>
+            <text class="mm-leaf-label" x="${leafX + dir * 12}" y="${ty + 4}" text-anchor="${leafAnchor}">${esc(label)}</text>
+          </a>`);
+        });
+      });
+    });
+
+    // center node
+    const overall = getOverallProgress();
+    out.push(`<rect class="mm-center-box" x="${CX - 88}" y="${CY - 32}" width="176" height="64" rx="10"/>
+      <text class="mm-center-label" x="${CX}" y="${CY - 4}" text-anchor="middle">AI ENG PREP</text>
+      <text class="mm-center-count" x="${CX}" y="${CY + 18}" text-anchor="middle">${overall.completed}/${overall.total} TOPICS · ${overall.pct}%</text>`);
+
+    const svg = document.getElementById('mindmap');
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.innerHTML = out.join('');
+  }
+
   renderModuleGrid();
+  renderMindmap();
   renderQuickFire();
 </script>
 </body>

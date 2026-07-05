@@ -14,10 +14,14 @@
       <a href="../index.html" class="back-link">← Back to modules</a>
       <h1>06 · Agents & LangChain</h1>
       <div class="tag-row">
-        <span class="tag">8 topics</span>
-        <span class="tag">~65 min deep-read</span>
+        <span class="tag">10 topics</span>
+        <span class="tag">~80 min deep-read</span>
         <span class="tag">Advanced</span>
         <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
       </div>
       <p class="why-line">Interviewers probe agent architecture because it's where LLM systems go from "single API call" to "autonomous, multi-step, tool-using system" — and that's where reliability and failure-mode understanding actually matter.</p>
     </div>
@@ -37,7 +41,7 @@
         </div>
         <div class="card-visual">
           <svg viewBox="0 0 360 200" xmlns="http://www.w3.org/2000/svg">
-            <circle cx="180" cy="100" r="70" fill="none" stroke="#1e2d45" stroke-dasharray="4,4"/>
+            <circle cx="180" cy="100" r="70" fill="none" stroke="#46618c" stroke-dasharray="4,4"/>
             <rect x="140" y="20" width="80" height="36" rx="6" fill="none" stroke="#3b82f6"/>
             <text x="152" y="43" font-family="JetBrains Mono" font-size="11" fill="#3b82f6">Perceive</text>
             <rect x="240" y="82" width="80" height="36" rx="6" fill="none" stroke="#f59e0b"/>
@@ -45,12 +49,12 @@
             <rect x="140" y="144" width="80" height="36" rx="6" fill="none" stroke="#10b981"/>
             <text x="168" y="167" font-family="JetBrains Mono" font-size="11" fill="#10b981">Act</text>
             <rect x="40" y="82" width="80" height="36" rx="6" fill="none" stroke="#6b80a0"/>
-            <text x="52" y="105" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">Observe</text>
-            <path d="M215 55 L 260 82" stroke="#1e2d45" marker-end="url(#a2)" fill="none"/>
-            <path d="M270 118 L 220 148" stroke="#1e2d45" marker-end="url(#a2)" fill="none"/>
-            <path d="M150 165 L 100 118" stroke="#1e2d45" marker-end="url(#a2)" fill="none"/>
-            <path d="M90 82 L 145 55" stroke="#1e2d45" marker-end="url(#a2)" fill="none"/>
-            <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#1e2d45"/></marker></defs>
+            <text x="52" y="105" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">Observe</text>
+            <path d="M215 55 L 260 82" stroke="#46618c" marker-end="url(#a2)" fill="none"/>
+            <path d="M270 118 L 220 148" stroke="#46618c" marker-end="url(#a2)" fill="none"/>
+            <path d="M150 165 L 100 118" stroke="#46618c" marker-end="url(#a2)" fill="none"/>
+            <path d="M90 82 L 145 55" stroke="#46618c" marker-end="url(#a2)" fill="none"/>
+            <defs><marker id="a2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#46618c"/></marker></defs>
           </svg>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -119,6 +123,12 @@
 <span class="cm">// Model's response (not an actual function call)</span>
 { <span class="str">"tool"</span>: <span class="str">"get_weather"</span>, <span class="str">"args"</span>: { <span class="str">"city"</span>: <span class="str">"Boston"</span> } }</div>
         </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Executing model output without schema validation</div><div>Malformed or hallucinated calls reach real systems &mdash; the model can request anything</div>
+          <div class="tf-row-failure tf-situation">Ambiguous or overlapping tool descriptions</div><div>Model picks the wrong tool or invents parameters &mdash; a schema bug that looks like a model bug</div>
+          <div class="tf-row-tradeoff tf-situation">More tools in context</div><div>Selection accuracy degrades and prompt tokens grow &mdash; tool count is a curated budget, not a free list</div>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Walk me through what actually happens, mechanically, when an LLM 'calls a tool.'"</div>
@@ -150,10 +160,10 @@
         </table>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
-          <div class="interview-q">"When would you reach for LangGraph instead of a simpler chain-based approach?"</div>
-          <div class="interview-weak">"LangGraph is the newer, more powerful version."</div>
-          <div class="interview-strong">I'd reach for LangGraph specifically when the workflow needs cycles or conditional branching that depends on runtime state — for example, an agent that should retry a failed tool call up to N times, or route to different sub-workflows based on a classification step's output. A simple linear chain models a fixed sequence of steps well, but the moment you need "go back to step 2 if this validation fails" or persistent state that survives a human-in-the-loop pause, you're fighting the chain abstraction rather than using it naturally — LangGraph's explicit state graph is built for exactly that control flow, at the cost of more upfront design work defining nodes, edges, and state schema.</div>
-          <div class="interview-followup">Follow-up: <strong>"How does LangGraph handle human-in-the-loop approval steps in a multi-step agent workflow?"</strong></div>
+          <div class="interview-q">"Your agent workflow needs 'retry this step up to 3 times, then escalate to a human.' How do you architect that control flow — and why does a pipeline abstraction fight you here?"</div>
+          <div class="interview-weak">"I'd use LangGraph because it's the newer, more powerful version of LangChain."</div>
+          <div class="interview-strong">The underlying issue is framework-agnostic: retry-until-condition is a cycle, and pipeline/chain abstractions are DAGs — they structurally can't express "go back to step 2," so you end up faking loops with recursion or nested wrappers that lose state between attempts. What the requirement actually demands is an explicit state machine: typed state (attempt count, last error, escalation flag), nodes for the step and the escalation path, and a conditional edge routing on attempt count — plus persisted state, because "escalate to a human" means execution pauses for hours and must resume exactly where it left off. LangGraph is one implementation of exactly this model (state graph with cycles, checkpointed state, human-in-the-loop interrupts); Temporal or a hand-rolled state machine solve it the same way. Naming the shape of the problem — cyclic control flow plus durable state — matters more in an interview than naming the library.</div>
+          <div class="interview-followup">Follow-up: <strong>"What does the persisted state schema need to contain for the resume-after-human-approval case to work?"</strong></div>
         </div>
       </div>
     </div>
@@ -170,6 +180,12 @@
             <li>Multi-agent systems exist because a single agent juggling too many responsibilities (planning, tool use, domain expertise) in one context window becomes unreliable — splitting responsibilities lets each agent have a focused, shorter context and specialized prompt.</li>
             <li class="insight"><strong>The insight:</strong> orchestrator-worker scales more predictably than peer-to-peer because it has a single point of control and clear task boundaries — peer-to-peer architectures are more flexible in theory but in practice are much harder to debug and constrain, since failure can emerge from the interaction between agents rather than any single agent's behavior.</li>
           </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-tradeoff tf-situation">Splitting one task across N agents</div><div>Token cost and latency multiply &mdash; every hand-off re-serializes context into another prompt</div>
+          <div class="tf-row-failure tf-situation">Lossy hand-offs between agents</div><div>Critical constraints silently dropped in summarization between orchestrator and workers</div>
+          <div class="tf-row-failure tf-situation">Peer-to-peer agents without a coordinator</div><div>Emergent loops and deadlocks from interaction &mdash; no single agent is at fault, so debugging is brutal</div>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
@@ -233,6 +249,64 @@
       </div>
     </div>
 
+    <div class="card" data-topic-id="llm-security">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>LLM Security Beyond Injection</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Beyond prompt injection, production LLM systems face jailbreaks (adversarial prompts that bypass safety training — role-play framing, encoding tricks, many-shot attacks), PII leakage (both memorized training data and over-broad RAG retrieval exposing documents the user shouldn't see), system-prompt extraction, and training-data poisoning (adversarial content planted in data you later fine-tune or index on).</li>
+            <li>These are distinct threat classes because they attack different layers — jailbreaks attack the model's safety training, PII leakage attacks your data plumbing, poisoning attacks your ingestion pipeline — so no single mitigation covers them.</li>
+            <li class="insight"><strong>The insight:</strong> the highest-frequency real-world LLM security incident isn't a clever jailbreak — it's RAG over-retrieval: the vector index has no concept of per-user permissions, so unless you filter retrieval by the requesting user's ACLs <em>before</em> generation, the model will happily summarize documents the user was never allowed to read. Authorization must live in the retrieval layer, not the prompt.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Vector index shared across users without ACL filtering</div><div>Any user can retrieve (and get summaries of) any indexed document</div>
+          <div class="tf-row-failure tf-situation">Fine-tuning on unvetted user-submitted data</div><div>Poisoned examples can implant backdoor behaviors triggered by specific phrases</div>
+          <div class="tf-row-tradeoff tf-situation">Aggressive safety filtering on inputs</div><div>False-positive refusals on legitimate queries — measurable UX and trust cost</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your RAG assistant indexes the whole company wiki. Legal asks how you prevent an intern from reading M&A documents through it. What's your answer?"</div>
+          <div class="interview-weak">"I'd add a system prompt telling the model not to reveal confidential information."</div>
+          <div class="interview-strong">Prompt instructions are not an access-control mechanism — the model can't reliably enforce them and a determined user can jailbreak around them. The fix is architectural: propagate document ACLs into the vector store as metadata, and filter every retrieval query by the requesting user's permissions before any chunk reaches the context window, so unauthorized content never exists in the prompt to leak. I'd also log retrieved document IDs per request for audit, and treat the embedding index like any other data store in security review — it's a copy of your documents and inherits their classification, which teams routinely forget because it "looks like" model infrastructure rather than data infrastructure.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does PII memorized during pretraining differ from PII leaked via retrieval, in terms of mitigation?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="guardrails">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Guardrails & Moderation Pipelines</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A guardrail pipeline layers checks around the model call: input-side (moderation classifiers, injection detectors, topic filters), output-side (content classifiers, PII scrubbers, groundedness checks), and structural validation (JSON schema enforcement, allowed-value constraints on anything that triggers downstream actions).</li>
+            <li>Dedicated guardrail layers exist because prompt-based safety ("you must never...") is probabilistic and bypassable — a separate classifier or validator is deterministic per-input, independently testable, and doesn't degrade when the main model is jailbroken.</li>
+            <li class="insight"><strong>The insight:</strong> every guardrail is a latency and false-positive budget decision — a stack of input classifier + output classifier + groundedness check can add hundreds of milliseconds and block legitimate requests, so production systems tier them: cheap deterministic checks (regex PII, schema validation) on every request, model-based checks on risk-routed subsets, human review only on sampled or flagged traffic.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-tradeoff tf-situation">Guardrail model on every input and output</div><div>Added latency per request + a second model to version, eval, and monitor</div>
+          <div class="tf-row-failure tf-situation">Relying only on system-prompt instructions for safety</div><div>Bypassable via jailbreak; no independent enforcement layer exists</div>
+          <div class="tf-row-tradeoff tf-situation">Tightening moderation thresholds after an incident</div><div>False-positive refusals spike — safety and helpfulness trade off directly</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Design the moderation pipeline for a public-facing LLM chatbot. Where do checks go and what does each catch?"</div>
+          <div class="interview-weak">"I'd use the moderation API to check messages before sending them to the model."</div>
+          <div class="interview-strong">I'd place checks at three points with different jobs: input-side, a fast moderation classifier plus injection heuristics to reject clearly abusive or adversarial prompts before spending main-model tokens; output-side, a content classifier and PII scrubber on the generated response, because a clean input can still produce a policy-violating output; and structural validation on anything machine-consumed — if the output triggers a tool call or gets parsed downstream, schema enforcement is a guardrail too, not just a parsing convenience. Each layer needs its own eval set and false-positive tracking, because guardrails silently rot: a threshold tuned for last quarter's traffic will over- or under-block as usage shifts, so I'd monitor block rates and sample blocked requests for review just like any other model in production.</div>
+          <div class="interview-followup">Follow-up: <strong>"Your output classifier adds 300ms of latency. How do you decide whether to run it on every response or a subset?"</strong></div>
+        </div>
+      </div>
+    </div>
+
     <div class="card" data-topic-id="agent-evals">
       <div class="card-header">
         <div class="card-header-left"><span class="card-read-dot"></span><h3>Evals for Agents</h3></div>
@@ -273,6 +347,10 @@
         <div class="cheat-term"><dt>Tool selection accuracy</dt><dd>Whether the agent picked the correct tool per sub-task.</dd></div>
         <div class="cheat-term"><dt>Blast radius</dt><dd>Scope of damage possible if an agent is compromised or errs.</dd></div>
         <div class="cheat-term"><dt>Human-in-the-loop</dt><dd>Requiring human approval before sensitive agent actions execute.</dd></div>
+        <div class="cheat-term"><dt>Jailbreak</dt><dd>Adversarial prompt that bypasses a model's safety training.</dd></div>
+        <div class="cheat-term"><dt>RAG over-retrieval</dt><dd>Index without ACL filtering leaks documents across users.</dd></div>
+        <div class="cheat-term"><dt>Data poisoning</dt><dd>Adversarial content planted in training or index data.</dd></div>
+        <div class="cheat-term"><dt>Guardrail tiering</dt><dd>Cheap deterministic checks always-on; model checks risk-routed.</dd></div>
       </dl>
     </details>
 
@@ -293,7 +371,7 @@
   container.innerHTML = SIM_QUESTIONS.map(item => `
     <div class="sim-card">
       <div class="sim-q-row">
-        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
         <button class="sim-show-btn">Show Answer</button>
       </div>
       <div class="sim-answer">${item.a}</div>

@@ -19,6 +19,10 @@
         <span class="tag">Core</span>
         <span class="badge badge-critical">[CRITICAL]</span>
       </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
+      </div>
       <p class="why-line">RAG is the most commonly deployed LLM architecture in production, so interviewers ask about it to check whether you understand the entire pipeline's failure modes, not just "it retrieves then generates."</p>
     </div>
 
@@ -37,21 +41,21 @@
         </div>
         <div class="card-visual">
           <svg viewBox="0 0 560 140" xmlns="http://www.w3.org/2000/svg">
-            <rect x="10" y="45" width="90" height="45" rx="6" fill="none" stroke="#1e2d45"/>
-            <text x="25" y="72" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">Query</text>
-            <path d="M100 67 L 130 67" stroke="#1e2d45" marker-end="url(#a1)"/>
+            <rect x="10" y="45" width="90" height="45" rx="6" fill="none" stroke="#46618c"/>
+            <text x="25" y="72" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">Query</text>
+            <path d="M100 67 L 130 67" stroke="#46618c" marker-end="url(#a1)"/>
             <rect x="130" y="45" width="90" height="45" rx="6" fill="none" stroke="#3b82f6"/>
             <text x="140" y="72" font-family="JetBrains Mono" font-size="11" fill="#3b82f6">Embed</text>
-            <path d="M220 67 L 250 67" stroke="#1e2d45" marker-end="url(#a1)"/>
+            <path d="M220 67 L 250 67" stroke="#46618c" marker-end="url(#a1)"/>
             <rect x="250" y="45" width="100" height="45" rx="6" fill="none" stroke="#10b981"/>
             <text x="260" y="72" font-family="JetBrains Mono" font-size="11" fill="#10b981">Vector Search</text>
-            <path d="M350 67 L 380 67" stroke="#1e2d45" marker-end="url(#a1)"/>
+            <path d="M350 67 L 380 67" stroke="#46618c" marker-end="url(#a1)"/>
             <rect x="380" y="45" width="90" height="45" rx="6" fill="none" stroke="#f59e0b"/>
             <text x="390" y="72" font-family="JetBrains Mono" font-size="11" fill="#f59e0b">Augment</text>
-            <path d="M470 67 L 500 67" stroke="#1e2d45" marker-end="url(#a1)"/>
-            <rect x="500" y="45" width="55" height="45" rx="6" fill="none" stroke="#1e2d45"/>
-            <text x="508" y="72" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">LLM</text>
-            <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#1e2d45"/></marker></defs>
+            <path d="M470 67 L 500 67" stroke="#46618c" marker-end="url(#a1)"/>
+            <rect x="500" y="45" width="55" height="45" rx="6" fill="none" stroke="#46618c"/>
+            <text x="508" y="72" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">LLM</text>
+            <defs><marker id="a1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#46618c"/></marker></defs>
           </svg>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -106,6 +110,12 @@
             <li>Open vs. API-based embedding models exist because teams trade off cost, latency, data privacy, and the ability to fine-tune the embedding model itself against the convenience of a managed API.</li>
             <li class="insight"><strong>The insight:</strong> a model that tops the overall MTEB leaderboard isn't automatically the best choice — MTEB averages across many task types, so a model with a middling average score can still be the best specifically at retrieval (the sub-task RAG actually needs) — always check the task-specific score, not the aggregate.</li>
           </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Swapping embedding models without re-indexing everything</div><div>Query and document vectors live in incompatible spaces &mdash; retrieval silently returns garbage</div>
+          <div class="tf-row-failure tf-situation">General-purpose embeddings on specialist text (legal, medical, code)</div><div>Domain terms cluster poorly &mdash; recall drops with no error surfaced</div>
+          <div class="tf-row-tradeoff tf-situation">Higher-dimensional embeddings</div><div>Finer distinctions vs more storage, slower ANN search, higher index memory</div>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
@@ -241,6 +251,11 @@
             <li class="insight"><strong>The insight:</strong> a cross-encoder can't be used for the initial retrieval step at all — it requires the query at scoring time, so document representations can't be precomputed and indexed, making it computationally impossible to run at index-wide scale. Reranking is the compromise that captures its accuracy benefit only where it's affordable.</li>
           </ul>
         </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-tradeoff tf-situation">Adding a cross-encoder rerank stage</div><div>One more model in the serving path &mdash; added latency per query and another artifact to version and eval</div>
+          <div class="tf-row-failure tf-situation">Shortlist too small before reranking</div><div>The true best chunk never reaches the reranker &mdash; reranking cannot recover what retrieval missed</div>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why not just use a cross-encoder for retrieval directly and skip the bi-encoder step?"</div>
@@ -349,7 +364,7 @@
   container.innerHTML = SIM_QUESTIONS.map(item => `
     <div class="sim-card">
       <div class="sim-q-row">
-        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
         <button class="sim-show-btn">Show Answer</button>
       </div>
       <div class="sim-answer">${item.a}</div>

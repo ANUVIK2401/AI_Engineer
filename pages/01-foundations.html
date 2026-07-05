@@ -20,6 +20,10 @@
         <span class="tag">Foundational</span>
         <span class="badge badge-critical">[CRITICAL]</span>
       </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
+      </div>
       <p class="why-line">Interviewers ask about this to check whether you can reason from first principles instead of pattern-matching APIs — it separates people who can debug a model from people who can only call one.</p>
     </div>
 
@@ -35,21 +39,26 @@
       <div class="card-body">
         <div class="card-core">
           <ul>
-            <li>AI is the broad goal of building systems that perform tasks requiring human-like intelligence; ML is a subset that learns patterns from data instead of following hardcoded rules; DL is a subset of ML using layered neural networks; GenAI is a subset of DL focused on generating new content rather than just predicting labels.</li>
+            <li>AI is the broad goal of building systems that perform tasks requiring human-like intelligence; ML is a subset that learns patterns from data instead of following hardcoded rules; DL is a subset of ML using layered neural networks; modern GenAI is DL applied to modeling full data distributions so it can generate new content rather than just predict labels (generative <em>modeling</em> itself predates DL — n-gram LMs and naive Bayes are generative too, so avoid claiming a strict subset if pushed).</li>
             <li>This hierarchy exists because each layer solves a limitation of the one above it — ML replaced brittle rule engines, DL replaced manual feature engineering, GenAI replaced discriminative-only outputs with generative ones.</li>
             <li class="insight"><strong>The insight:</strong> every GenAI system is still just ML underneath — the "magic" is scale and objective (next-token prediction), not a new paradigm. Someone who "gets it" can explain an LLM in terms of loss functions and gradients, not buzzwords.</li>
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 260" xmlns="http://www.w3.org/2000/svg">
-            <rect x="10" y="10" width="500" height="240" rx="8" fill="none" stroke="#1e2d45"/>
-            <text x="30" y="34" font-family="JetBrains Mono" font-size="12" fill="#6b80a0">ARTIFICIAL INTELLIGENCE</text>
-            <rect x="40" y="50" width="450" height="180" rx="8" fill="none" stroke="#1e2d45"/>
-            <text x="60" y="74" font-family="JetBrains Mono" font-size="12" fill="#6b80a0">MACHINE LEARNING</text>
-            <rect x="70" y="90" width="390" height="120" rx="8" fill="none" stroke="#1e2d45"/>
-            <text x="90" y="114" font-family="JetBrains Mono" font-size="12" fill="#6b80a0">DEEP LEARNING</text>
-            <rect x="100" y="130" width="330" height="60" rx="8" fill="none" stroke="#3b82f6"/>
-            <text x="120" y="165" font-family="JetBrains Mono" font-size="13" fill="#3b82f6">GENERATIVE AI</text>
+          <svg viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg">
+            <rect x="10" y="10" width="500" height="260" rx="8" fill="none" stroke="#46618c"/>
+            <text x="30" y="34" font-family="JetBrains Mono" font-size="12" fill="#7b8fb0">ARTIFICIAL INTELLIGENCE</text>
+            <text x="270" y="34" font-family="Inter" font-size="10" fill="#7b8fb0">rule engines, A* search, expert systems</text>
+            <rect x="40" y="50" width="450" height="200" rx="8" fill="none" stroke="#46618c"/>
+            <text x="60" y="74" font-family="JetBrains Mono" font-size="12" fill="#7b8fb0">MACHINE LEARNING</text>
+            <text x="270" y="74" font-family="Inter" font-size="10" fill="#7b8fb0">XGBoost, SVMs — hand-built features</text>
+            <rect x="70" y="90" width="390" height="140" rx="8" fill="none" stroke="#46618c"/>
+            <text x="90" y="114" font-family="JetBrains Mono" font-size="12" fill="#7b8fb0">DEEP LEARNING</text>
+            <text x="270" y="114" font-family="Inter" font-size="10" fill="#7b8fb0">ResNet, BERT — learned features</text>
+            <rect x="100" y="130" width="330" height="80" rx="8" fill="none" stroke="#3b82f6"/>
+            <text x="120" y="155" font-family="JetBrains Mono" font-size="13" fill="#3b82f6">GENERATIVE AI</text>
+            <text x="120" y="175" font-family="Inter" font-size="10" fill="#7b8fb0">GPT, diffusion — model the full distribution,</text>
+            <text x="120" y="190" font-family="Inter" font-size="10" fill="#7b8fb0">sample new outputs instead of predicting labels</text>
           </svg>
         </div>
         <div class="interview-toggle">
@@ -83,8 +92,8 @@
         </div>
         <div class="card-visual">
           <svg viewBox="0 0 480 220" xmlns="http://www.w3.org/2000/svg">
-            <line x1="40" y1="190" x2="440" y2="190" stroke="#1e2d45"/>
-            <line x1="40" y1="190" x2="40" y2="20" stroke="#1e2d45"/>
+            <line x1="40" y1="190" x2="440" y2="190" stroke="#46618c"/>
+            <line x1="40" y1="190" x2="40" y2="20" stroke="#46618c"/>
             <circle cx="120" cy="120" r="4" fill="#3b82f6"/>
             <text x="128" y="118" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">king</text>
             <circle cx="150" cy="150" r="4" fill="#3b82f6"/>
@@ -94,7 +103,7 @@
             <circle cx="360" cy="90" r="4" fill="#10b981"/>
             <text x="368" y="88" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">banana</text>
             <line x1="120" y1="120" x2="150" y2="150" stroke="#3b82f6" stroke-dasharray="3,3"/>
-            <text x="230" y="205" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">semantically related terms cluster together</text>
+            <text x="230" y="205" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">semantically related terms cluster together</text>
           </svg>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -190,7 +199,8 @@
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
           <div class="tf-row-tradeoff tf-situation">Learning rate too high</div><div>Loss oscillates or diverges instead of converging</div>
-          <div class="tf-row-failure tf-situation">Deep, narrow local minima / saddle points</div><div>Training stalls; gradients near zero make progress slow</div>
+          <div class="tf-row-failure tf-situation">Saddle points / flat plateaus</div><div>Gradients near zero — training stalls without momentum or noise to escape</div>
+          <div class="tf-row-tradeoff tf-situation">Converging into a sharp, narrow minimum</div><div>Trains fine but generalizes worse than a flat minimum — a generalization problem, not a stall</div>
           <div class="tf-row-tradeoff tf-situation">Very large batch size</div><div>Smoother gradients but worse generalization and higher memory cost</div>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -273,7 +283,7 @@
   container.innerHTML = SIM_QUESTIONS.map(item => `
     <div class="sim-card">
       <div class="sim-q-row">
-        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
         <button class="sim-show-btn">Show Answer</button>
       </div>
       <div class="sim-answer">${item.a}</div>

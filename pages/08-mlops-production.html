@@ -14,10 +14,14 @@
       <a href="../index.html" class="back-link">← Back to modules</a>
       <h1>08 · MLOps & Production</h1>
       <div class="tag-row">
-        <span class="tag">9 topics</span>
-        <span class="tag">~70 min deep-read</span>
+        <span class="tag">10 topics</span>
+        <span class="tag">~80 min deep-read</span>
         <span class="tag">Advanced</span>
         <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
       </div>
       <p class="why-line">Interviewers ask about this because a model that works in a notebook and a model that survives production for a year are entirely different engineering problems — this module is where "can you ship and maintain this" gets tested.</p>
     </div>
@@ -37,22 +41,22 @@
         </div>
         <div class="card-visual">
           <svg viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg">
-            <rect x="10" y="45" width="80" height="45" rx="6" fill="none" stroke="#1e2d45"/>
-            <text x="22" y="72" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">Data</text>
-            <path d="M90 67 L 115 67" stroke="#1e2d45" marker-end="url(#a3)"/>
+            <rect x="10" y="45" width="80" height="45" rx="6" fill="none" stroke="#46618c"/>
+            <text x="22" y="72" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">Data</text>
+            <path d="M90 67 L 115 67" stroke="#46618c" marker-end="url(#a3)"/>
             <rect x="115" y="45" width="80" height="45" rx="6" fill="none" stroke="#3b82f6"/>
             <text x="125" y="72" font-family="JetBrains Mono" font-size="10" fill="#3b82f6">Train</text>
-            <path d="M195 67 L 220 67" stroke="#1e2d45" marker-end="url(#a3)"/>
+            <path d="M195 67 L 220 67" stroke="#46618c" marker-end="url(#a3)"/>
             <rect x="220" y="45" width="80" height="45" rx="6" fill="none" stroke="#10b981"/>
             <text x="228" y="72" font-family="JetBrains Mono" font-size="10" fill="#10b981">Evaluate</text>
-            <path d="M300 67 L 325 67" stroke="#1e2d45" marker-end="url(#a3)"/>
+            <path d="M300 67 L 325 67" stroke="#46618c" marker-end="url(#a3)"/>
             <rect x="325" y="45" width="80" height="45" rx="6" fill="none" stroke="#f59e0b"/>
             <text x="335" y="72" font-family="JetBrains Mono" font-size="10" fill="#f59e0b">Deploy</text>
-            <path d="M405 67 L 430 67" stroke="#1e2d45" marker-end="url(#a3)"/>
+            <path d="M405 67 L 430 67" stroke="#46618c" marker-end="url(#a3)"/>
             <rect x="430" y="45" width="80" height="45" rx="6" fill="none" stroke="#ef4444"/>
             <text x="435" y="72" font-family="JetBrains Mono" font-size="10" fill="#ef4444">Monitor</text>
-            <path d="M470 90 L 470 110 L 50 110 L 50 90" fill="none" stroke="#1e2d45" stroke-dasharray="3,3" marker-end="url(#a3)"/>
-            <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#1e2d45"/></marker></defs>
+            <path d="M470 90 L 470 110 L 50 110 L 50 90" fill="none" stroke="#46618c" stroke-dasharray="3,3" marker-end="url(#a3)"/>
+            <defs><marker id="a3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#46618c"/></marker></defs>
           </svg>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -100,6 +104,11 @@
             <li>It exists to solve training/serving skew — the problem where features are computed differently (different code paths, different timing) between the offline training pipeline and the online serving path, causing subtle, hard-to-detect prediction quality issues.</li>
             <li class="insight"><strong>The insight:</strong> training/serving skew is one of the most common and hardest-to-detect production ML bugs precisely because it doesn't throw an error — the model just silently performs worse than its offline evaluation suggested, because the online features it's actually receiving are computed slightly differently than the ones it was trained and evaluated on.</li>
           </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-tradeoff tf-situation">Adopting a feature store for a small team / few models</div><div>Heavy infrastructure for a problem a single shared feature library may solve</div>
+          <div class="tf-row-failure tf-situation">Online store lags the offline store</div><div>Serving reads stale feature values &mdash; skew reappears inside the very system meant to kill it</div>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
@@ -159,6 +168,42 @@
           <div class="interview-weak">"Yes, if it ran without errors in shadow mode it's safe to deploy fully."</div>
           <div class="interview-strong">Shadow mode only validates that the new model runs correctly and produces outputs in a similar range to the old model — it never actually influences real user behavior, so it can't tell you anything about the metric you actually care about, like conversion rate or user satisfaction. I'd follow shadow mode with a canary deployment to a small percentage of real traffic, measuring the actual business metric with statistical rigor (accounting for sample size and variance) before considering a full rollout, since real user response to model changes can differ in ways that never show up when the model's predictions have zero real-world consequence. Skipping from shadow mode straight to 100% rollout conflates "doesn't crash" with "actually improves the metric," which are very different bars.</div>
           <div class="interview-followup">Follow-up: <strong>"How would you determine the right traffic percentage and duration for a canary deployment?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="llm-evaluation">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Evaluating LLM Systems (Beyond RAGAS)</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>The eval toolbox has four distinct layers: public benchmark suites (MMLU for knowledge, HumanEval for code, HELM for holistic multi-metric comparison, MT-Bench/Chatbot Arena for conversational quality) for model <em>selection</em>; task-specific golden sets for your <em>application</em>; LLM-as-judge for scalable semantic grading; and human eval as the ground-truth anchor the others are calibrated against.</li>
+            <li>Multiple layers exist because they answer different questions — a model's MMLU score says nothing about whether your prompt + retrieval + model pipeline answers your users' questions, and application-level accuracy says nothing about which base model to pick next quarter.</li>
+            <li class="insight"><strong>The insight:</strong> LLM-as-judge is the workhorse of production eval but has known, measurable biases — position bias (favoring the first answer shown), verbosity bias (longer = rated better), and self-preference (judging its own family's outputs higher). Senior candidates name the mitigations unprompted: randomize answer order, use pairwise comparison over absolute scores, use a different model family as judge, and periodically calibrate judge verdicts against a human-labeled sample. Also: public benchmark scores are increasingly contaminated (test data leaking into training sets), so treat leaderboard deltas as marketing until verified on held-out private data.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Method</th><th>Scales?</th><th>Trust level</th><th>Use for</th></tr>
+          <tr><td>Benchmarks (MMLU, HELM, HumanEval)</td><td>free, precomputed</td><td>low for your task; contamination risk</td><td>base model shortlisting</td></tr>
+          <tr><td>Golden set + exact/programmatic checks</td><td>high</td><td>high where checkable</td><td>regression gating in CI</td></tr>
+          <tr><td>LLM-as-judge</td><td>high</td><td>medium — known biases</td><td>semantic quality at scale</td></tr>
+          <tr><td>Human eval</td><td>low, expensive</td><td>highest</td><td>calibrating the other three</td></tr>
+        </table>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Trusting LLM-judge scores without human calibration</div><div>Systematic bias (verbosity, position, self-preference) skews every decision built on them</div>
+          <div class="tf-row-failure tf-situation">Selecting models purely on public leaderboards</div><div>Contaminated benchmarks reward memorization; ranking may invert on your task</div>
+          <div class="tf-row-tradeoff tf-situation">Bigger judge model for better grading</div><div>Eval cost can rival production inference cost at scale</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You're replacing the model behind a production feature. The new model scores higher on MMLU. Ship it?"</div>
+          <div class="interview-weak">"Yes — it's a more capable model, so it should improve the feature."</div>
+          <div class="interview-strong">MMLU measures multiple-choice knowledge recall, which likely has near-zero correlation with my feature's actual task — and the score may be partly contamination anyway. I'd run the candidate through our application-level eval instead: the golden set with programmatic checks for anything objectively verifiable, LLM-as-judge with randomized pairwise comparisons for semantic quality, both models blind. If the golden set is thin, I'd expand it from real production traffic first, because an eval that doesn't reflect live query distribution will approve a model that regresses in the field. Only after offline parity-or-better would I canary it — and I'd check tone, refusal rate, and output-length drift explicitly, since "better" models routinely break downstream parsing or change product voice in ways no benchmark captures.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you detect that your LLM judge has verbosity bias, and what would you change?"</strong></div>
         </div>
       </div>
     </div>
@@ -278,6 +323,9 @@
         <div class="cheat-term"><dt>Evaluation gate</dt><dd>CI/CD check comparing new model metrics against production baseline.</dd></div>
         <div class="cheat-term"><dt>Observability (ML)</dt><dd>Monitoring model-quality signals beyond standard infra metrics.</dd></div>
         <div class="cheat-term"><dt>Model decay</dt><dd>Performance degradation over time from drift or staleness.</dd></div>
+        <div class="cheat-term"><dt>LLM-as-judge</dt><dd>Model grades outputs at scale; needs bias mitigation + human calibration.</dd></div>
+        <div class="cheat-term"><dt>Benchmark contamination</dt><dd>Test data leaking into training inflates leaderboard scores.</dd></div>
+        <div class="cheat-term"><dt>Golden set</dt><dd>Fixed labeled eval queries used as a CI regression gate.</dd></div>
       </dl>
     </details>
 
@@ -298,7 +346,7 @@
   container.innerHTML = SIM_QUESTIONS.map(item => `
     <div class="sim-card">
       <div class="sim-q-row">
-        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
         <button class="sim-show-btn">Show Answer</button>
       </div>
       <div class="sim-answer">${item.a}</div>

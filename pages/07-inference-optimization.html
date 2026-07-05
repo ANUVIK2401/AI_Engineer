@@ -14,10 +14,14 @@
       <a href="../index.html" class="back-link">← Back to modules</a>
       <h1>07 · Inference Optimization</h1>
       <div class="tag-row">
-        <span class="tag">8 topics</span>
-        <span class="tag">~65 min deep-read</span>
+        <span class="tag">9 topics</span>
+        <span class="tag">~75 min deep-read</span>
         <span class="tag">Advanced</span>
         <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
       </div>
       <p class="why-line">Companies serving LLMs at scale (NVIDIA especially) ask about this to check whether you understand that inference cost and latency are engineering problems with real tradeoffs, not just "buy more GPUs."</p>
     </div>
@@ -36,12 +40,13 @@
           </ul>
         </div>
         <table class="cmp-table">
-          <tr><th>Precision</th><th>Bits/weight</th><th>Relative quality</th><th>Relative speed/memory</th></tr>
-          <tr><td>FP32</td><td>32</td><td>baseline</td><td>1x (slowest, most memory)</td></tr>
-          <tr><td>FP16 / BF16</td><td>16</td><td>~lossless</td><td>~2x faster, half memory</td></tr>
-          <tr><td>INT8</td><td>8</td><td>small quality drop</td><td>~4x faster, quarter memory</td></tr>
-          <tr><td>INT4</td><td>4</td><td>noticeable drop without care</td><td>~8x faster, eighth memory</td></tr>
+          <tr><th>Precision</th><th>Bits/weight</th><th>Relative quality</th><th>Memory vs FP32</th></tr>
+          <tr><td>FP32</td><td>32</td><td>baseline</td><td>1x</td></tr>
+          <tr><td>FP16 / BF16</td><td>16</td><td>~lossless</td><td>½</td></tr>
+          <tr><td>INT8</td><td>8</td><td>small quality drop</td><td>¼</td></tr>
+          <tr><td>INT4</td><td>4</td><td>noticeable drop without outlier handling</td><td>⅛</td></tr>
         </table>
+        <p class="table-note">Speedup ≠ memory ratio: gains show up mainly in memory-bandwidth-bound decode (fewer bytes to read per step). Compute-bound prefill sees little benefit, and INT4 dequantization kernel overhead can even make it slower than FP16 there.</p>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why does quantizing a model to INT4 sometimes barely hurt quality, and other times destroy it?"</div>
@@ -117,6 +122,11 @@
             <li class="insight"><strong>The insight:</strong> speculative decoding produces mathematically identical output distributions to standard decoding — it's not an approximation that trades quality for speed, it's a verification scheme that only ever accepts tokens the large model would have generated anyway, which is why it's one of the rare "free" speedups in LLM serving.</li>
           </ul>
         </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Draft model poorly matched to target (domain or tokenizer)</div><div>Low acceptance rate &mdash; you pay draft + verify and go slower than plain decoding</div>
+          <div class="tf-row-tradeoff tf-situation">Speculative decoding under high batch load</div><div>Speedup shrinks once the GPU is already saturated &mdash; it shines at low-batch, latency-sensitive serving</div>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Doesn't using a smaller, less accurate model to draft tokens hurt output quality?"</div>
@@ -168,6 +178,11 @@
             <li>It exists because before paged attention, KV cache memory management was the dominant inefficiency in LLM serving — vLLM's specific contribution was applying an OS-style virtual memory paging concept to this problem, unlocking dramatically higher throughput on the same hardware.</li>
             <li class="insight"><strong>The insight:</strong> vLLM's biggest wins come specifically from memory efficiency, not raw compute speed — it doesn't make the model's forward pass mathematically faster, it lets you fit far more concurrent requests in the same GPU memory by eliminating KV cache fragmentation and waste, which is a fundamentally different kind of optimization than quantization or kernel fusion.</li>
           </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-tradeoff tf-situation">Adopting vLLM for a single small model / low traffic</div><div>Operational surface of a serving engine without the concurrency that justifies it</div>
+          <div class="tf-row-failure tf-situation">Assuming paged attention fixes latency</div><div>It is a throughput/memory optimization &mdash; single-request TTFT and TBT barely change</div>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
@@ -236,6 +251,35 @@
       </div>
     </div>
 
+    <div class="card" data-topic-id="cost-modeling">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Cost Modeling (API vs Self-Hosting)</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>API cost per query = (input tokens × input price) + (output tokens × output price) — output tokens typically cost 3-5x more than input, so verbose responses and chatty agents dominate the bill. Self-hosted cost per query = (GPU-hours × hourly rate) ÷ queries served, which means it depends entirely on utilization.</li>
+            <li>Cost modeling exists as a discipline because the two models scale oppositely: API cost is linear in usage with zero idle cost, while self-hosting has a large fixed floor (GPUs cost the same at 5% and 95% utilization) that amortizes only at sustained volume.</li>
+            <li class="insight"><strong>The insight:</strong> the API-vs-self-host breakeven is a utilization question, not a price-list question — a self-hosted 70B deployment that sits idle overnight can cost more per query than a frontier API, while the same hardware at sustained high utilization can be 5-10x cheaper. Prompt caching, batching efficiency, and traffic shape (bursty vs steady) move the breakeven more than the model choice does. Also count the hidden line items: on-call, serving-stack engineering, and eval infrastructure are real costs the API price already includes.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-tradeoff tf-situation">Self-hosting with bursty, low-average traffic</div><div>GPUs idle most of the day — cost per query exceeds the API you left</div>
+          <div class="tf-row-tradeoff tf-situation">Long system prompts without prompt caching</div><div>Re-paying prefill for identical prefix tokens on every single request</div>
+          <div class="tf-row-failure tf-situation">Agent loops without token budgets</div><div>One runaway multi-step task can cost more than thousands of normal queries</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Leadership wants to move off the API to self-hosted models to 'cut costs.' How do you evaluate whether that's actually true?"</div>
+          <div class="interview-weak">"I'd compare the API price per token against the GPU rental price."</div>
+          <div class="interview-strong">I'd model cost per query on both sides under our real traffic shape, not list prices. For the API side: measured input/output token distributions per request type, times current pricing, minus what prompt caching saves on repeated prefixes. For self-hosting: the smallest model that passes our quality bar on our own evals, its measured tokens/sec on the target GPU with continuous batching, and realistic utilization given our traffic curve — then divide GPU-hours by queries actually served, and add the honest overheads: an engineer-fraction for the serving stack, on-call, and the eval work to validate the swap. The usual result is a crossover point at some sustained QPS; below it the API wins, above it self-hosting wins, and the right architecture is often hybrid — self-host the high-volume simple tier, keep the API for the low-volume hard tier.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does prompt caching change the economics of a long shared system prompt?"</strong></div>
+        </div>
+      </div>
+    </div>
+
     <div class="section-label">Interview Simulator — Inference Optimization</div>
     <div id="sim-container"></div>
 
@@ -253,6 +297,9 @@
         <div class="cheat-term"><dt>TTFT</dt><dd>Time to first token — user-perceived initial response latency.</dd></div>
         <div class="cheat-term"><dt>TBT</dt><dd>Time between tokens — streaming generation speed.</dd></div>
         <div class="cheat-term"><dt>Throughput</dt><dd>Total tokens/sec served across all concurrent requests.</dd></div>
+        <div class="cheat-term"><dt>Prompt caching</dt><dd>Reusing prefill KV state for repeated prompt prefixes to cut cost.</dd></div>
+        <div class="cheat-term"><dt>Breakeven utilization</dt><dd>Sustained volume above which self-hosting beats API pricing.</dd></div>
+        <div class="cheat-term"><dt>Distillation</dt><dd>Training a small model on a large model's outputs to cut serving cost.</dd></div>
       </dl>
     </details>
 
@@ -273,7 +320,7 @@
   container.innerHTML = SIM_QUESTIONS.map(item => `
     <div class="sim-card">
       <div class="sim-q-row">
-        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
         <button class="sim-show-btn">Show Answer</button>
       </div>
       <div class="sim-answer">${item.a}</div>

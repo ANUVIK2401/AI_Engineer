@@ -20,6 +20,10 @@
         <span class="tag">Core</span>
         <span class="badge badge-critical">[CRITICAL]</span>
       </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
+      </div>
       <p class="why-line">This is the single most-tested module in AI engineering interviews right now — attention, KV cache, and sampling internals are where companies filter people who understand LLMs from people who just call an API.</p>
     </div>
 
@@ -38,6 +42,11 @@
         </div>
         <div class="card-visual">
           $$ \text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V $$
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">No 1/&radic;d_k scaling at large d_k</div><div>Dot products grow with dimension, softmax saturates, gradients vanish</div>
+          <div class="tf-row-tradeoff tf-situation">Full self-attention on long sequences</div><div>O(n&sup2;) score matrix &mdash; the structural cost every efficient-attention variant attacks</div>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
@@ -118,18 +127,18 @@
           <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
             <rect x="40" y="10" width="220" height="50" rx="6" fill="none" stroke="#3b82f6"/>
             <text x="70" y="40" font-family="JetBrains Mono" font-size="12" fill="#3b82f6">Multi-Head Attention</text>
-            <line x1="150" y1="60" x2="150" y2="85" stroke="#1e2d45"/>
-            <rect x="40" y="85" width="220" height="40" rx="6" fill="none" stroke="#1e2d45"/>
-            <text x="75" y="110" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">Add + LayerNorm</text>
-            <line x1="150" y1="125" x2="150" y2="150" stroke="#1e2d45"/>
+            <line x1="150" y1="60" x2="150" y2="85" stroke="#46618c"/>
+            <rect x="40" y="85" width="220" height="40" rx="6" fill="none" stroke="#46618c"/>
+            <text x="75" y="110" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">Add + LayerNorm</text>
+            <line x1="150" y1="125" x2="150" y2="150" stroke="#46618c"/>
             <rect x="40" y="150" width="220" height="50" rx="6" fill="none" stroke="#f59e0b"/>
             <text x="105" y="180" font-family="JetBrains Mono" font-size="12" fill="#f59e0b">FFN</text>
-            <line x1="150" y1="200" x2="150" y2="225" stroke="#1e2d45"/>
-            <rect x="40" y="225" width="220" height="40" rx="6" fill="none" stroke="#1e2d45"/>
-            <text x="75" y="250" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">Add + LayerNorm</text>
-            <path d="M 20 35 L 20 105 L 40 105" fill="none" stroke="#1e2d45" stroke-dasharray="3,3"/>
-            <path d="M 20 175 L 20 245 L 40 245" fill="none" stroke="#1e2d45" stroke-dasharray="3,3"/>
-            <text x="150" y="300" font-family="JetBrains Mono" font-size="10" fill="#6b80a0" text-anchor="middle">× N layers</text>
+            <line x1="150" y1="200" x2="150" y2="225" stroke="#46618c"/>
+            <rect x="40" y="225" width="220" height="40" rx="6" fill="none" stroke="#46618c"/>
+            <text x="75" y="250" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">Add + LayerNorm</text>
+            <path d="M 20 35 L 20 105 L 40 105" fill="none" stroke="#46618c" stroke-dasharray="3,3"/>
+            <path d="M 20 175 L 20 245 L 40 245" fill="none" stroke="#46618c" stroke-dasharray="3,3"/>
+            <text x="150" y="300" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0" text-anchor="middle">× N layers</text>
           </svg>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -178,6 +187,12 @@
             <li class="insight"><strong>The insight:</strong> vocabulary size is a direct tradeoff against sequence length and embedding table size — a larger vocab means shorter sequences per input (cheaper attention, which scales quadratically) but a bigger embedding/output matrix, so vocab size is a deliberate engineering choice, not just "bigger is better."</li>
           </ul>
         </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Character-level tasks (count letters, reverse strings)</div><div>Model never sees characters &mdash; a tokenization artifact, not a reasoning failure</div>
+          <div class="tf-row-failure tf-situation">Domain text unseen by the tokenizer (code, rare languages)</div><div>Fragments into many tiny tokens &mdash; burns context budget and degrades quality</div>
+          <div class="tf-row-tradeoff tf-situation">Growing vocab to shorten sequences</div><div>Embedding + output matrices grow; rare tokens get poorly trained embeddings</div>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why do LLMs struggle with tasks like counting letters in a word or reversing a string?"</div>
@@ -198,7 +213,8 @@
           <ul>
             <li>The context window is the maximum number of tokens a model can attend to at once; the KV cache stores each generated token's Key and Value vectors so they don't need to be recomputed for every new token during autoregressive generation.</li>
             <li>The KV cache exists because without it, generating each new token would require recomputing attention over the entire prior sequence from scratch — caching turns that into an incremental append.</li>
-            <li class="insight"><strong>The insight:</strong> attention cost scales quadratically with sequence length (every token attends to every other token), which is why context window increases are far more expensive than linear — doubling context roughly quadruples the attention compute and KV cache memory footprint, which is the real bottleneck behind long-context serving costs.</li>
+            <li><strong>MQA / GQA</strong> shrink the cache architecturally: Multi-Query Attention shares one K/V head across all query heads; Grouped-Query Attention (used by LLaMA-2/3, Mistral) shares K/V across small groups of query heads — cutting KV cache size by 4-8x with minimal quality loss, which is why nearly every modern LLM ships with GQA.</li>
+            <li class="insight"><strong>The insight:</strong> attention cost scales quadratically with sequence length (every token attends to every other token) while KV cache memory grows linearly per request — doubling context roughly quadruples attention compute but "only" doubles cache memory. Both matter: quadratic compute dominates prefill cost, and the linear-but-per-request cache is what eats GPU memory and caps concurrency in serving.</li>
           </ul>
         </div>
         <div class="tf-grid">
@@ -226,7 +242,7 @@
           <ul>
             <li>Temperature rescales logits before softmax to control randomness; top-k restricts sampling to the k highest-probability tokens; top-p (nucleus sampling) restricts to the smallest set of tokens whose cumulative probability exceeds p.</li>
             <li>These exist because always picking the single most likely token (greedy decoding) produces repetitive, low-diversity text, while pure random sampling from the full distribution produces incoherent text by occasionally picking very low-probability tokens.</li>
-            <li class="insight"><strong>The insight — the classic gotcha:</strong> greedy decoding is deterministic and often produces worse quality output than sampling with a moderate temperature, because always taking the locally most-probable token can lead down a path that's globally suboptimal — it's a form of exposure bias, not a "safe default."</li>
+            <li class="insight"><strong>The insight — the classic gotcha:</strong> greedy decoding is deterministic and often produces worse quality output than sampling with a moderate temperature, because always taking the locally most-probable token can lead down a path that's globally suboptimal — greedy is locally optimal per step, not sequence-optimal, so it's not a "safe default."</li>
           </ul>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -250,24 +266,31 @@
             <li>RLHF trains a reward model on human preference comparisons between model outputs, then uses that reward model to fine-tune the LLM via reinforcement learning (typically PPO), optimizing generations to score highly under the learned reward.</li>
             <li>It exists because "good response" isn't a label you can directly supervise — there's no ground truth token sequence for "be helpful and harmless," so you instead learn a proxy reward function from relative human judgments and optimize against that.</li>
             <li class="insight"><strong>The insight:</strong> RLHF doesn't teach the model new knowledge or capabilities — pretraining already encodes that. It reshapes which parts of the model's existing distribution get sampled, steering output style, refusals, and helpfulness — which is why RLHF'd models can still hallucinate confidently on facts they were never taught to verify.</li>
+            <li><strong>DPO (Direct Preference Optimization)</strong> reaches a similar goal without the RL machinery: it derives a closed-form loss that optimizes the policy directly on preference pairs, skipping the separate reward model and PPO loop entirely. It's simpler and more stable to train, at the cost of losing the explicit reward model (useful for filtering/monitoring) and being tied to the offline preference dataset rather than exploring on-policy samples. "RLHF vs DPO" is now a standard interview question.</li>
           </ul>
         </div>
         <div class="card-visual">
           <svg viewBox="0 0 480 140" xmlns="http://www.w3.org/2000/svg">
-            <rect x="10" y="45" width="120" height="50" rx="6" fill="none" stroke="#1e2d45"/>
-            <text x="25" y="75" font-family="JetBrains Mono" font-size="11" fill="#6b80a0">SFT Model</text>
-            <path d="M130 70 L 170 70" stroke="#1e2d45" marker-end="url(#arrow)"/>
+            <rect x="10" y="45" width="120" height="50" rx="6" fill="none" stroke="#46618c"/>
+            <text x="25" y="75" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">SFT Model</text>
+            <path d="M130 70 L 170 70" stroke="#46618c" marker-end="url(#arrow)"/>
             <rect x="170" y="20" width="140" height="50" rx="6" fill="none" stroke="#3b82f6"/>
             <text x="185" y="50" font-family="JetBrains Mono" font-size="11" fill="#3b82f6">Reward Model</text>
-            <text x="180" y="10" font-family="JetBrains Mono" font-size="10" fill="#6b80a0">trained on human prefs</text>
-            <path d="M240 70 L 240 95" stroke="#1e2d45" marker-end="url(#arrow)"/>
+            <text x="180" y="10" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">trained on human prefs</text>
+            <path d="M240 70 L 240 95" stroke="#46618c" marker-end="url(#arrow)"/>
             <rect x="170" y="95" width="140" height="40" rx="6" fill="none" stroke="#f59e0b"/>
             <text x="205" y="120" font-family="JetBrains Mono" font-size="11" fill="#f59e0b">PPO Update</text>
-            <path d="M310 115 L 400 115 L 400 80" stroke="#1e2d45" marker-end="url(#arrow)" fill="none"/>
+            <path d="M310 115 L 400 115 L 400 80" stroke="#46618c" marker-end="url(#arrow)" fill="none"/>
             <rect x="350" y="45" width="120" height="35" rx="6" fill="none" stroke="#10b981"/>
             <text x="365" y="67" font-family="JetBrains Mono" font-size="11" fill="#10b981">Aligned LLM</text>
-            <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#1e2d45"/></marker></defs>
+            <defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="none" stroke="#46618c"/></marker></defs>
           </svg>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">Policy over-optimizes against the reward model</div><div>Reward hacking &mdash; scores rise while real quality falls; the KL penalty against the SFT model is the standard brake</div>
+          <div class="tf-row-failure tf-situation">Preference data rewards confident-sounding answers</div><div>Sycophancy and polished hallucination &mdash; confidence gets reinforced regardless of accuracy</div>
+          <div class="tf-row-tradeoff tf-situation">RLHF vs DPO</div><div>RLHF: on-policy + reusable reward model, but complex/unstable. DPO: simple and stable, but offline-only, no explicit reward model</div>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
@@ -299,6 +322,11 @@
           <tr><td>QLoRA</td><td>~0.1-1%</td><td>low (4-bit base)</td><td>single-GPU fine-tuning of large models</td></tr>
           <tr><td>Prefix tuning</td><td>&lt;0.1%</td><td>lowest</td><td>lightweight task steering</td></tr>
         </table>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
+          <div class="tf-row-failure tf-situation">LoRA rank too low for a large distribution shift</div><div>Update capacity saturates &mdash; model plateaus below task requirements no matter how long you train</div>
+          <div class="tf-row-failure tf-situation">Aggressive full fine-tune on narrow data</div><div>Catastrophic forgetting &mdash; general capabilities regress while the narrow task improves</div>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"When would you choose full fine-tuning over LoRA despite the cost?"</div>
@@ -328,6 +356,8 @@
         <div class="cheat-term"><dt>QLoRA</dt><dd>LoRA applied on top of a 4-bit quantized frozen base model.</dd></div>
         <div class="cheat-term"><dt>Reward hacking</dt><dd>Policy exploits reward model flaws instead of genuinely improving.</dd></div>
         <div class="cheat-term"><dt>Intrinsic rank</dt><dd>Low-dimensional subspace where useful fine-tuning updates live.</dd></div>
+        <div class="cheat-term"><dt>DPO</dt><dd>Optimizes preference pairs directly via closed-form loss; no reward model or PPO.</dd></div>
+        <div class="cheat-term"><dt>GQA</dt><dd>Groups of query heads share K/V heads, shrinking KV cache 4-8x.</dd></div>
       </dl>
     </details>
 
@@ -348,7 +378,7 @@
   container.innerHTML = SIM_QUESTIONS.map(item => `
     <div class="sim-card">
       <div class="sim-q-row">
-        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
         <button class="sim-show-btn">Show Answer</button>
       </div>
       <div class="sim-answer">${item.a}</div>

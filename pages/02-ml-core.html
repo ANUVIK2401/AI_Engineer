@@ -20,6 +20,10 @@
         <span class="tag">Foundational</span>
         <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
       </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
+      </div>
       <p class="why-line">Interviewers ask about this because classic ML questions filter for people who understand tradeoffs (bias/variance, precision/recall) rather than people who only know how to call .fit() on a deep net.</p>
     </div>
 
@@ -37,19 +41,30 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 500 200" xmlns="http://www.w3.org/2000/svg">
-            <rect x="20" y="20" width="140" height="160" rx="8" fill="none" stroke="#1e2d45"/>
+          <svg viewBox="0 0 500 230" xmlns="http://www.w3.org/2000/svg">
+            <rect x="20" y="20" width="140" height="160" rx="8" fill="none" stroke="#46618c"/>
             <text x="35" y="45" font-family="JetBrains Mono" font-size="11" fill="#3b82f6">SUPERVISED</text>
-            <text x="35" y="70" font-family="Inter" font-size="11" fill="#6b80a0">Labeled data</text>
-            <text x="35" y="88" font-family="Inter" font-size="11" fill="#6b80a0">→ predict label</text>
-            <rect x="180" y="20" width="140" height="160" rx="8" fill="none" stroke="#1e2d45"/>
+            <text x="35" y="70" font-family="Inter" font-size="11" fill="#7b8fb0">Labeled data</text>
+            <text x="35" y="88" font-family="Inter" font-size="11" fill="#7b8fb0">→ predict label</text>
+            <text x="35" y="120" font-family="Inter" font-size="10" fill="#7b8fb0">regression, trees,</text>
+            <text x="35" y="135" font-family="Inter" font-size="10" fill="#7b8fb0">fine-tuning (SFT)</text>
+            <text x="35" y="165" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">SIGNAL: y per x</text>
+            <rect x="180" y="20" width="140" height="160" rx="8" fill="none" stroke="#46618c"/>
             <text x="195" y="45" font-family="JetBrains Mono" font-size="11" fill="#10b981">UNSUPERVISED</text>
-            <text x="195" y="70" font-family="Inter" font-size="11" fill="#6b80a0">Unlabeled data</text>
-            <text x="195" y="88" font-family="Inter" font-size="11" fill="#6b80a0">→ find structure</text>
-            <rect x="340" y="20" width="140" height="160" rx="8" fill="none" stroke="#1e2d45"/>
+            <text x="195" y="70" font-family="Inter" font-size="11" fill="#7b8fb0">Unlabeled data</text>
+            <text x="195" y="88" font-family="Inter" font-size="11" fill="#7b8fb0">→ find structure</text>
+            <text x="195" y="120" font-family="Inter" font-size="10" fill="#7b8fb0">k-means, PCA,</text>
+            <text x="195" y="135" font-family="Inter" font-size="10" fill="#7b8fb0">LLM pretraining*</text>
+            <text x="195" y="165" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">SIGNAL: none</text>
+            <rect x="340" y="20" width="140" height="160" rx="8" fill="none" stroke="#46618c"/>
             <text x="355" y="45" font-family="JetBrains Mono" font-size="11" fill="#f59e0b">REINFORCEMENT</text>
-            <text x="355" y="70" font-family="Inter" font-size="11" fill="#6b80a0">Reward signal</text>
-            <text x="355" y="88" font-family="Inter" font-size="11" fill="#6b80a0">→ learn policy</text>
+            <text x="355" y="70" font-family="Inter" font-size="11" fill="#7b8fb0">Reward signal</text>
+            <text x="355" y="88" font-family="Inter" font-size="11" fill="#7b8fb0">→ learn policy</text>
+            <text x="355" y="120" font-family="Inter" font-size="10" fill="#7b8fb0">Q-learning, PPO,</text>
+            <text x="355" y="135" font-family="Inter" font-size="10" fill="#7b8fb0">RLHF's RL stage</text>
+            <text x="355" y="165" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">SIGNAL: delayed R</text>
+            <text x="20" y="208" font-family="Inter" font-size="10" fill="#7b8fb0">*self-supervised: labels manufactured from the data itself.</text>
+            <text x="20" y="222" font-family="Inter" font-size="10" fill="#7b8fb0">RLHF spans all three — supervised reward model, RL stage, self-supervised base.</text>
           </svg>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -72,7 +87,7 @@
           <ul>
             <li>Linear regression models a continuous target as a weighted sum of input features plus bias, fit by minimizing squared error between predictions and actual values.</li>
             <li>It exists as the simplest possible model connecting inputs to a continuous output, giving a baseline every other regression method is measured against.</li>
-            <li class="insight"><strong>The insight:</strong> the normal equation gives an exact closed-form solution, but it's rarely used in practice because inverting X^TX is O(n³) and numerically unstable for high-dimensional or collinear features — which is exactly why gradient descent is preferred at scale.</li>
+            <li class="insight"><strong>The insight:</strong> the normal equation gives an exact closed-form solution, but it's rarely used in practice because inverting X^TX is O(d³) in the number of features (plus O(nd²) just to form X^TX) and numerically unstable for collinear features — which is exactly why gradient descent is preferred at scale.</li>
           </ul>
         </div>
         <div class="card-visual">
@@ -82,7 +97,7 @@
         <div class="interview-content">
           <div class="interview-q">"When would the normal equation fail or be a bad choice?"</div>
           <div class="interview-weak">"When there's too much data."</div>
-          <div class="interview-strong">It fails numerically when X^TX is singular or near-singular — which happens with perfectly or highly collinear features — because the matrix inverse becomes unstable or undefined. It's also a bad choice computationally at scale: the O(n³) matrix inversion becomes intractable well before gradient-based methods would struggle, and gradient descent handles regularization (ridge/lasso) and streaming data naturally where the closed form doesn't.</div>
+          <div class="interview-strong">It fails numerically when X^TX is singular or near-singular — which happens with perfectly or highly collinear features — because the matrix inverse becomes unstable or undefined. It's also a bad choice computationally at scale: the O(d³) inversion cost in the feature dimension — plus the O(nd²) cost of forming X^TX over all samples — becomes intractable well before gradient-based methods would struggle, and gradient descent handles regularization (ridge/lasso) and streaming data naturally where the closed form doesn't.</div>
           <div class="interview-followup">Follow-up: <strong>"How does ridge regression fix the collinearity problem mathematically?"</strong></div>
         </div>
       </div>
@@ -158,10 +173,10 @@
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
-          <div class="interview-q">"Explain the kernel trick in one or two sentences."</div>
-          <div class="interview-weak">"It maps data to higher dimensions so it's separable."</div>
-          <div class="interview-strong">The kernel trick replaces the need to explicitly compute a high-dimensional (or infinite-dimensional) feature mapping with a kernel function that directly computes the dot product two points would have had in that space, without ever materializing the transformed vectors. This makes otherwise computationally infeasible feature spaces — like the RBF kernel's implicit infinite-dimensional mapping — usable, since the SVM optimization only ever needs pairwise dot products, never the coordinates themselves.</div>
-          <div class="interview-followup">Follow-up: <strong>"Why don't SVMs scale well to very large datasets?"</strong></div>
+          <div class="interview-q">"You have 10M labeled samples. Why is a kernel SVM a bad choice here, and what would you use instead?"</div>
+          <div class="interview-weak">"SVMs are old — I'd just use a neural network."</div>
+          <div class="interview-strong">Kernel SVMs need the pairwise kernel matrix, which is O(n²) in memory and worse in training time — at 10M samples that's structurally infeasible, not just slow, and prediction cost also grows with the number of support vectors, which itself grows with n. For tabular data at that scale I'd reach for gradient-boosted trees (near-SOTA on tabular, trains in minutes, handles mixed feature types), or a linear model with explicit feature crosses if latency matters most; a neural net only if the data has structure (images, text, sequences) that justifies it. The kernel trick itself is still worth understanding — it's the same "compute similarity without materializing the feature space" idea that shows up in attention approximations and kernel regression — but the algorithm's scaling wall is exactly why you rarely see SVMs in production anymore.</div>
+          <div class="interview-followup">Follow-up: <strong>"Where does the kernel-trick idea reappear in modern deep learning?"</strong></div>
         </div>
       </div>
     </div>
@@ -240,7 +255,7 @@
         <div class="cheat-term"><dt>AUC-ROC</dt><dd>Area under the true-positive vs. false-positive rate curve.</dd></div>
         <div class="cheat-term"><dt>K-fold CV</dt><dd>Rotate K train/validation splits and average results.</dd></div>
         <div class="cheat-term"><dt>Cross-entropy loss</dt><dd>Negative log-likelihood under a Bernoulli/categorical model.</dd></div>
-        <div class="cheat-term"><dt>Normal equation</dt><dd>Closed-form OLS solution; O(n³), numerically unstable at scale.</dd></div>
+        <div class="cheat-term"><dt>Normal equation</dt><dd>Closed-form OLS solution; O(d³) in features, numerically unstable at scale.</dd></div>
       </dl>
     </details>
 
@@ -261,7 +276,7 @@
   container.innerHTML = SIM_QUESTIONS.map(item => `
     <div class="sim-card">
       <div class="sim-q-row">
-        <div class="sim-q-text">${item.q} <span class="badge badge-advanced" style="margin-left:6px">[${item.level}]</span></div>
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
         <button class="sim-show-btn">Show Answer</button>
       </div>
       <div class="sim-answer">${item.a}</div>
