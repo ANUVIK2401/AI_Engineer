@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="A focused, visual learning path for AI engineering concepts, tradeoffs, and interview practice.">
 <title>AI Eng Prep — Learn, Recall, Explain</title>
-<link rel="stylesheet" href="shared/styles.css?v=20260831d">
+<link rel="stylesheet" href="shared/styles.css?v=20260831f">
 </head>
 <body class="home-page">
 <div class="app-shell">
@@ -15,14 +15,37 @@
     <header class="topbar">
       <a class="topbar-brand" href="index.html" aria-label="AI Eng Prep home">AI Eng <span>Prep</span></a>
       <nav class="topbar-mode-nav" aria-label="Homepage sections">
-        <a class="active" href="#modules-title" aria-current="location">Learn</a>
+        <a class="active" href="#knowledge-map" aria-current="location">Map</a>
+        <a href="#modules-title">Learn</a>
         <a href="#quickfire-title">Recall</a>
-        <a href="#knowledge-map">Map</a>
       </nav>
       <div class="topbar-actions">
         <div class="topbar-counter"><strong id="modules-complete-count">0</strong> / 8 modules complete</div>
       </div>
     </header>
+
+    <section class="knowledge-map-dock" id="knowledge-map" aria-labelledby="knowledge-map-title">
+      <div class="knowledge-map-dock-head">
+        <div>
+          <span class="section-kicker">Your learning map</span>
+          <h2 id="knowledge-map-title">See the whole path at a glance</h2>
+        </div>
+        <p>Eight connected systems, from first principles to reliable production AI.</p>
+      </div>
+      <div class="knowledge-map-preview" id="knowledge-map-preview" aria-label="Eight-module knowledge map"></div>
+      <details class="knowledge-map-panel">
+        <summary>
+          <span><span class="section-kicker">70 connected topics</span><strong>Open the detailed knowledge map</strong></span>
+          <span class="summary-action"><span id="knowledge-topic-count">70</span> topics <span aria-hidden="true">＋</span></span>
+        </summary>
+        <div class="mindmap-wrap"><svg id="mindmap" role="img" aria-label="Interactive map of all modules and topics"></svg></div>
+        <div class="mindmap-legend">
+          <span><span class="dot dot-read"></span>READ</span>
+          <span><span class="dot dot-unread"></span>UNREAD</span>
+          <span>SELECT A TOPIC TO OPEN IT</span>
+        </div>
+      </details>
+    </section>
 
     <section class="home-hero">
       <div class="hero-copy">
@@ -72,24 +95,11 @@
       <div id="quickfire-container"></div>
     </section>
 
-    <details class="knowledge-map-panel" id="knowledge-map">
-      <summary>
-        <span><span class="section-kicker">Explore freely</span><strong>Open the full knowledge map</strong></span>
-        <span class="summary-action"><span id="knowledge-topic-count">70</span> connected topics <span aria-hidden="true">＋</span></span>
-      </summary>
-      <div class="mindmap-wrap"><svg id="mindmap" role="img" aria-label="Interactive map of all modules and topics"></svg></div>
-      <div class="mindmap-legend">
-        <span><span class="dot dot-read"></span>READ</span>
-        <span><span class="dot dot-unread"></span>UNREAD</span>
-        <span>SELECT A TOPIC TO OPEN IT</span>
-      </div>
-    </details>
-
   </div>
   </div>
 </div>
 
-<script src="shared/nav.js?v=20260831d"></script>
+<script src="shared/nav.js?v=20260831f"></script>
 <script>
   const MODULE_META = [
     { descriptor: 'Build first-principles intuition for the math underneath AI.', badge: 'START HERE', time: '45 min', bestFor: 'Best for building intuition', outcomes: ['Explain the hierarchy cleanly', 'Connect probability to LLMs', 'Reason from gradients, not buzzwords'] },
@@ -221,6 +231,20 @@
 
   function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
+  function renderKnowledgeMapPreview() {
+    const preview = document.getElementById('knowledge-map-preview');
+    preview.innerHTML = NAV_MODULES.map(module => {
+      const completed = getModuleCompletedCount(module.slug);
+      const percent = Math.round((completed / module.topics) * 100);
+      return `
+        <a class="knowledge-node" href="${module.path}" aria-label="Open ${module.label}: ${completed} of ${module.topics} topics complete">
+          <span class="knowledge-node-num">${module.id}</span>
+          <span class="knowledge-node-copy"><strong>${esc(module.label)}</strong><small>${completed}/${module.topics} topics</small></span>
+          <span class="knowledge-node-progress" aria-hidden="true"><i style="width:${percent}%"></i></span>
+        </a>`;
+    }).join('');
+  }
+
   function renderHomeProgress() {
     const progress = getOverallProgress();
     const next = NAV_MODULES.find(m => getModuleCompletedCount(m.slug) < m.topics) || NAV_MODULES[0];
@@ -242,6 +266,11 @@
     const sections = links
       .map(link => document.querySelector(link.getAttribute('href')))
       .filter(Boolean);
+    const orderedSections = [...sections].sort((a, b) => {
+      const aTop = a.getBoundingClientRect().top + window.scrollY;
+      const bTop = b.getBoundingClientRect().top + window.scrollY;
+      return aTop - bTop;
+    });
 
     const selectLink = id => {
       links.forEach(link => {
@@ -256,12 +285,12 @@
     const updateForScroll = () => {
       const nearPageEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8;
       if (nearPageEnd) {
-        selectLink(sections[sections.length - 1].id);
+        selectLink(orderedSections[orderedSections.length - 1].id);
         updateQueued = false;
         return;
       }
       const marker = window.scrollY + 120;
-      const activeSection = sections.reduce((selected, section) => {
+      const activeSection = orderedSections.reduce((selected, section) => {
         const sectionTop = section.getBoundingClientRect().top + window.scrollY;
         return sectionTop <= marker ? section : selected;
       }, sections[0]);
@@ -345,6 +374,7 @@
   }
 
   renderModuleGrid();
+  renderKnowledgeMapPreview();
   renderMindmap();
   renderQuickFire();
   renderHomeProgress();

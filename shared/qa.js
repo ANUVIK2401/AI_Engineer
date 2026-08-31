@@ -267,7 +267,8 @@ function buildQANav() {
     return `
       <li>
         <a href="${base}pages/interview/${s.id}-${s.slug}.html"
-           class="${current && current.slug === s.slug ? 'active' : ''}">
+           class="${current && current.slug === s.slug ? 'active' : ''}"
+           ${current && current.slug === s.slug ? 'aria-current="page"' : ''}>
           <span class="nav-num">${s.id}</span>
           <span class="nav-label">${s.title}</span>
           <span class="nav-count">${s.count}</span>
@@ -284,9 +285,36 @@ function buildQANav() {
     </nav>`;
 }
 
+function buildQAMobileNav() {
+  const base = qaBase();
+  const current = QA_SECTIONS.find(section => location.pathname.includes(section.slug));
+  const currentIndex = current ? QA_SECTIONS.findIndex(section => section.slug === current.slug) : -1;
+  const previous = currentIndex > 0 ? QA_SECTIONS[currentIndex - 1] : null;
+  const next = currentIndex >= 0 && currentIndex < QA_SECTIONS.length - 1 ? QA_SECTIONS[currentIndex + 1] : null;
+
+  return `
+    <nav class="qa-mobile-nav" aria-label="Interview question navigation">
+      <a href="${base}interview.html" class="${current ? '' : 'active'}"
+         aria-label="Open question bank"${current ? '' : ' aria-current="page"'}>Bank</a>
+      ${previous ? `<a href="${base}pages/interview/${previous.page}" aria-label="Previous set: ${previous.title}">← ${previous.id}</a>` : '<span aria-hidden="true">—</span>'}
+      ${current ? `<span class="qa-mobile-current" aria-current="page">${current.id} · ${current.title}</span>` : '<span class="qa-mobile-current">Choose a question set</span>'}
+      ${next ? `<a href="${base}pages/interview/${next.page}" aria-label="Next set: ${next.title}">${next.id} →</a>` : '<span aria-hidden="true">—</span>'}
+    </nav>`;
+}
+
 function injectQANav() {
   const shell = document.querySelector('.app-shell');
-  if (shell) shell.insertAdjacentHTML('afterbegin', buildQANav());
+  if (!shell) return;
+  const main = shell.querySelector('.main');
+  if (main) {
+    main.id = main.id || 'main-content';
+    main.setAttribute('role', 'main');
+  }
+  if (!document.querySelector('.skip-link')) {
+    document.body.insertAdjacentHTML('afterbegin', '<a class="skip-link" href="#main-content">Skip to main content</a>');
+  }
+  shell.insertAdjacentHTML('afterbegin', buildQANav());
+  document.body.insertAdjacentHTML('beforeend', buildQAMobileNav());
 }
 
 document.addEventListener('DOMContentLoaded', () => {

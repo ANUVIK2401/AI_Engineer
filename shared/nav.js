@@ -196,6 +196,14 @@ function buildBottomNav() {
 function injectNav() {
   const shell = document.querySelector('.app-shell');
   if (!shell) return;
+  const main = shell.querySelector('.main');
+  if (main) {
+    main.id = main.id || 'main-content';
+    main.setAttribute('role', 'main');
+  }
+  if (!document.querySelector('.skip-link')) {
+    document.body.insertAdjacentHTML('afterbegin', '<a class="skip-link" href="#main-content">Skip to main content</a>');
+  }
   shell.insertAdjacentHTML('afterbegin', buildSidebar());
   document.body.insertAdjacentHTML('beforeend', buildBottomNav());
 }

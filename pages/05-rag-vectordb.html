@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>05 · RAG & Vector DBs — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260831d">
+<link rel="stylesheet" href="../shared/styles.css?v=20260831f">
 </head>
 <body>
 <div class="app-shell">
@@ -350,7 +350,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260831d"></script>
+<script src="../shared/nav.js?v=20260831f"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Design a RAG evaluation pipeline that would catch a silent regression after swapping to a cheaper embedding model.', a: 'I\'d maintain a fixed golden set of queries with known-correct source chunks and answers, run it against both embedding models, and compare context recall/precision before deploying the swap — this catches retrieval-stage regressions the aggregate MTEB score wouldn\'t reveal for our specific data distribution. I\'d also run it as a CI-style gate, not a one-time check, since embedding models and vector index configs can regress silently with any pipeline change. Critically, I\'d separate retrieval metrics from generation metrics in this suite, because a cheaper embedding model could hurt recall while faithfulness stays high (the model just answers well with worse or fewer chunks) — muddying the two would hide exactly the regression I\'m trying to catch.', level: 'Senior' },

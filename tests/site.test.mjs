@@ -12,10 +12,13 @@ test('home page prioritizes modules, a compact learning loop, and practice', asy
   assert.match(html, /class="hero-study-loop"/);
   assert.match(html, /class="topbar-mode-nav"/);
   assert.match(html, /function initHomeSectionNav\(/);
-  assert.match(html, /aria-current="location">Learn/);
+  assert.match(html, /aria-current="location">Map/);
   assert.match(html, /id="module-grid"/);
   assert.match(html, /id="quickfire-container"/);
   assert.match(html, /<details class="knowledge-map-panel"/);
+  assert.match(html, /id="knowledge-map-preview"/);
+  assert.match(html, /function renderKnowledgeMapPreview\(/);
+  assert.ok(html.indexOf('id="knowledge-map"') < html.indexOf('class="home-hero"'));
   assert.doesNotMatch(html, /class="learning-path"/);
 });
 
@@ -45,6 +48,52 @@ test('mobile navigation exposes meaningful destinations and current page state',
   assert.match(nav, /aria-label="Open \$\{m\.label\} module"/);
   assert.match(nav, /m\.slug === current \? ' aria-current="page"' : ''/);
   assert.match(nav, /homeActive \? ' aria-current="page"' : ''/);
+});
+
+test('tablet layouts switch to a full-width reading surface before content becomes cramped', async () => {
+  const css = await read('shared/styles.css');
+
+  assert.match(css, /@media \(max-width: 899px\)/);
+  assert.match(css, /\.main > :not\(\.main-inner\)/);
+  assert.match(css, /\.qa-mobile-nav/);
+  assert.match(css, /min-height: 44px/);
+});
+
+test('interview pages keep navigation available when the desktop sidebar collapses', async () => {
+  const qa = await read('shared/qa.js');
+
+  assert.match(qa, /function buildQAMobileNav\(/);
+  assert.match(qa, /class="qa-mobile-nav"/);
+  assert.match(qa, /aria-current="page"/);
+  assert.match(qa, /role', 'main'/);
+});
+
+test('every page shares one responsive stylesheet version and a viewport contract', async () => {
+  const pagePaths = [
+    'index.html',
+    'interview.html',
+    ...Array.from({ length: 8 }, (_, index) => `pages/0${index + 1}-${[
+      'foundations', 'ml-core', 'deep-learning', 'transformers-llms',
+      'rag-vectordb', 'agents-langchain', 'inference-optimization', 'mlops-production'
+    ][index]}.html`),
+    ...[
+      '01-llm-fundamentals', '02-prompt-engineering', '03-rag', '04-vector-db',
+      '05-agents', '06-fine-tuning', '07-system-design', '08-llmops',
+      '09-evaluation', '10-safety-ethics', '11-multimodal', '12-infrastructure',
+      '13-coding', '14-behavioral'
+    ].map(name => `pages/interview/${name}.html`),
+  ];
+  const versions = new Set();
+
+  for (const pagePath of pagePaths) {
+    const html = await read(pagePath);
+    assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1\.0">/, pagePath);
+    const version = html.match(/shared\/styles\.css\?v=([^"']+)/)?.[1];
+    assert.ok(version, `${pagePath} must load the shared stylesheet`);
+    versions.add(version);
+  }
+
+  assert.equal(versions.size, 1);
 });
 
 test('shared module experience includes scan, summary, and focus helpers', async () => {
