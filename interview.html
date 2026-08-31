@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Q&amp;A — 487 Questions | AI Eng Prep</title>
+<meta name="description" content="487 AI engineering interview questions with detailed answers across 14 topics — LLMs, RAG, agents, system design, LLMOps, evaluation, and safety.">
+<link rel="stylesheet" href="shared/styles.css">
+<style>
+  .qa-hero-stats { display:flex; gap:28px; flex-wrap:wrap; margin:18px 0 4px; }
+  .qa-stat b { display:block; font-family:var(--font-display); font-size:26px; color:var(--accent); line-height:1.1; }
+  .qa-stat span { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); letter-spacing:0.05em; text-transform:uppercase; }
+  #bookmark-list .qa-sec-card { margin-bottom:8px; }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="topbar">
+      <div class="topbar-brand">AI Eng <span>Prep</span></div>
+      <div class="topbar-counter"><strong id="qa-done-total">0</strong> / 487 reviewed</div>
+    </div>
+
+    <section class="page-hero">
+      <a href="index.html" class="back-link">← Concept modules</a>
+      <h1>Interview Question Bank</h1>
+      <p class="subtext">487 questions with answers written for the follow-up, not the first response — mechanism, tradeoff, and the failure mode a competent candidate misses.</p>
+      <div class="qa-hero-stats">
+        <div class="qa-stat"><b>487</b><span>Questions</span></div>
+        <div class="qa-stat"><b>14</b><span>Topics</span></div>
+        <div class="qa-stat"><b id="qa-saved-total">0</b><span>Bookmarked</span></div>
+        <div class="qa-stat"><b id="qa-pct">0%</b><span>Reviewed</span></div>
+      </div>
+      <div class="qa-progress-row" style="margin-top:14px">
+        <div class="qa-progress-track"><div id="qa-total-bar"></div></div>
+      </div>
+    </section>
+
+    <div class="section-label" id="bookmarks" style="margin-top:0">Bookmarked</div>
+    <div id="bookmark-list"></div>
+
+    <div class="section-label">Question Sets</div>
+    <div class="qa-grid" id="qa-grid"></div>
+
+  </div>
+</div>
+
+<script src="shared/qa.js"></script>
+<script>
+  function renderGrid() {
+    document.getElementById('qa-grid').innerHTML = QA_SECTIONS.map(s => {
+      const done = qaDoneCount(s.slug);
+      const saved = qaBookmarkCount(s.slug);
+      const pct = Math.round((done / s.count) * 100);
+      return `
+        <a class="qa-sec-card" href="pages/interview/${s.page}">
+          <div class="qa-sec-top">
+            <span class="qa-sec-num">SET ${s.id}</span>
+            <span class="qa-sec-count">${s.count} Q${saved ? ' · ★' + saved : ''}</span>
+          </div>
+          <h3>${s.label}</h3>
+          <div class="descriptor">${s.blurb}</div>
+          <div class="qa-sec-bar"><div style="width:${pct}%"></div></div>
+        </a>`;
+    }).join('');
+  }
+
+  function renderBookmarks() {
+    const marks = qaAllBookmarks();
+    const wrap = document.getElementById('bookmark-list');
+    const label = document.getElementById('bookmarks');
+    if (!marks.length) {
+      label.hidden = true;
+      wrap.innerHTML = '';
+      return;
+    }
+    label.hidden = false;
+    const bySection = {};
+    marks.forEach(m => { (bySection[m.section.id] ||= { s: m.section, items: [] }).items.push(m.index); });
+    wrap.innerHTML = Object.values(bySection).map(({ s, items }) => `
+      <a class="qa-sec-card" href="pages/interview/${s.page}#q${items[0]}">
+        <div class="qa-sec-top">
+          <span class="qa-sec-num">SET ${s.id}</span>
+          <span class="qa-sec-count">★ ${items.length} saved</span>
+        </div>
+        <h3>${s.label}</h3>
+        <div class="descriptor">Jump to your saved questions in this set.</div>
+      </a>`).join('');
+  }
+
+  function renderTotals() {
+    const done = qaTotalDone();
+    const saved = qaAllBookmarks().length;
+    const pct = Math.round((done / QA_TOTAL) * 100);
+    document.getElementById('qa-done-total').textContent = done;
+    document.getElementById('qa-saved-total').textContent = saved;
+    document.getElementById('qa-pct').textContent = pct + '%';
+    document.getElementById('qa-total-bar').style.width = pct + '%';
+  }
+
+  renderGrid();
+  renderBookmarks();
+  renderTotals();
+</script>
+</body>
+</html>
