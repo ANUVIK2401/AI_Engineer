@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>08 · MLOps & Production — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260831b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260831d">
 </head>
 <body>
 <div class="app-shell">
@@ -332,7 +332,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260831b"></script>
+<script src="../shared/nav.js?v=20260831d"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Design a monitoring system for a production LLM-powered support chatbot. What would you track and why?', a: 'Beyond standard infra metrics (latency, error rate, uptime), I\'d track token usage per request (cost driver and a proxy for verbosity drift), retrieval quality signals if it\'s RAG-based (which chunks were retrieved, confidence/similarity scores), and explicit or implicit user feedback (thumbs up/down, whether the user had to rephrase or escalate to a human agent) as the closest available proxy for actual answer quality without manual review of every conversation. I\'d also sample a small percentage of conversations for periodic human or LLM-judge review specifically checking for hallucination and policy violations, since aggregate metrics like "average session length" can mask individual bad responses that a sampling-based qualitative review would catch. The key design principle is combining cheap, always-on proxy signals with more expensive but higher-fidelity sampled review, rather than relying on either alone.', level: 'Senior' },

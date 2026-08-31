@@ -130,6 +130,8 @@ function getModulesCompleteCount() {
 function buildSidebar() {
   const base = getBasePath();
   const current = getCurrentModuleSlug();
+  const homeActive = document.body.classList.contains('home-page');
+  const overall = getOverallProgress();
 
   const links = NAV_MODULES.map(m => {
     const done = getModuleCompletedCount(m.slug);
@@ -137,7 +139,7 @@ function buildSidebar() {
     const isActive = m.slug === current;
     return `
       <li>
-        <a href="${base}${m.path}" class="${isActive ? 'active' : ''}">
+        <a href="${base}${m.path}" class="${isActive ? 'active' : ''}"${isActive ? ' aria-current="page"' : ''}>
           <span class="nav-num">${m.id}</span>
           <span class="nav-label">${m.label}</span>
         </a>
@@ -147,9 +149,28 @@ function buildSidebar() {
   }).join('');
 
   return `
-    <nav class="sidebar" id="sidebar">
-      <a href="${base}index.html" class="sidebar-brand">AI Eng <span>Prep</span></a>
+    <nav class="sidebar" id="sidebar" aria-label="Learning navigation">
+      <div class="sidebar-top">
+        <a href="${base}index.html" class="sidebar-brand">AI Eng <span>Prep</span></a>
+        <span class="sidebar-status"><i></i> Learning workspace</span>
+      </div>
+      <a href="${base}index.html" class="sidebar-overview${homeActive ? ' active' : ''}"${homeActive ? ' aria-current="page"' : ''}>
+        <span class="nav-icon" aria-hidden="true">⌂</span>
+        <span><strong>Overview</strong><small>Your learning dashboard</small></span>
+      </a>
+      <div class="sidebar-section-label"><span>Curriculum</span><span>8 modules</span></div>
       <ul class="sidebar-nav">${links}</ul>
+      <div class="sidebar-footer">
+        <div class="sidebar-overall">
+          <span><strong>${overall.pct}%</strong> overall mastery</span>
+          <span>${overall.completed}/${overall.total}</span>
+          <div><i style="width:${overall.pct}%"></i></div>
+        </div>
+        <a class="sidebar-practice" href="${base}interview.html">
+          <span>Practice bank</span>
+          <strong>487 questions <span aria-hidden="true">↗</span></strong>
+        </a>
+      </div>
     </nav>
   `;
 }
@@ -160,19 +181,19 @@ function buildBottomNav() {
   const homeActive = !current;
 
   const links = NAV_MODULES.map(m => `
-    <a href="${base}${m.path}" class="${m.slug === current ? 'active' : ''}">${m.id}</a>
+    <a href="${base}${m.path}" class="${m.slug === current ? 'active' : ''}"
+       aria-label="Open ${m.label} module"${m.slug === current ? ' aria-current="page"' : ''}>${m.id}</a>
   `).join('');
 
   return `
     <nav class="bottom-nav" id="bottom-nav">
-      <a href="${base}index.html" class="${homeActive ? 'active' : ''}">HOME</a>
+      <a href="${base}index.html" class="${homeActive ? 'active' : ''}" aria-label="Open learning overview"${homeActive ? ' aria-current="page"' : ''}>HOME</a>
       ${links}
     </nav>
   `;
 }
 
 function injectNav() {
-  if (document.body.classList.contains('home-page')) return;
   const shell = document.querySelector('.app-shell');
   if (!shell) return;
   shell.insertAdjacentHTML('afterbegin', buildSidebar());

@@ -5,25 +5,46 @@ import { access, readFile } from 'node:fs/promises';
 const root = new URL('../', import.meta.url);
 const read = (path) => readFile(new URL(path, root), 'utf8');
 
-test('home page prioritizes a guided learning path and practice', async () => {
+test('home page prioritizes modules, a compact learning loop, and practice', async () => {
   const html = await read('index.html');
 
   assert.match(html, /id="continue-learning"/);
-  assert.match(html, /class="learning-path"/);
+  assert.match(html, /class="hero-study-loop"/);
+  assert.match(html, /class="topbar-mode-nav"/);
+  assert.match(html, /function initHomeSectionNav\(/);
+  assert.match(html, /aria-current="location">Learn/);
   assert.match(html, /id="module-grid"/);
   assert.match(html, /id="quickfire-container"/);
   assert.match(html, /<details class="knowledge-map-panel"/);
+  assert.doesNotMatch(html, /class="learning-path"/);
 });
 
-test('home page owns the full viewport without module navigation collisions', async () => {
-  const html = await read('index.html');
+test('home page keeps the shared desktop sidebar in its own layout column', async () => {
   const nav = await read('shared/nav.js');
   const css = await read('shared/styles.css');
 
-  assert.match(nav, /document\.body\.classList\.contains\('home-page'\)/);
-  assert.match(css, /\.home-page \.sidebar/);
-  assert.doesNotMatch(html, /class="daily-plan"/);
-  assert.doesNotMatch(html, /class="proof-grid"/);
+  assert.doesNotMatch(nav, /if \(document\.body\.classList\.contains\('home-page'\)\) return/);
+  assert.match(nav, /class="sidebar-overview\$\{homeActive \? ' active' : ''\}"/);
+  assert.match(nav, /class="sidebar-practice"/);
+  assert.match(css, /\.home-page \.app-shell \{ display: flex; \}/);
+  assert.match(css, /\.home-page \.main-inner/);
+});
+
+test('dark learning palette gives navigation, actions, and progress distinct roles', async () => {
+  const css = await read('shared/styles.css');
+
+  assert.match(css, /--black:/);
+  assert.match(css, /--deep-red:/);
+  assert.match(css, /--deep-blue:/);
+  assert.match(css, /--deep-green:/);
+});
+
+test('mobile navigation exposes meaningful destinations and current page state', async () => {
+  const nav = await read('shared/nav.js');
+
+  assert.match(nav, /aria-label="Open \$\{m\.label\} module"/);
+  assert.match(nav, /m\.slug === current \? ' aria-current="page"' : ''/);
+  assert.match(nav, /homeActive \? ' aria-current="page"' : ''/);
 });
 
 test('shared module experience includes scan, summary, and focus helpers', async () => {

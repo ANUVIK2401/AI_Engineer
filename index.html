@@ -5,30 +5,40 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="A focused, visual learning path for AI engineering concepts, tradeoffs, and interview practice.">
 <title>AI Eng Prep — Learn, Recall, Explain</title>
-<link rel="stylesheet" href="shared/styles.css?v=20260831b">
+<link rel="stylesheet" href="shared/styles.css?v=20260831d">
 </head>
 <body class="home-page">
 <div class="app-shell">
   <div class="main">
+  <div class="main-inner">
 
-    <div class="topbar">
-      <a class="topbar-brand" href="index.html">AI Eng <span>Prep</span></a>
+    <header class="topbar">
+      <a class="topbar-brand" href="index.html" aria-label="AI Eng Prep home">AI Eng <span>Prep</span></a>
+      <nav class="topbar-mode-nav" aria-label="Homepage sections">
+        <a class="active" href="#modules-title" aria-current="location">Learn</a>
+        <a href="#quickfire-title">Recall</a>
+        <a href="#knowledge-map">Map</a>
+      </nav>
       <div class="topbar-actions">
-        <a href="interview.html" class="text-link">Practice questions <span aria-hidden="true">↗</span></a>
         <div class="topbar-counter"><strong id="modules-complete-count">0</strong> / 8 modules complete</div>
       </div>
-    </div>
+    </header>
 
     <section class="home-hero">
       <div class="hero-copy">
-        <div class="eyebrow"><span></span> Learn it. Recall it. Explain it.</div>
-        <h1>Build AI engineering knowledge that <em>sticks.</em></h1>
-        <p class="subtext">Use one place to learn the concept, find the tradeoff, and rehearse the answer you would actually say in an interview or design review.</p>
+        <div class="eyebrow"><span></span> Your AI engineering learning desk</div>
+        <h1>Learn the system. <em>Explain it clearly.</em></h1>
+        <p class="subtext">Move from first principles to production tradeoffs with short study points, recall prompts, and answers you can use in a real interview.</p>
         <div class="hero-actions">
           <a class="button button-primary" id="continue-learning" href="pages/01-foundations.html">Start learning <span aria-hidden="true">→</span></a>
           <a class="button button-secondary" href="interview.html">Practice interview Q&amp;A</a>
         </div>
         <p class="continue-note" id="continue-note">Start with the fundamentals, then build toward production systems.</p>
+        <ol class="hero-study-loop" aria-label="Three-step learning loop">
+          <li><span>01</span><div><strong>Orient</strong><small>See the core idea</small></div></li>
+          <li><span>02</span><div><strong>Understand</strong><small>Find the tradeoff</small></div></li>
+          <li><span>03</span><div><strong>Retrieve</strong><small>Say it from memory</small></div></li>
+        </ol>
       </div>
       <aside class="today-card" aria-label="Your learning progress">
         <div class="today-label">Your learning pulse</div>
@@ -46,22 +56,10 @@
       </aside>
     </section>
 
-    <section class="learning-path" aria-labelledby="learning-path-title">
-      <div class="section-heading">
-        <div><span class="section-kicker">A simple learning loop</span><h2 id="learning-path-title">Turn reading into recall</h2></div>
-        <p>Every module now follows the same shape so your attention goes into learning, not re-orienting.</p>
-      </div>
-      <div class="learning-path-grid">
-        <article><span class="path-number">01</span><div><h3>Orient</h3><p>Start with the quick scan summary and what the topic unlocks.</p></div></article>
-        <article><span class="path-number">02</span><div><h3>Understand</h3><p>Use short point cards, visuals, and failure modes to make it concrete.</p></div></article>
-        <article><span class="path-number">03</span><div><h3>Retrieve</h3><p>Answer the interview prompt before revealing the strong response.</p></div></article>
-      </div>
-    </section>
-
     <section class="home-section" aria-labelledby="modules-title">
       <div class="section-heading">
-        <div><span class="section-kicker">Guided curriculum</span><h2 id="modules-title">Choose your next module</h2></div>
-        <p>Each module shows what you will be able to explain, who it is best for, and how far through it you already are.</p>
+        <div><span class="section-kicker">8-module path</span><h2 id="modules-title">Choose what to learn next</h2></div>
+        <p>Start at Foundations or jump directly to the system you need to understand today.</p>
       </div>
       <div class="module-grid" id="module-grid"></div>
     </section>
@@ -74,7 +72,7 @@
       <div id="quickfire-container"></div>
     </section>
 
-    <details class="knowledge-map-panel">
+    <details class="knowledge-map-panel" id="knowledge-map">
       <summary>
         <span><span class="section-kicker">Explore freely</span><strong>Open the full knowledge map</strong></span>
         <span class="summary-action"><span id="knowledge-topic-count">70</span> connected topics <span aria-hidden="true">＋</span></span>
@@ -88,9 +86,10 @@
     </details>
 
   </div>
+  </div>
 </div>
 
-<script src="shared/nav.js?v=20260831b"></script>
+<script src="shared/nav.js?v=20260831d"></script>
 <script>
   const MODULE_META = [
     { descriptor: 'Build first-principles intuition for the math underneath AI.', badge: 'START HERE', time: '45 min', bestFor: 'Best for building intuition', outcomes: ['Explain the hierarchy cleanly', 'Connect probability to LLMs', 'Reason from gradients, not buzzwords'] },
@@ -238,6 +237,49 @@
     document.getElementById('knowledge-topic-count').textContent = progress.total;
   }
 
+  function initHomeSectionNav() {
+    const links = [...document.querySelectorAll('.topbar-mode-nav a')];
+    const sections = links
+      .map(link => document.querySelector(link.getAttribute('href')))
+      .filter(Boolean);
+
+    const selectLink = id => {
+      links.forEach(link => {
+        const active = link.getAttribute('href') === `#${id}`;
+        link.classList.toggle('active', active);
+        if (active) link.setAttribute('aria-current', 'location');
+        else link.removeAttribute('aria-current');
+      });
+    };
+
+    let updateQueued = false;
+    const updateForScroll = () => {
+      const nearPageEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 8;
+      if (nearPageEnd) {
+        selectLink(sections[sections.length - 1].id);
+        updateQueued = false;
+        return;
+      }
+      const marker = window.scrollY + 120;
+      const activeSection = sections.reduce((selected, section) => {
+        const sectionTop = section.getBoundingClientRect().top + window.scrollY;
+        return sectionTop <= marker ? section : selected;
+      }, sections[0]);
+      selectLink(activeSection.id);
+      updateQueued = false;
+    };
+
+    window.addEventListener('scroll', () => {
+      if (updateQueued) return;
+      updateQueued = true;
+      requestAnimationFrame(updateForScroll);
+    }, { passive: true });
+    links.forEach(link => link.addEventListener('click', () => {
+      selectLink(link.getAttribute('href').slice(1));
+    }));
+    updateForScroll();
+  }
+
   function renderMindmap() {
     const W = 1240, ROW = 22, MOD_GAP = 34, PAD = 44;
     const CX = W / 2;
@@ -306,6 +348,7 @@
   renderMindmap();
   renderQuickFire();
   renderHomeProgress();
+  initHomeSectionNav();
 </script>
 </body>
 </html>
