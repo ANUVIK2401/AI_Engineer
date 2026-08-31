@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>03 · Deep Learning — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css">
+<link rel="stylesheet" href="../shared/styles.css?v=20260831b">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -280,7 +280,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js"></script>
+<script src="../shared/nav.js?v=20260831b"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Walk through what specifically causes vanishing gradients in a deep vanilla RNN.', a: 'Backpropagation through time multiplies the same recurrent weight matrix (and the derivative of the activation function) once per time step as the gradient flows backward through the sequence. If the largest eigenvalue of that weight matrix is less than 1, repeated multiplication shrinks the gradient exponentially with sequence length; if greater than 1, it explodes exponentially instead. This is why LSTMs introduce a separate cell state with an additive (not multiplicative) update path gated by the forget gate — additive updates don\'t suffer the same exponential decay, giving gradients a much more direct path back through time.', level: 'Senior' },

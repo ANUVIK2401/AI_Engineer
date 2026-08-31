@@ -3,64 +3,104 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI Eng Prep — Master AI Engineering Interviews</title>
-<link rel="stylesheet" href="shared/styles.css">
-<style>
-  .quickfire-item { margin-bottom: 14px; }
-</style>
+<meta name="description" content="A focused, visual learning path for AI engineering concepts, tradeoffs, and interview practice.">
+<title>AI Eng Prep — Learn, Recall, Explain</title>
+<link rel="stylesheet" href="shared/styles.css?v=20260831b">
 </head>
-<body>
+<body class="home-page">
 <div class="app-shell">
   <div class="main">
 
     <div class="topbar">
-      <div class="topbar-brand">AI Eng <span>Prep</span></div>
-      <a href="interview.html" class="tag" style="margin-left:auto;margin-right:14px">487 Interview Q&amp;A →</a>
-      <div class="topbar-counter"><strong id="modules-complete-count">0</strong> / 8 modules complete</div>
+      <a class="topbar-brand" href="index.html">AI Eng <span>Prep</span></a>
+      <div class="topbar-actions">
+        <a href="interview.html" class="text-link">Practice questions <span aria-hidden="true">↗</span></a>
+        <div class="topbar-counter"><strong id="modules-complete-count">0</strong> / 8 modules complete</div>
+      </div>
     </div>
 
-    <section class="page-hero">
-      <h1>Master AI Engineering Interviews</h1>
-      <p class="subtext">Concepts, tradeoffs, failure modes, and interview patterns — nothing else.</p>
+    <section class="home-hero">
+      <div class="hero-copy">
+        <div class="eyebrow"><span></span> Learn it. Recall it. Explain it.</div>
+        <h1>Build AI engineering knowledge that <em>sticks.</em></h1>
+        <p class="subtext">Use one place to learn the concept, find the tradeoff, and rehearse the answer you would actually say in an interview or design review.</p>
+        <div class="hero-actions">
+          <a class="button button-primary" id="continue-learning" href="pages/01-foundations.html">Start learning <span aria-hidden="true">→</span></a>
+          <a class="button button-secondary" href="interview.html">Practice interview Q&amp;A</a>
+        </div>
+        <p class="continue-note" id="continue-note">Start with the fundamentals, then build toward production systems.</p>
+      </div>
+      <aside class="today-card" aria-label="Your learning progress">
+        <div class="today-label">Your learning pulse</div>
+        <div class="pulse-row">
+          <div class="progress-orbit" id="overall-progress-orbit" style="--progress:0">
+            <div><strong id="overall-progress-pct">0%</strong><span>complete</span></div>
+          </div>
+          <div class="pulse-stats">
+            <div><strong id="topics-read-count">0</strong><span>topics understood</span></div>
+            <div><strong>487</strong><span>questions to practice</span></div>
+            <div><strong>8</strong><span>guided modules</span></div>
+          </div>
+        </div>
+        <div class="today-tip"><span aria-hidden="true">✦</span><p><strong>Best rhythm:</strong> learn one topic, explain it aloud, then test yourself.</p></div>
+      </aside>
     </section>
 
-    <a class="qa-sec-card" href="interview.html" style="margin-bottom:26px">
-      <div class="qa-sec-top">
-        <span class="qa-sec-num">INTERVIEW Q&amp;A</span>
-        <span class="qa-sec-count">487 questions · 14 sets</span>
+    <section class="learning-path" aria-labelledby="learning-path-title">
+      <div class="section-heading">
+        <div><span class="section-kicker">A simple learning loop</span><h2 id="learning-path-title">Turn reading into recall</h2></div>
+        <p>Every module now follows the same shape so your attention goes into learning, not re-orienting.</p>
       </div>
-      <h3>Interview Question Bank →</h3>
-      <div class="descriptor">Searchable Q&amp;A across LLMs, RAG, agents, system design, LLMOps, evaluation, safety, and behavioral rounds — with bookmarks and progress tracking.</div>
-    </a>
+      <div class="learning-path-grid">
+        <article><span class="path-number">01</span><div><h3>Orient</h3><p>Start with the quick scan summary and what the topic unlocks.</p></div></article>
+        <article><span class="path-number">02</span><div><h3>Understand</h3><p>Use short point cards, visuals, and failure modes to make it concrete.</p></div></article>
+        <article><span class="path-number">03</span><div><h3>Retrieve</h3><p>Answer the interview prompt before revealing the strong response.</p></div></article>
+      </div>
+    </section>
 
-    <div class="section-label" style="margin-top:0">Modules</div>
-    <div class="module-grid" id="module-grid"></div>
+    <section class="home-section" aria-labelledby="modules-title">
+      <div class="section-heading">
+        <div><span class="section-kicker">Guided curriculum</span><h2 id="modules-title">Choose your next module</h2></div>
+        <p>Each module shows what you will be able to explain, who it is best for, and how far through it you already are.</p>
+      </div>
+      <div class="module-grid" id="module-grid"></div>
+    </section>
 
-    <div class="section-label">Knowledge Map</div>
-    <div class="mindmap-wrap"><svg id="mindmap" role="img" aria-label="Interactive map of all modules and topics"></svg></div>
-    <div class="mindmap-legend">
-      <span><span class="dot dot-read"></span>READ</span>
-      <span><span class="dot dot-unread"></span>UNREAD</span>
-      <span>CLICK ANY TOPIC TO JUMP TO ITS CARD</span>
-    </div>
+    <section class="home-section practice-section" aria-labelledby="quickfire-title">
+      <div class="section-heading">
+        <div><span class="section-kicker">Active recall</span><h2 id="quickfire-title">Quick fire: five questions</h2></div>
+        <p>Try to answer from memory first. The uncomfortable pause is part of the learning, not a sign you are doing it wrong.</p>
+      </div>
+      <div id="quickfire-container"></div>
+    </section>
 
-    <div class="section-label">Quick Fire — 5 Random Questions</div>
-    <div id="quickfire-container"></div>
+    <details class="knowledge-map-panel">
+      <summary>
+        <span><span class="section-kicker">Explore freely</span><strong>Open the full knowledge map</strong></span>
+        <span class="summary-action"><span id="knowledge-topic-count">70</span> connected topics <span aria-hidden="true">＋</span></span>
+      </summary>
+      <div class="mindmap-wrap"><svg id="mindmap" role="img" aria-label="Interactive map of all modules and topics"></svg></div>
+      <div class="mindmap-legend">
+        <span><span class="dot dot-read"></span>READ</span>
+        <span><span class="dot dot-unread"></span>UNREAD</span>
+        <span>SELECT A TOPIC TO OPEN IT</span>
+      </div>
+    </details>
 
   </div>
 </div>
 
-<script src="shared/nav.js"></script>
+<script src="shared/nav.js?v=20260831b"></script>
 <script>
   const MODULE_META = [
-    { descriptor: 'Vectors, math, intuition', badge: 'CRITICAL' },
-    { descriptor: 'Classic algorithms, metrics', badge: 'FREQUENTLY ASKED' },
-    { descriptor: 'Networks, backprop, CNNs', badge: null },
-    { descriptor: 'Attention, tokens, RLHF', badge: 'FREQUENTLY ASKED' },
-    { descriptor: 'Retrieval, chunking, eval', badge: 'CRITICAL' },
-    { descriptor: 'Tool use, ReAct, memory', badge: null },
-    { descriptor: 'Quantization, serving, KV cache', badge: 'TRADEOFF' },
-    { descriptor: 'Lifecycle, drift, CI/CD', badge: null },
+    { descriptor: 'Build first-principles intuition for the math underneath AI.', badge: 'START HERE', time: '45 min', bestFor: 'Best for building intuition', outcomes: ['Explain the hierarchy cleanly', 'Connect probability to LLMs', 'Reason from gradients, not buzzwords'] },
+    { descriptor: 'Reason about algorithms, metrics, and model selection.', badge: 'CORE', time: '55 min', bestFor: 'Best for model choice questions', outcomes: ['Pick the right baseline', 'Defend the metric choice', 'Catch leakage and imbalance traps'] },
+    { descriptor: 'Understand networks, backpropagation, and learned features.', badge: null, time: '60 min', bestFor: 'Best for neural net fundamentals', outcomes: ['Trace the forward pass', 'Explain backprop simply', 'Talk about generalization tradeoffs'] },
+    { descriptor: 'Make attention, tokenization, alignment, and LLMs click.', badge: 'HIGH YIELD', time: '75 min', bestFor: 'Best for modern GenAI interviews', outcomes: ['Walk a transformer block', 'Explain tokenization and decoding', 'Connect RLHF and LoRA to the base model'] },
+    { descriptor: 'Design retrieval that stays useful, grounded, and measurable.', badge: 'HIGH YIELD', time: '70 min', bestFor: 'Best for RAG and search design', outcomes: ['Break down the RAG pipeline', 'Compare retrieval strategies', 'Name the main failure mode fast'] },
+    { descriptor: 'Build safer tool-using systems with memory and control loops.', badge: null, time: '70 min', bestFor: 'Best for agent system thinking', outcomes: ['Describe the agent loop', 'Separate tools, memory, and guardrails', 'Prevent looping and unsafe behavior'] },
+    { descriptor: 'Balance latency, throughput, memory, quality, and cost.', badge: 'TRADEOFFS', time: '65 min', bestFor: 'Best for serving and systems tradeoffs', outcomes: ['Name the bottleneck correctly', 'Compare batching and quantization', 'Tie infra decisions to user experience'] },
+    { descriptor: 'Ship, monitor, evaluate, and improve models in production.', badge: null, time: '70 min', bestFor: 'Best for production readiness', outcomes: ['Explain the release loop', 'Detect drift and regressions', 'Talk through observability and rollback'] },
   ];
 
   const QUICKFIRE_BANK = [
@@ -87,14 +127,18 @@
       return `
         <a class="module-card" href="${m.path}">
           <div class="module-card-top">
-            <span class="module-card-num">MODULE ${m.id}</span>
-            ${meta.badge ? `<span class="badge badge-${meta.badge === 'CRITICAL' ? 'critical' : meta.badge === 'TRADEOFF' ? 'tradeoff' : 'faq'}">[${meta.badge}]</span>` : ''}
+            <span class="module-card-num">${m.id}</span>
+            ${meta.badge ? `<span class="module-priority">${meta.badge}</span>` : '<span></span>'}
           </div>
-          <h3>${m.label}</h3>
-          <div class="descriptor">${meta.descriptor}</div>
+          <h3>${m.label}<span aria-hidden="true">↗</span></h3>
+          <p class="descriptor">${meta.descriptor}</p>
+          <div class="module-card-bestfor">${meta.bestFor}</div>
+          <ul class="module-card-points">
+            ${meta.outcomes.map(item => `<li>${item}</li>`).join('')}
+          </ul>
           <div class="module-card-meta">
             <span>${m.topics} topics</span>
-            <span>·</span>
+            <span>${meta.time}</span>
             <span>${done}/${m.topics} read</span>
           </div>
           <div class="module-card-progress"><div style="width:${pct}%"></div></div>
@@ -112,9 +156,9 @@
       <div class="sim-card quickfire-item">
         <div class="sim-q-row">
           <div class="sim-q-text">${item.q}</div>
-          <button class="sim-show-btn">Show Answer</button>
+          <button class="sim-show-btn" aria-expanded="false" aria-controls="quick-answer-${i + 1}">Show Answer</button>
         </div>
-        <div class="sim-answer">${item.a}</div>
+        <div class="sim-answer" id="quick-answer-${i + 1}" aria-hidden="true">${item.a.split(/(?<=[.!?])\s+(?=[A-Z])/).map(point => `<span>${point}</span>`).join('')}</div>
       </div>
     `).join('');
     initSimulator();
@@ -177,6 +221,22 @@
   };
 
   function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+
+  function renderHomeProgress() {
+    const progress = getOverallProgress();
+    const next = NAV_MODULES.find(m => getModuleCompletedCount(m.slug) < m.topics) || NAV_MODULES[0];
+    const topic = MINDMAP_TOPICS[next.slug].find(([id]) => !isTopicRead(next.slug, id)) || MINDMAP_TOPICS[next.slug][0];
+    const link = document.getElementById('continue-learning');
+    link.href = `${next.path}#${topic[0]}`;
+    link.firstChild.textContent = progress.completed ? 'Continue learning ' : 'Start learning ';
+    document.getElementById('continue-note').textContent = progress.completed
+      ? `Up next: ${topic[1]} in ${next.label}.`
+      : 'Start with the fundamentals, then build toward production systems.';
+    document.getElementById('topics-read-count').textContent = progress.completed;
+    document.getElementById('overall-progress-pct').textContent = `${progress.pct}%`;
+    document.getElementById('overall-progress-orbit').style.setProperty('--progress', progress.pct);
+    document.getElementById('knowledge-topic-count').textContent = progress.total;
+  }
 
   function renderMindmap() {
     const W = 1240, ROW = 22, MOD_GAP = 34, PAD = 44;
@@ -245,6 +305,7 @@
   renderModuleGrid();
   renderMindmap();
   renderQuickFire();
+  renderHomeProgress();
 </script>
 </body>
 </html>

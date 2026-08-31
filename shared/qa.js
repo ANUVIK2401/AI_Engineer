@@ -94,6 +94,46 @@ function qaBadgeClass(tag) {
   return 'badge-faq';
 }
 
+function stripAnswerHtml(answer) {
+  return answer.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function buildAnswerTakeaway(answer) {
+  const clean = stripAnswerHtml(answer);
+  const match = clean.match(/.+?[.!?](?=\s|$)/);
+  return match ? match[0].trim() : clean;
+}
+
+function splitAnswerPoints(answer) {
+  const paragraphPoints = answer
+    .split(/<br\s*\/?>(?:\s|&nbsp;)*<br\s*\/?>/i)
+    .map(point => point.trim())
+    .filter(Boolean);
+
+  if (paragraphPoints.length > 1) return paragraphPoints;
+
+  return answer
+    .split(/(?<=[.!?])\s+(?=[A-Z0-9(])/)
+    .map(point => point.trim())
+    .filter(Boolean);
+}
+
+function formatQAAnswer(answer) {
+  const points = splitAnswerPoints(answer);
+  const takeaway = buildAnswerTakeaway(answer);
+
+  return `
+    <div class="answer-takeaway">
+      <span>Key takeaway</span>
+      <p>${takeaway}</p>
+    </div>
+    ${points.map((point, index) => `
+    <div class="qa-answer-point">
+      <span class="qa-answer-index" aria-hidden="true">${String(index + 1).padStart(2, '0')}</span>
+      <div>${point}</div>
+    </div>`).join('')}`;
+}
+
 function renderQASection(section) {
   const list = document.getElementById('qa-list');
   if (!list) return;
@@ -116,10 +156,10 @@ function renderQASection(section) {
           <button class="qa-mark${marked ? ' is-on' : ''}" data-action="bookmark"
                   aria-label="Bookmark question" title="Bookmark">★</button>
         </div>
-        <button class="qa-toggle" data-action="toggle">
+        <button class="qa-toggle" data-action="toggle" aria-expanded="false" aria-controls="answer-${section.slug}-${i + 1}">
           <span class="chevron">▸</span> Show answer
         </button>
-        <div class="qa-a">${item.a}</div>
+        <div class="qa-a" id="answer-${section.slug}-${i + 1}" aria-hidden="true">${formatQAAnswer(item.a)}</div>
       </article>`;
   }).join('');
 
@@ -131,6 +171,9 @@ function renderQASection(section) {
 
     if (btn.dataset.action === 'toggle') {
       const open = card.classList.toggle('is-open');
+      const answer = card.querySelector('.qa-a');
+      btn.setAttribute('aria-expanded', String(open));
+      answer.setAttribute('aria-hidden', String(!open));
       btn.querySelector('.chevron').textContent = open ? '▾' : '▸';
       btn.childNodes[btn.childNodes.length - 1].textContent =
         open ? ' Hide answer' : ' Show answer';
@@ -199,7 +242,10 @@ function jumpToHash() {
   if (!el) return;
   el.classList.add('is-open');
   const btn = el.querySelector('.qa-toggle');
+  const answer = el.querySelector('.qa-a');
+  answer?.setAttribute('aria-hidden', 'false');
   if (btn) {
+    btn.setAttribute('aria-expanded', 'true');
     btn.querySelector('.chevron').textContent = '▾';
     btn.childNodes[btn.childNodes.length - 1].textContent = ' Hide answer';
   }

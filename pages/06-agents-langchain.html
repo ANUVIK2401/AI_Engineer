@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>06 · Agents & LangChain — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css">
+<link rel="stylesheet" href="../shared/styles.css?v=20260831b">
 </head>
 <body>
 <div class="app-shell">
@@ -357,7 +357,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js"></script>
+<script src="../shared/nav.js?v=20260831b"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Design a production agent for automated customer refund processing. What safeguards would you build in?', a: 'Given refunds involve real financial actions, I\'d classify the action tiers by risk — read-only actions (looking up order history) the agent handles autonomously, but the actual refund issuance requires either a hard dollar-amount threshold below which it can act autonomously, or human approval above it, implemented as an explicit approval step in the agent\'s control flow, not just a prompt instruction. I\'d also cap the agent to a strict, narrowly-scoped tool set (no general database write access, only a dedicated "issue_refund" function with server-side validation of amount and eligibility), log every tool call with full context for audit, and set a hard iteration limit with alerting if the agent loops without resolving — because for financial actions, a probabilistic model making an unrecoverable mistake is a business risk, not just a UX bug.', level: 'Senior' },
