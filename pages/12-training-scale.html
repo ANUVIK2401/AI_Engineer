@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>12 · Training &amp; Scale — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -315,7 +315,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903a"></script>
+<script src="../shared/nav.js?v=20260903b"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Walk me through the memory budget of fine-tuning a 7B model with AdamW in mixed precision.', a: 'Weights in fp32 master copy are 4 bytes per parameter, 28GB. Gradients are another 4 bytes, 28GB. AdamW keeps two moment estimates at fp32, 8 bytes, 56GB. That is 112GB of static state before a single activation, which is why a 7B model does not fine-tune on an 80GB card naively. Activations add on top and scale with batch size, sequence length, and depth — activation checkpointing trades roughly 30% extra compute to cut that term substantially. The standard mitigations are ZeRO or FSDP sharding of the optimizer state and gradients across ranks, 8-bit optimizers which quantize m and v block-wise, and LoRA, which removes the optimizer state for all but a tiny fraction of parameters and is why QLoRA fits a 70B model on a single node.', level: 'Senior' },

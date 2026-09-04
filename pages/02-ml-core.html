@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>02 · ML Core — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -262,7 +262,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903a"></script>
+<script src="../shared/nav.js?v=20260903b"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why does gradient boosting typically require more careful hyperparameter tuning than random forests?', a: 'Random forest trees are built independently and in parallel, and averaging naturally controls variance regardless of how deep individual trees are, so it\'s fairly robust to default settings. Gradient boosting builds trees sequentially, each correcting the previous ensemble\'s residual errors, which means it can overfit if the learning rate is too high or too many boosting rounds are run — there\'s no averaging effect to protect you. This is why boosting libraries expose learning rate, number of estimators, and early stopping as first-class controls that materially change outcomes.', level: 'Mid' },

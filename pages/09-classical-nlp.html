@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>09 · Classical NLP — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -365,7 +365,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903a"></script>
+<script src="../shared/nav.js?v=20260903b"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why is BM25 still used in production RAG systems when dense embeddings exist?', a: 'BM25 and dense retrieval fail on opposite inputs, so they compose well. Dense embeddings generalize semantically but blur rare tokens — product codes, error strings, names, and acronyms land in near-arbitrary regions of the vector space. BM25 does the reverse: it has no semantic generalization at all, but an exact match on a high-IDF term produces an overwhelming score. Hybrid retrieval fuses both rankings, usually with Reciprocal Rank Fusion since it requires no score calibration between two systems on incomparable scales.', level: 'Mid' },

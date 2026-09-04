@@ -215,3 +215,29 @@ test('recall-first reveal, topic filter, and keyboard stepping are wired up', as
   // printing must never hand the reader a page of blurred boxes
   assert.match(css, /@media print \{[\s\S]*?is-revealed\) \.card-core/);
 });
+
+test('sidebar scrolls its module list, not the whole rail', async () => {
+  const css = await read('shared/styles.css');
+
+  // 12 modules overflow a ~950px sidebar, so the rail must not scroll as one
+  // block — that hides the pinned mastery/practice footer and clips the list.
+  const sidebarRule = css.match(/\n\.sidebar \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(sidebarRule, '.sidebar rule must exist');
+  assert.match(sidebarRule, /overflow:\s*hidden/);
+  assert.doesNotMatch(sidebarRule, /overflow-y:\s*auto/);
+
+  const navRule = css.match(/\n\.sidebar-nav \{[\s\S]*?\n\}/)?.[0];
+  assert.ok(navRule, '.sidebar-nav rule must exist');
+  assert.match(navRule, /overflow-y:\s*auto/);
+  // without min-height:0 a flex child refuses to shrink below content height
+  // and scrolls nothing, which is the silent way this fix regresses
+  assert.match(navRule, /min-height:\s*0/);
+  assert.match(navRule, /flex:\s*1 1 auto/);
+
+  // chrome above and below the list must not be squeezed by 12 rows
+  for (const selector of ['.sidebar-top', '.sidebar-overview', '.sidebar-section-label', '.sidebar-footer']) {
+    const rule = css.match(new RegExp(`\\n\\${selector} \\{[\\s\\S]*?\\n?\\}`))?.[0];
+    assert.ok(rule, `${selector} rule must exist`);
+    assert.match(rule, /flex-shrink:\s*0/, `${selector} must not shrink`);
+  }
+});

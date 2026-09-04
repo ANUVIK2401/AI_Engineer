@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>01 · Foundations — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -269,7 +269,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903a"></script>
+<script src="../shared/nav.js?v=20260903b"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why is cosine similarity often preferred over raw dot product for comparing embeddings?', a: 'Cosine similarity normalizes by vector magnitude, so it measures pure directional alignment regardless of vector length — important because embedding norms can vary with token frequency or sentence length in ways unrelated to semantic content. Raw dot product conflates magnitude and direction, which can bias similarity rankings toward longer or more "confident" vectors. Most embedding models are trained with a contrastive objective that specifically optimizes cosine similarity, so using anything else at inference is inconsistent with training.', level: 'Mid' },

@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>10 · Unsupervised &amp; Applied ML — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -356,7 +356,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903a"></script>
+<script src="../shared/nav.js?v=20260903b"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why can k-means confidently produce a completely wrong clustering, and how would you detect that?', a: 'K-means minimizes within-cluster sum of squares, which implicitly assumes clusters are convex, roughly spherical, and similar in size and density. Given concentric rings or elongated manifolds it returns a low-inertia solution that cuts straight through the true structure — the objective is satisfied, the answer is wrong, and no internal metric complains. I would detect it by visualizing with UMAP, checking silhouette per cluster rather than the average since one bad cluster hides in the mean, and testing stability across bootstrap refits. If structure is non-convex I would switch to DBSCAN or spectral clustering rather than tuning k further.', level: 'Mid' },

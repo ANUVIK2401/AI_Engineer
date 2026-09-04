@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>11 · Generative Models &amp; Vision — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -326,7 +326,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903a"></script>
+<script src="../shared/nav.js?v=20260903b"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Explain the generative trilemma and place diffusion, GANs, and autoregressive models on it.', a: 'The trilemma is that high sample quality, broad mode coverage, and fast sampling are hard to get simultaneously. GANs deliver quality and single-pass speed but drop modes, because the adversarial objective only requires fooling a discriminator, which one convincing mode can do. Diffusion delivers quality and coverage — it is trained to model the whole distribution with a stable regression objective — but pays with many sequential denoising steps. Autoregressive models give exact likelihood and excellent coverage but sample token by token. Every major recent result is an attempt to buy the missing corner: consistency and distillation models give diffusion fast sampling, speculative decoding gives autoregressive models parallelism.', level: 'Senior' },
