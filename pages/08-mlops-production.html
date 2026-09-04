@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>08 · MLOps & Production — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 </head>
 <body>
 <div class="app-shell">
@@ -40,7 +40,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="The ML lifecycle from data and training through deployment back to monitoring" viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg">
             <rect x="10" y="45" width="80" height="45" rx="6" fill="none" stroke="#3d4a5c"/>
             <text x="22" y="72" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">Data</text>
             <path d="M90 67 L 115 67" stroke="#3d4a5c" marker-end="url(#a3)"/>
@@ -82,6 +82,21 @@
             <li class="insight"><strong>The insight:</strong> a model version without its associated training data snapshot and eval results is nearly useless for debugging — if a production issue traces back to a specific model version, you need to know exactly what data and code produced it to understand and fix the root cause, not just roll back to a different weights file.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 146" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A reproducible model version pins code, data, config and environment together">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">"WHICH MODEL IS IN PROD" NEEDS FOUR ANSWERS, NOT ONE</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="20" y="32" width="106" height="42" rx="5"/><rect x="138" y="32" width="106" height="42" rx="5"/>
+          <rect x="256" y="32" width="106" height="42" rx="5"/><rect x="374" y="32" width="120" height="42" rx="5"/>
+          </g>
+          <g font-family="JetBrains Mono" font-size="9" fill="#f0f4ff"><text x="34" y="50">code SHA</text><text x="152" y="50">data version</text><text x="270" y="50">hyperparams</text><text x="388" y="50">env / image</text></g>
+          <g font-family="Inter" font-size="8.5" fill="#7b8fb0"><text x="34" y="65">git commit</text><text x="152" y="65">DVC / snapshot</text><text x="270" y="65">config hash</text><text x="388" y="65">pinned deps + CUDA</text></g>
+          <g stroke="#3d4a5c"><line x1="73" y1="74" x2="240" y2="94"/><line x1="191" y1="74" x2="248" y2="94"/><line x1="309" y1="74" x2="264" y2="94"/><line x1="434" y1="74" x2="272" y2="94"/></g>
+          <rect x="182" y="96" width="150" height="26" rx="5" fill="rgba(16,185,129,.14)" stroke="#10b981"/>
+          <text x="196" y="113" font-family="JetBrains Mono" font-size="9" fill="#10b981">one reproducible run</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#e5484d">Miss any one and you cannot answer "why did last Tuesday's model behave differently" — the most common production question.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why is versioning a model harder than versioning a regular software artifact?"</div>
@@ -104,6 +119,23 @@
             <li>It exists to solve training/serving skew — the problem where features are computed differently (different code paths, different timing) between the offline training pipeline and the online serving path, causing subtle, hard-to-detect prediction quality issues.</li>
             <li class="insight"><strong>The insight:</strong> training/serving skew is one of the most common and hardest-to-detect production ML bugs precisely because it doesn't throw an error — the model just silently performs worse than its offline evaluation suggested, because the online features it's actually receiving are computed slightly differently than the ones it was trained and evaluated on.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A feature store shares one definition between batch training and online serving to prevent skew">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">TRAINING / SERVING SKEW — TWO IMPLEMENTATIONS DRIFT APART</text>
+          <rect x="20" y="30" width="180" height="34" rx="5" fill="none" stroke="#5b91bd"/>
+          <text x="32" y="45" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">TRAINING (batch)</text>
+          <text x="32" y="59" font-family="Inter" font-size="8.5" fill="#7b8fb0">SQL over the warehouse</text>
+          <rect x="300" y="30" width="180" height="34" rx="5" fill="none" stroke="#f9bd67"/>
+          <text x="312" y="45" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">SERVING (online)</text>
+          <text x="312" y="59" font-family="Inter" font-size="8.5" fill="#7b8fb0">hand-written Python in the API</text>
+          <text x="216" y="52" font-family="JetBrains Mono" font-size="14" fill="#e5484d">≠</text>
+          <rect x="130" y="82" width="240" height="30" rx="5" fill="rgba(16,185,129,.12)" stroke="#10b981"/>
+          <text x="144" y="101" font-family="JetBrains Mono" font-size="9" fill="#10b981">FEATURE STORE — one definition, two runtimes</text>
+          <g stroke="#3d4a5c"><line x1="110" y1="64" x2="180" y2="82"/><line x1="390" y1="64" x2="320" y2="82"/></g>
+          <text x="14" y="132" font-family="Inter" font-size="10" fill="#7b8fb0">It also supplies point-in-time correct joins, so a training row never sees a feature value computed</text>
+          <text x="14" y="146" font-family="Inter" font-size="10" fill="#7b8fb0">after its label — the leakage that makes offline scores unreachable in production.</text>
+          </svg>
         </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
@@ -132,6 +164,24 @@
             <li>These distinctions exist because they require different detection methods and different fixes — data drift can sometimes be detected without labels (comparing feature distributions), while concept drift requires tracking actual prediction accuracy against ground truth over time.</li>
             <li class="insight"><strong>The insight:</strong> data drift can be detected without waiting for ground-truth labels (by monitoring input feature distributions directly), but concept drift often can't be detected until labels arrive — which means for tasks with delayed labels (like loan default prediction, resolved months later), concept drift can be silently accumulating for a long time before you have any direct evidence of it.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 156" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Data drift shifts the inputs; concept drift changes the input to label relationship">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">DATA DRIFT — inputs move, rule holds</text>
+          <path d="M 26 84 C 46 84, 50 46, 70 46 C 90 46, 94 84, 114 84" fill="none" stroke="#7b8fb0"/>
+          <path d="M 86 84 C 106 84, 110 52, 130 52 C 150 52, 154 84, 174 84" fill="none" stroke="#5b91bd" stroke-width="2"/>
+          <line x1="20" y1="84" x2="186" y2="84" stroke="#3d4a5c"/>
+          <text x="24" y="102" font-family="Inter" font-size="9" fill="#7b8fb0">P(X) changed, P(Y|X) same</text>
+          <text x="24" y="116" font-family="Inter" font-size="9" fill="#10b981">often still accurate — monitor, don't panic</text>
+          <line x1="216" y1="24" x2="216" y2="140" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="242" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">CONCEPT DRIFT — the rule itself moves</text>
+          <line x1="248" y1="84" x2="414" y2="84" stroke="#3d4a5c"/>
+          <line x1="252" y1="46" x2="330" y2="84" stroke="#7b8fb0" stroke-dasharray="3,2"/>
+          <line x1="272" y1="34" x2="404" y2="76" stroke="#e5484d" stroke-width="2"/>
+          <text x="246" y="102" font-family="Inter" font-size="9" fill="#7b8fb0">P(Y|X) changed</text>
+          <text x="246" y="116" font-family="Inter" font-size="9" fill="#e5484d">silently wrong — inputs look normal</text>
+          <text x="14" y="150" font-family="Inter" font-size="10" fill="#7b8fb0">Input monitoring catches the first and misses the second. Concept drift needs labels — which is why delayed ground truth is the hard part of ML monitoring.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Type</th><th>What changes</th><th>Detectable without labels?</th></tr>
@@ -162,6 +212,28 @@
             <li class="insight"><strong>The insight:</strong> shadow mode catches technical/operational failures (crashes, latency, wildly wrong outputs) safely with zero user risk, but it can't measure actual business impact, since shadow predictions never affect real user behavior — you need a real canary or A/B test specifically to validate the metric that actually matters, and skipping straight from shadow mode to full rollout skips that validation entirely.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Shadow, canary and A/B answer different questions at different risk levels">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">THREE STAGES — EACH ANSWERS A DIFFERENT QUESTION</text>
+          <rect x="20" y="30" width="150" height="70" rx="6" fill="none" stroke="#5b91bd"/>
+          <text x="32" y="48" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">SHADOW</text>
+          <text x="32" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">0% of users see it</text>
+          <text x="32" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">"does it crash or lag?"</text>
+          <text x="32" y="94" font-family="Inter" font-size="8.5" fill="#10b981">zero user risk</text>
+          <rect x="184" y="30" width="150" height="70" rx="6" fill="none" stroke="#f9bd67"/>
+          <text x="196" y="48" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">CANARY</text>
+          <text x="196" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">1-5% of traffic</text>
+          <text x="196" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">"does it break in the wild?"</text>
+          <text x="196" y="94" font-family="Inter" font-size="8.5" fill="#f9bd67">bounded blast radius</text>
+          <rect x="348" y="30" width="152" height="70" rx="6" fill="none" stroke="#10b981"/>
+          <text x="360" y="48" font-family="JetBrains Mono" font-size="9" fill="#10b981">A/B</text>
+          <text x="360" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">50/50, powered</text>
+          <text x="360" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">"is it actually better?"</text>
+          <text x="360" y="94" font-family="Inter" font-size="8.5" fill="#10b981">the only causal answer</text>
+          <text x="14" y="128" font-family="Inter" font-size="10" fill="#7b8fb0">Offline metrics justify starting this ladder; they never replace it. Decide the sample size and the</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">stopping rule before launch, or you will peek and ship noise.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Your new model passed shadow mode with no errors. Is that enough to roll out to 100% of traffic?"</div>
@@ -184,6 +256,26 @@
             <li>Multiple layers exist because they answer different questions — a model's MMLU score says nothing about whether your prompt + retrieval + model pipeline answers your users' questions, and application-level accuracy says nothing about which base model to pick next quarter.</li>
             <li class="insight"><strong>The insight:</strong> LLM-as-judge is the workhorse of production eval but has known, measurable biases — position bias (favoring the first answer shown), verbosity bias (longer = rated better), and self-preference (judging its own family's outputs higher). Senior candidates name the mitigations unprompted: randomize answer order, use pairwise comparison over absolute scores, use a different model family as judge, and periodically calibrate judge verdicts against a human-labeled sample. Also: public benchmark scores are increasingly contaminated (test data leaking into training sets), so treat leaderboard deltas as marketing until verified on held-out private data.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Evaluation ladder from unit assertions through LLM judge to human review">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">CHEAP AND NARROW → EXPENSIVE AND TRUE</text>
+          <g>
+          <rect x="20" y="30" width="120" height="20" rx="3" fill="rgba(16,185,129,.28)" stroke="#10b981"/>
+          <text x="30" y="44" font-family="JetBrains Mono" font-size="9" fill="#10b981">assertions</text>
+          <text x="240" y="44" font-family="Inter" font-size="9" fill="#7b8fb0">format, schema, regex — run on every commit</text>
+          <rect x="20" y="56" width="170" height="20" rx="3" fill="rgba(91,145,189,.28)" stroke="#5b91bd"/>
+          <text x="30" y="70" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">golden set</text>
+          <text x="240" y="70" font-family="Inter" font-size="9" fill="#7b8fb0">fixed inputs + expected answers</text>
+          <rect x="20" y="82" width="200" height="20" rx="3" fill="rgba(249,189,103,.28)" stroke="#f9bd67"/>
+          <text x="30" y="96" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">LLM-as-judge</text>
+          <text x="240" y="96" font-family="Inter" font-size="9" fill="#7b8fb0">scalable — must be validated against humans first</text>
+          <rect x="20" y="108" width="120" height="20" rx="3" fill="rgba(229,72,77,.24)" stroke="#e5484d"/>
+          <text x="30" y="122" font-family="JetBrains Mono" font-size="9" fill="#e5484d">human</text>
+          <text x="240" y="122" font-family="Inter" font-size="9" fill="#7b8fb0">ground truth — slow, expensive, irreplaceable</text>
+          </g>
+          <text x="14" y="148" font-family="Inter" font-size="10" fill="#7b8fb0">A judge you never checked against human ratings is an unvalidated model scoring another model.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Method</th><th>Scales?</th><th>Trust level</th><th>Use for</th></tr>
@@ -221,6 +313,21 @@
             <li class="insight"><strong>The insight:</strong> for ML specifically, "it works on my machine" is a much deeper problem than in typical software — GPU driver/CUDA version mismatches can cause a model to run without any error but produce subtly different numerical outputs, which is a much scarier failure mode than a container that simply fails to start.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 146" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ML containers must pin CUDA, framework and model weights, not just Python dependencies">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">ML IMAGES HAVE A DEEPER STACK THAN WEB IMAGES</text>
+          <g>
+          <rect x="120" y="28" width="280" height="18" rx="3" fill="none" stroke="#3d4a5c"/><text x="132" y="41" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">app code</text>
+          <rect x="120" y="50" width="280" height="18" rx="3" fill="none" stroke="#3d4a5c"/><text x="132" y="63" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">python deps (pinned, hashed)</text>
+          <rect x="120" y="72" width="280" height="18" rx="3" fill="rgba(249,189,103,.12)" stroke="#f9bd67"/><text x="132" y="85" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">framework + CUDA/cuDNN — must match the driver</text>
+          <rect x="120" y="94" width="280" height="18" rx="3" fill="rgba(91,145,189,.12)" stroke="#5b91bd"/><text x="132" y="107" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">base image + GPU driver on the host</text>
+          </g>
+          <text x="412" y="85" font-family="Inter" font-size="9" fill="#e5484d">version mismatch</text>
+          <text x="412" y="97" font-family="Inter" font-size="9" fill="#e5484d">here = silent CPU</text>
+          <text x="412" y="109" font-family="Inter" font-size="9" fill="#e5484d">fallback, 50× slower</text>
+          <text x="14" y="136" font-family="Inter" font-size="10" fill="#7b8fb0">Keep multi-GB weights out of the image — mount or fetch them, so a code change does not rebuild 8GB.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why is 'it works on my machine' a more dangerous problem for ML systems than for typical software?"</div>
@@ -243,6 +350,21 @@
             <li>This exists because standard software monitoring (uptime, latency, error rate) tells you the system is running, but says nothing about whether the model's predictions are still good — you need model-specific signals layered on top of infra monitoring.</li>
             <li class="insight"><strong>The insight:</strong> a model can have perfect infrastructure health (100% uptime, low latency, zero 500 errors) while silently producing garbage predictions — infra monitoring and model quality monitoring are almost entirely orthogonal, and teams that only instrument the former have no visibility into the failure mode that actually matters most.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LLM observability adds trace, cost, quality and feedback on top of standard metrics">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">STANDARD APM IS NOT ENOUGH FOR AN LLM SYSTEM</text>
+          <rect x="20" y="30" width="228" height="46" rx="5" fill="none" stroke="#3d4a5c"/>
+          <text x="32" y="48" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">WHAT YOU ALREADY HAVE</text>
+          <text x="32" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">latency · error rate · throughput</text>
+          <rect x="268" y="30" width="232" height="46" rx="5" fill="rgba(16,185,129,.10)" stroke="#10b981"/>
+          <text x="280" y="48" font-family="JetBrains Mono" font-size="9" fill="#10b981">WHAT LLM SYSTEMS ALSO NEED</text>
+          <text x="280" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">tokens/$ · full trace · quality · feedback</text>
+          <rect x="20" y="86" width="480" height="34" rx="5" fill="none" stroke="#f9bd67"/>
+          <text x="32" y="103" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">THE TRACE IS THE CRITICAL ONE</text>
+          <text x="32" y="116" font-family="Inter" font-size="9" fill="#7b8fb0">prompt → retrieved chunks → tool calls → raw completion. Without it a bad answer is unreproducible and undebuggable.</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#e5484d">Log with sampling and PII redaction — full prompt logs are a compliance surface.</text>
+          </svg>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
@@ -267,6 +389,27 @@
             <li class="insight"><strong>The insight:</strong> in software CI/CD, passing tests is usually a reliable signal to deploy; in ML CI/CD, passing tests only proves the code runs — the actual "does this improve things" question requires a separate evaluation gate against real metrics, meaning ML CI/CD pipelines need an additional decision point that pure software pipelines don't.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ML CI adds data validation and model evaluation gates that software CI does not have">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">SOFTWARE CI GATES ON TESTS — ML CI ALSO GATES ON DATA AND METRICS</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="16" y="34" width="74" height="30" rx="4"/><rect x="106" y="34" width="74" height="30" rx="4"/>
+          </g>
+          <g fill="none" stroke="#f9bd67"><rect x="196" y="34" width="86" height="30" rx="4"/></g>
+          <g fill="none" stroke="#10b981"><rect x="298" y="34" width="94" height="30" rx="4"/><rect x="408" y="34" width="86" height="30" rx="4"/></g>
+          <g font-family="JetBrains Mono" font-size="8.5" fill="#f0f4ff"><text x="30" y="53">lint+test</text><text x="118" y="53">build img</text></g>
+          <text x="204" y="53" font-family="JetBrains Mono" font-size="8.5" fill="#f9bd67">validate data</text>
+          <text x="306" y="53" font-family="JetBrains Mono" font-size="8.5" fill="#10b981">eval vs baseline</text>
+          <text x="422" y="53" font-family="JetBrains Mono" font-size="8.5" fill="#10b981">canary</text>
+          <g stroke="#3d4a5c"><line x1="90" y1="49" x2="104" y2="49"/><line x1="180" y1="49" x2="194" y2="49"/><line x1="282" y1="49" x2="296" y2="49"/><line x1="392" y1="49" x2="406" y2="49"/></g>
+          <text x="196" y="84" font-family="Inter" font-size="9" fill="#f9bd67">schema, nulls, ranges,</text>
+          <text x="196" y="96" font-family="Inter" font-size="9" fill="#f9bd67">distribution shift</text>
+          <text x="298" y="84" font-family="Inter" font-size="9" fill="#10b981">block the merge if any</text>
+          <text x="298" y="96" font-family="Inter" font-size="9" fill="#10b981">slice regresses, not just the mean</text>
+          <text x="14" y="128" font-family="Inter" font-size="10" fill="#7b8fb0">A model that improves overall while collapsing on one segment is the regression aggregate metrics hide —</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">so the gate must be per-slice.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"How is a CI/CD pipeline for an ML model fundamentally different from one for a typical microservice?"</div>
@@ -289,6 +432,27 @@
             <li>They exist because building and maintaining the full MLOps stack (feature stores, training orchestration, serving infra, monitoring) in-house is a significant, ongoing engineering investment that most teams don't need to reinvent when a managed option covers their needs.</li>
             <li class="insight"><strong>The insight:</strong> the right time to reach for a managed platform is a team-size and workload-maturity decision, not a technical superiority question — small teams benefit enormously from offloading undifferentiated MLOps infrastructure work, but teams with very specific performance requirements or existing heavy investment in open-source tooling (vLLM, MLflow, Kubernetes) can find managed platforms constraining rather than helpful past a certain scale.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 146" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Managed API versus managed platform versus self hosted, traded against control and cost">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">CONTROL AND OPERATIONAL BURDEN MOVE TOGETHER</text>
+          <rect x="20" y="30" width="150" height="76" rx="6" fill="none" stroke="#10b981"/>
+          <text x="32" y="48" font-family="JetBrains Mono" font-size="9" fill="#10b981">MANAGED API</text>
+          <text x="32" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">fastest to ship</text>
+          <text x="32" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">per-token pricing</text>
+          <text x="32" y="94" font-family="Inter" font-size="9" fill="#e5484d">data leaves your boundary</text>
+          <rect x="184" y="30" width="150" height="76" rx="6" fill="none" stroke="#5b91bd"/>
+          <text x="196" y="48" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">MANAGED PLATFORM</text>
+          <text x="196" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">your weights, their infra</text>
+          <text x="196" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">Bedrock / Vertex / SageMaker</text>
+          <text x="196" y="94" font-family="Inter" font-size="9" fill="#7b8fb0">stays in your VPC</text>
+          <rect x="348" y="30" width="152" height="76" rx="6" fill="none" stroke="#f9bd67"/>
+          <text x="360" y="48" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">SELF-HOSTED</text>
+          <text x="360" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">full control, lowest unit cost</text>
+          <text x="360" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">at high steady utilization</text>
+          <text x="360" y="94" font-family="Inter" font-size="9" fill="#e5484d">you now own GPU ops</text>
+          <text x="14" y="136" font-family="Inter" font-size="10" fill="#7b8fb0">Pick from data residency and volume, not preference. Most teams should start managed and earn the move down.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Platform</th><th>Provider</th><th>One-line positioning</th></tr>
@@ -332,7 +496,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Design a monitoring system for a production LLM-powered support chatbot. What would you track and why?', a: 'Beyond standard infra metrics (latency, error rate, uptime), I\'d track token usage per request (cost driver and a proxy for verbosity drift), retrieval quality signals if it\'s RAG-based (which chunks were retrieved, confidence/similarity scores), and explicit or implicit user feedback (thumbs up/down, whether the user had to rephrase or escalate to a human agent) as the closest available proxy for actual answer quality without manual review of every conversation. I\'d also sample a small percentage of conversations for periodic human or LLM-judge review specifically checking for hallucination and policy violations, since aggregate metrics like "average session length" can mask individual bad responses that a sampling-based qualitative review would catch. The key design principle is combining cheap, always-on proxy signals with more expensive but higher-fidelity sampled review, rather than relying on either alone.', level: 'Senior' },

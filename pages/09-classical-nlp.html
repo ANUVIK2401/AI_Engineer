@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>09 · Classical NLP — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -40,6 +40,23 @@
             <li class="insight"><strong>The insight:</strong> almost every one of these steps is now actively harmful with transformers. Lowercasing destroys the case signal a subword model uses (US vs us), stopword removal deletes the function words attention relies on for syntax, and stemming corrupts the subword vocabulary the tokenizer was trained on. Preprocessing was a workaround for models that had no notion of context — knowing when <em>not</em> to preprocess is the modern skill.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Preprocessing that helped bag-of-words actively harms a transformer">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">THE SAME STEP, OPPOSITE VERDICTS</text>
+          <text x="14" y="42" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">"The movie was NOT good"</text>
+          <line x1="196" y1="38" x2="228" y2="38" stroke="#3d4a5c"/>
+          <rect x="234" y="28" width="120" height="20" rx="3" fill="rgba(16,185,129,.14)" stroke="#10b981"/>
+          <text x="244" y="42" font-family="JetBrains Mono" font-size="9" fill="#10b981">BoW: strip stopwords</text>
+          <text x="366" y="42" font-family="Inter" font-size="9" fill="#10b981">helps — less sparsity</text>
+          <text x="14" y="76" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">→ "movie good"</text>
+          <rect x="234" y="62" width="120" height="20" rx="3" fill="rgba(229,72,77,.14)" stroke="#e5484d"/>
+          <text x="244" y="76" font-family="JetBrains Mono" font-size="9" fill="#e5484d">BERT: same strip</text>
+          <text x="366" y="76" font-family="Inter" font-size="9" fill="#e5484d">inverts the sentiment</text>
+          <rect x="20" y="96" width="480" height="38" rx="5" fill="none" stroke="#3d4a5c"/>
+          <text x="32" y="113" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">THE RULE</text>
+          <text x="32" y="128" font-family="Inter" font-size="9.5" fill="#7b8fb0">Match preprocessing to what the model was trained on. Transformers saw raw cased text with function words — keep only Unicode normalization and control-character stripping.</text>
+          </svg>
+        </div>
         <table class="cmp-table">
           <tr><th>Step</th><th>Classical ML</th><th>Transformer</th></tr>
           <tr><td>Lowercasing</td><td>almost always</td><td>no — model is cased for a reason</td></tr>
@@ -70,6 +87,27 @@
             <li>They matter because they turn text into a sparse numeric vector that any classifier or inverted index can consume — and because BM25 is still the sparse half of every hybrid search system in production RAG today, not a historical footnote.</li>
             <li class="insight"><strong>The insight:</strong> BM25's advantage over dense embeddings is precisely that it does <em>not</em> generalize. An exact match on a rare token — a product SKU, an error code, a surname — scores enormously because IDF is high and there is no semantic smoothing to dilute it. That is why hybrid retrieval beats pure dense: they fail on opposite inputs.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TF-IDF downweights common terms and upweights rare ones, which is why exact rare matches score high">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">IDF IS WHY BM25 STILL BEATS EMBEDDINGS ON PART NUMBERS</text>
+          <text x="26" y="42" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">TERM</text>
+          <text x="150" y="42" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">APPEARS IN</text>
+          <text x="266" y="42" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">IDF WEIGHT</text>
+          <text x="26" y="66" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">"the"</text>
+          <text x="150" y="66" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">99% of docs</text>
+          <rect x="266" y="56" width="8" height="12" fill="#3d4a5c"/>
+          <text x="290" y="66" font-family="Inter" font-size="9" fill="#7b8fb0">≈ 0 — carries no signal</text>
+          <text x="26" y="92" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">"battery"</text>
+          <text x="150" y="92" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">8% of docs</text>
+          <rect x="266" y="82" width="46" height="12" fill="#5b91bd"/>
+          <text x="330" y="92" font-family="Inter" font-size="9" fill="#5b91bd">moderate</text>
+          <text x="26" y="118" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">"XR-4471-B"</text>
+          <text x="150" y="118" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">1 doc</text>
+          <rect x="266" y="108" width="140" height="12" fill="#10b981"/>
+          <text x="416" y="118" font-family="Inter" font-size="9" fill="#10b981">enormous</text>
+          <text x="14" y="146" font-family="Inter" font-size="10" fill="#7b8fb0">A rare exact match dominates the ranking — precisely the case where a dense embedding has no signal at all.</text>
+          </svg>
         </div>
         <div class="card-visual">
           $$ \text{BM25}(q,d) = \sum_{t \in q} \text{IDF}(t)\cdot\frac{f(t,d)\,(k_1+1)}{f(t,d) + k_1\left(1-b+b\frac{|d|}{\text{avgdl}}\right)} $$
@@ -104,6 +142,24 @@
             <li class="insight"><strong>The insight:</strong> these are <em>static</em> embeddings — one fixed vector per word, forever. "Bank" gets a single vector that is the blurred average of the river sense and the financial sense, and no amount of training data fixes it. That single limitation is the entire motivation for contextual embeddings and, ultimately, for transformers.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A static embedding gives bank one averaged vector; a contextual model gives it a different vector per sentence">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">STATIC — one vector, both senses blurred</text>
+          <circle cx="70" cy="60" r="4" fill="#7b8fb0"/><text x="80" y="64" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">river</text>
+          <circle cx="180" cy="60" r="4" fill="#7b8fb0"/><text x="190" y="64" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">money</text>
+          <circle cx="125" cy="90" r="5" fill="#e5484d"/><text x="98" y="108" font-family="JetBrains Mono" font-size="9" fill="#e5484d">"bank"</text>
+          <line x1="74" y1="62" x2="121" y2="88" stroke="#3d4a5c" stroke-dasharray="2,2"/>
+          <line x1="176" y1="62" x2="129" y2="88" stroke="#3d4a5c" stroke-dasharray="2,2"/>
+          <text x="14" y="130" font-family="Inter" font-size="9" fill="#7b8fb0">stranded between both — good for neither</text>
+          <line x1="252" y1="24" x2="252" y2="140" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="278" y="18" font-family="JetBrains Mono" font-size="10" fill="#10b981">CONTEXTUAL — vector depends on the sentence</text>
+          <circle cx="320" cy="56" r="4" fill="#10b981"/>
+          <text x="330" y="60" font-family="JetBrains Mono" font-size="8.5" fill="#10b981">"sat on the bank"</text>
+          <circle cx="420" cy="98" r="4" fill="#5b91bd"/>
+          <text x="330" y="102" font-family="JetBrains Mono" font-size="8.5" fill="#5b91bd">"deposit at the bank"</text>
+          <text x="278" y="130" font-family="Inter" font-size="9" fill="#7b8fb0">same token id, two positions — so it cannot be cached as a lookup table</text>
+          </svg>
+        </div>
         <table class="cmp-table">
           <tr><th>Model</th><th>Trained on</th><th>Handles OOV?</th><th>Key property</th></tr>
           <tr><td>Word2Vec</td><td>local context windows</td><td>no</td><td>fast, strong analogies</td></tr>
@@ -133,6 +189,27 @@
             <li>They matter because they define the objective every modern LLM still optimizes: predict the next token given the previous ones. GPT differs from a trigram model in capacity and context length, not in the fundamental training objective.</li>
             <li class="insight"><strong>The insight:</strong> n-grams fail because the parameter count grows as vocabulary^n while the data to estimate it does not — with a 50k vocabulary, a 5-gram model has 50,000⁵ possible contexts and almost all of them are never observed. Neural LMs solve this by sharing parameters across similar contexts via dense representations, which is the real reason they generalize.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="N-gram parameter count explodes with n while observed counts stay sparse">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">WHY N-GRAMS HIT A WALL — 50k VOCABULARY</text>
+          <text x="26" y="44" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">n</text>
+          <text x="96" y="44" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">POSSIBLE CONTEXTS</text>
+          <text x="290" y="44" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">EVER OBSERVED</text>
+          <text x="26" y="68" font-family="JetBrains Mono" font-size="10" fill="#10b981">2</text>
+          <text x="96" y="68" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">2.5 × 10⁹</text>
+          <rect x="290" y="58" width="90" height="12" fill="#10b981"/>
+          <text x="390" y="68" font-family="Inter" font-size="9" fill="#10b981">workable</text>
+          <text x="26" y="94" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">3</text>
+          <text x="96" y="94" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">1.2 × 10¹⁴</text>
+          <rect x="290" y="84" width="26" height="12" fill="#f9bd67"/>
+          <text x="390" y="94" font-family="Inter" font-size="9" fill="#f9bd67">sparse</text>
+          <text x="26" y="120" font-family="JetBrains Mono" font-size="10" fill="#e5484d">5</text>
+          <text x="96" y="120" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">3.1 × 10²³</text>
+          <rect x="290" y="110" width="4" height="12" fill="#e5484d"/>
+          <text x="390" y="120" font-family="Inter" font-size="9" fill="#e5484d">hopeless</text>
+          <text x="14" y="146" font-family="Inter" font-size="10" fill="#7b8fb0">Neural LMs share parameters across similar contexts through dense vectors — that sharing, not capacity, is why they generalize.</text>
+          </svg>
         </div>
         <div class="card-visual">
           $$ \text{PPL}(W) = \exp\left(-\frac{1}{N}\sum_{i=1}^{N}\log P(w_i \mid w_{<i})\right) $$
@@ -167,7 +244,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="BIO tagging of entity spans, with a CRF blocking illegal tag transitions" viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg">
             <text x="20" y="34" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">TOKENS</text>
             <text x="120" y="34" font-family="JetBrains Mono" font-size="12" fill="#f0f4ff">Ada</text>
             <text x="185" y="34" font-family="JetBrains Mono" font-size="12" fill="#f0f4ff">Lovelace</text>
@@ -209,7 +286,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 190" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Vanilla seq2seq bottleneck vector compared with attention over all encoder states" viewBox="0 0 520 190" xmlns="http://www.w3.org/2000/svg">
             <text x="16" y="24" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">VANILLA SEQ2SEQ — one bottleneck vector</text>
             <rect x="20" y="34" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
             <rect x="76" y="34" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
@@ -257,6 +334,23 @@
             <li class="insight"><strong>The insight:</strong> LLMs collapsed all of these into one interface — text in, text out — which is convenient and hides the structure. But the evaluation didn't collapse: an extractive QA system can be checked against source offsets, while a generative one requires groundedness evaluation. Choosing generation when extraction would do buys you a hallucination surface you didn't need.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Extractive QA returns a verifiable span while generative QA can hallucinate">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">SAME QUESTION, TWO TASK SHAPES, DIFFERENT RISK</text>
+          <rect x="20" y="30" width="228" height="76" rx="6" fill="none" stroke="#10b981"/>
+          <text x="32" y="48" font-family="JetBrains Mono" font-size="9" fill="#10b981">EXTRACTIVE</text>
+          <text x="32" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">returns char offsets [412:429]</text>
+          <text x="32" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">verifiable against the source</text>
+          <text x="32" y="96" font-family="Inter" font-size="9" fill="#10b981">structurally cannot hallucinate</text>
+          <rect x="268" y="30" width="232" height="76" rx="6" fill="none" stroke="#f9bd67"/>
+          <text x="280" y="48" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">GENERATIVE</text>
+          <text x="280" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">synthesizes across documents</text>
+          <text x="280" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">needed for multi-hop answers</text>
+          <text x="280" y="96" font-family="Inter" font-size="9" fill="#e5484d">buys a hallucination surface</text>
+          <text x="14" y="132" font-family="Inter" font-size="10" fill="#7b8fb0">Choosing generation when extraction suffices adds an entire evaluation burden — groundedness, citations,</text>
+          <text x="14" y="146" font-family="Inter" font-size="10" fill="#7b8fb0">abstention — that the extractive framing gets for free.</text>
+          </svg>
+        </div>
         <table class="cmp-table">
           <tr><th>Task shape</th><th>Classic architecture</th><th>Metric</th></tr>
           <tr><td>Sequence classification</td><td>encoder + pooling head</td><td>F1, accuracy, AUC</td></tr>
@@ -289,6 +383,22 @@
             <li class="insight"><strong>The insight:</strong> the choice of precision versus recall isn't arbitrary. BLEU is precision-oriented because a translation must not add content that isn't in the source; ROUGE is recall-oriented because a summary must not omit the important content. When someone reports "ROUGE" for a translation task, they've usually picked the metric without thinking about which error the task actually punishes.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 146" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A correct paraphrase scores near zero on BLEU because there is no n-gram overlap">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">N-GRAM OVERLAP IS NOT CORRECTNESS</text>
+          <text x="14" y="44" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">reference</text>
+          <text x="96" y="44" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">"The cat sat on the mat."</text>
+          <text x="14" y="72" font-family="JetBrains Mono" font-size="9" fill="#10b981">candidate A</text>
+          <text x="96" y="72" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">"A feline rested upon the rug."</text>
+          <rect x="330" y="60" width="40" height="14" fill="#e5484d"/>
+          <text x="378" y="72" font-family="Inter" font-size="9" fill="#e5484d">BLEU ≈ 0 — but correct</text>
+          <text x="14" y="100" font-family="JetBrains Mono" font-size="9" fill="#e5484d">candidate B</text>
+          <text x="96" y="100" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">"The cat sat on the hat."</text>
+          <rect x="330" y="88" width="130" height="14" fill="#10b981"/>
+          <text x="378" y="112" font-family="Inter" font-size="9" fill="#10b981">BLEU high — but wrong</text>
+          <text x="14" y="140" font-family="Inter" font-size="10" fill="#7b8fb0">BERTScore credits the paraphrase; nothing here measures factuality. That is what an LLM judge or human review is for.</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
           <div class="tf-row-failure tf-situation">A correct paraphrase</div><div>Scores near zero on BLEU/ROUGE — no n-gram overlap despite being right</div>
@@ -318,6 +428,25 @@
             <li>It matters because unlabeled text arrives constantly — support tickets, reviews, survey responses — and topic modeling is how you find structure before you know what the labels should be.</li>
             <li class="insight"><strong>The insight:</strong> topic models have no ground truth, so evaluation is the hard part. Perplexity on held-out documents actually correlates <em>negatively</em> with human judgments of topic quality, a well-replicated result. Use coherence measures (NPMI, C_v) and, honestly, human inspection — and treat the number of topics as a decision you make, not one the data reveals.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 146" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BERTopic pipeline: embed, reduce, cluster, then name clusters with c-TF-IDF">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">EMBED → REDUCE → CLUSTER → NAME</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="16" y="34" width="88" height="34" rx="5"/><rect x="122" y="34" width="88" height="34" rx="5"/>
+          <rect x="228" y="34" width="98" height="34" rx="5"/><rect x="344" y="34" width="98" height="34" rx="5"/>
+          </g>
+          <g font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">
+          <text x="28" y="55">embed</text><text x="132" y="55">UMAP</text><text x="240" y="55">HDBSCAN</text><text x="358" y="55">c-TF-IDF</text>
+          </g>
+          <g stroke="#3d4a5c"><line x1="104" y1="51" x2="120" y2="51"/><line x1="210" y1="51" x2="226" y2="51"/><line x1="326" y1="51" x2="342" y2="51"/></g>
+          <g font-family="Inter" font-size="8" fill="#7b8fb0">
+          <text x="16" y="82">sentence vectors</text><text x="122" y="82">to 5-10 dims</text><text x="228" y="82">density clusters</text><text x="344" y="82">distinguishing terms</text>
+          </g>
+          <rect x="20" y="96" width="480" height="36" rx="5" fill="none" stroke="#f9bd67"/>
+          <text x="32" y="112" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">WHY THIS BEATS LDA ON SHORT TEXT</text>
+          <text x="32" y="126" font-family="Inter" font-size="9.5" fill="#7b8fb0">LDA needs enough word counts per document to estimate a topic mixture; a two-line support ticket has none. HDBSCAN also labels genuine one-offs as noise instead of forcing them into a topic.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th></th><th>LDA</th><th>BERTopic / embed+cluster</th></tr>
@@ -365,7 +494,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why is BM25 still used in production RAG systems when dense embeddings exist?', a: 'BM25 and dense retrieval fail on opposite inputs, so they compose well. Dense embeddings generalize semantically but blur rare tokens — product codes, error strings, names, and acronyms land in near-arbitrary regions of the vector space. BM25 does the reverse: it has no semantic generalization at all, but an exact match on a high-IDF term produces an overwhelming score. Hybrid retrieval fuses both rankings, usually with Reciprocal Rank Fusion since it requires no score calibration between two systems on incomparable scales.', level: 'Mid' },

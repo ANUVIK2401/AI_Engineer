@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>01 · Foundations — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -45,7 +45,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Nested boxes showing generative AI inside deep learning, inside machine learning, inside AI" viewBox="0 0 520 280" xmlns="http://www.w3.org/2000/svg">
             <rect x="10" y="10" width="500" height="260" rx="8" fill="none" stroke="#3d4a5c"/>
             <text x="30" y="34" font-family="JetBrains Mono" font-size="12" fill="#7b8fb0">ARTIFICIAL INTELLIGENCE</text>
             <text x="270" y="34" font-family="Inter" font-size="10" fill="#7b8fb0">rule engines, A* search, expert systems</text>
@@ -91,7 +91,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 480 220" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Embedding space where semantically related words cluster together" viewBox="0 0 480 220" xmlns="http://www.w3.org/2000/svg">
             <line x1="40" y1="190" x2="440" y2="190" stroke="#3d4a5c"/>
             <line x1="40" y1="190" x2="40" y2="20" stroke="#3d4a5c"/>
             <circle cx="120" cy="120" r="4" fill="#e5484d"/>
@@ -134,6 +134,27 @@
           </ul>
         </div>
         <div class="card-visual">
+          <svg viewBox="0 0 520 168" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dot product as directional alignment: aligned vectors score high, orthogonal score zero, opposed score negative">
+          <text x="14" y="20" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">DOT PRODUCT = ALIGNMENT</text>
+          <line x1="70" y1="120" x2="70" y2="46" stroke="#3d4a5c"/><line x1="30" y1="110" x2="130" y2="110" stroke="#3d4a5c"/>
+          <line x1="70" y1="110" x2="118" y2="62" stroke="#10b981" stroke-width="2"/>
+          <line x1="70" y1="110" x2="112" y2="72" stroke="#10b981" stroke-width="2" stroke-dasharray="3,2"/>
+          <text x="46" y="140" font-family="JetBrains Mono" font-size="10" fill="#10b981">a·b &gt; 0</text>
+          <text x="34" y="156" font-family="Inter" font-size="9" fill="#7b8fb0">same direction</text>
+          <line x1="240" y1="120" x2="240" y2="46" stroke="#3d4a5c"/><line x1="200" y1="110" x2="300" y2="110" stroke="#3d4a5c"/>
+          <line x1="240" y1="110" x2="240" y2="60" stroke="#5b91bd" stroke-width="2"/>
+          <line x1="240" y1="110" x2="292" y2="110" stroke="#5b91bd" stroke-width="2" stroke-dasharray="3,2"/>
+          <path d="M 240 98 L 252 98 L 252 110" fill="none" stroke="#5b91bd" stroke-width="1"/>
+          <text x="216" y="140" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">a·b = 0</text>
+          <text x="212" y="156" font-family="Inter" font-size="9" fill="#7b8fb0">orthogonal</text>
+          <line x1="410" y1="120" x2="410" y2="46" stroke="#3d4a5c"/><line x1="370" y1="110" x2="470" y2="110" stroke="#3d4a5c"/>
+          <line x1="410" y1="110" x2="458" y2="62" stroke="#e5484d" stroke-width="2"/>
+          <line x1="410" y1="110" x2="366" y2="150" stroke="#e5484d" stroke-width="2" stroke-dasharray="3,2"/>
+          <text x="386" y="140" font-family="JetBrains Mono" font-size="10" fill="#e5484d">a·b &lt; 0</text>
+          <text x="378" y="156" font-family="Inter" font-size="9" fill="#7b8fb0">opposed</text>
+          </svg>
+        </div>
+        <div class="card-visual">
           $$ \mathbf{a} \cdot \mathbf{b} = \sum_{i=1}^n a_i b_i = |\mathbf{a}||\mathbf{b}|\cos\theta $$
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -164,6 +185,24 @@
           </ul>
         </div>
         <div class="card-visual">
+          <svg viewBox="0 0 520 190" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bayes theorem: a rare disease with an accurate test still yields mostly false positives">
+          <text x="14" y="20" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">10,000 PEOPLE · 1% BASE RATE · 99% ACCURATE TEST</text>
+          <rect x="14" y="34" width="492" height="30" rx="4" fill="none" stroke="#3d4a5c"/>
+          <rect x="14" y="34" width="5" height="30" fill="#e5484d"/>
+          <text x="26" y="54" font-family="JetBrains Mono" font-size="10" fill="#e5484d">100 sick</text>
+          <text x="300" y="54" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">9,900 healthy</text>
+          <line x1="16" y1="70" x2="60" y2="98" stroke="#e5484d"/><line x1="260" y1="70" x2="300" y2="98" stroke="#5b91bd"/>
+          <rect x="30" y="100" width="120" height="34" rx="5" fill="none" stroke="#e5484d"/>
+          <text x="42" y="114" font-family="JetBrains Mono" font-size="10" fill="#e5484d">99 true positive</text>
+          <text x="42" y="128" font-family="Inter" font-size="9" fill="#7b8fb0">sick and flagged</text>
+          <rect x="270" y="100" width="140" height="34" rx="5" fill="none" stroke="#f9bd67"/>
+          <text x="282" y="114" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">99 false positive</text>
+          <text x="282" y="128" font-family="Inter" font-size="9" fill="#7b8fb0">healthy but flagged</text>
+          <text x="14" y="164" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">P(sick | positive) = 99 / (99 + 99) = 50%</text>
+          <text x="14" y="182" font-family="Inter" font-size="10" fill="#7b8fb0">The base rate, not the accuracy, decides the answer.</text>
+          </svg>
+        </div>
+        <div class="card-visual">
           $$ P(A \mid B) = \frac{P(B \mid A)\,P(A)}{P(B)} $$
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -192,6 +231,25 @@
             <li>It exists because most models have no closed-form solution for their optimal parameters — the loss landscape is too complex, so we search it numerically instead.</li>
             <li class="insight"><strong>The insight:</strong> the learning rate isn't just a speed knob — it determines whether you converge at all. Too high and updates overshoot and diverge; too low and you get stuck in flat regions or take impractically long; this is why LR schedules and warmup exist.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Gradient descent step size: too small stalls, too large diverges, right size converges">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">THE LEARNING RATE IS THE WHOLE GAME</text>
+          <path d="M 20 130 C 60 130, 70 46, 108 46 C 146 46, 156 130, 196 130" fill="none" stroke="#3d4a5c" stroke-width="1.5"/>
+          <circle cx="40" cy="112" r="3.5" fill="#5b91bd"/><circle cx="54" cy="98" r="3.5" fill="#5b91bd"/><circle cx="66" cy="82" r="3.5" fill="#5b91bd"/>
+          <text x="30" y="156" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">LR too small</text>
+          <text x="26" y="170" font-family="Inter" font-size="9" fill="#7b8fb0">crawls, may never arrive</text>
+          <path d="M 210 130 C 250 130, 260 46, 298 46 C 336 46, 346 130, 386 130" fill="none" stroke="#3d4a5c" stroke-width="1.5"/>
+          <circle cx="298" cy="46" r="3.5" fill="#10b981"/><circle cx="270" cy="76" r="3.5" fill="#10b981"/><circle cx="326" cy="72" r="3.5" fill="#10b981"/>
+          <path d="M 326 72 Q 300 40 298 46" fill="none" stroke="#10b981" stroke-dasharray="2,2"/>
+          <text x="238" y="156" font-family="JetBrains Mono" font-size="10" fill="#10b981">LR just right</text>
+          <text x="240" y="170" font-family="Inter" font-size="9" fill="#7b8fb0">settles in the basin</text>
+          <path d="M 400 130 C 440 130, 450 46, 488 46 C 500 46, 504 80, 508 100" fill="none" stroke="#3d4a5c" stroke-width="1.5"/>
+          <circle cx="424" cy="98" r="3.5" fill="#e5484d"/><circle cx="492" cy="60" r="3.5" fill="#e5484d"/><circle cx="410" cy="124" r="3.5" fill="#e5484d"/>
+          <path d="M 424 98 L 492 60 L 410 124" fill="none" stroke="#e5484d" stroke-dasharray="2,2"/>
+          <text x="414" y="156" font-family="JetBrains Mono" font-size="10" fill="#e5484d">LR too large</text>
+          <text x="410" y="170" font-family="Inter" font-size="9" fill="#7b8fb0">overshoots, diverges</text>
+          </svg>
         </div>
         <div class="card-visual">
           $$ \theta_{t+1} = \theta_t - \eta \nabla_\theta \mathcal{L}(\theta_t) $$
@@ -229,6 +287,22 @@
             <li>The bias-variance tradeoff exists because model error decomposes into bias (systematic error from oversimplifying) and variance (sensitivity to training data specifics) — you can't minimize both simultaneously without more data or better inductive bias.</li>
             <li class="insight"><strong>The insight:</strong> regularization isn't "making the model dumber" — it's trading a small amount of bias for a large reduction in variance, which lowers total generalization error even though training loss gets worse.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 186" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Training loss keeps falling while validation loss turns upward at the overfitting point">
+          <line x1="52" y1="140" x2="490" y2="140" stroke="#3d4a5c"/><line x1="52" y1="140" x2="52" y2="26" stroke="#3d4a5c"/>
+          <text x="14" y="32" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">LOSS</text>
+          <text x="404" y="158" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">EPOCHS →</text>
+          <path d="M 56 44 C 130 92, 210 118, 486 132" fill="none" stroke="#10b981" stroke-width="2"/>
+          <path d="M 56 48 C 130 96, 190 112, 236 110 C 320 106, 400 66, 486 36" fill="none" stroke="#e5484d" stroke-width="2"/>
+          <line x1="236" y1="26" x2="236" y2="140" stroke="#f9bd67" stroke-dasharray="4,3"/>
+          <circle cx="236" cy="110" r="4" fill="#f9bd67"/>
+          <text x="244" y="42" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">stop here</text>
+          <text x="244" y="56" font-family="Inter" font-size="9" fill="#7b8fb0">best generalization</text>
+          <text x="392" y="128" font-family="JetBrains Mono" font-size="10" fill="#10b981">train</text>
+          <text x="392" y="48" font-family="JetBrains Mono" font-size="10" fill="#e5484d">validation</text>
+          <text x="14" y="178" font-family="Inter" font-size="10" fill="#7b8fb0">Memorization begins where the two curves separate — the gap is the diagnosis.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Regime</th><th>Train loss</th><th>Val loss</th><th>Fix</th></tr>
@@ -269,7 +343,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why is cosine similarity often preferred over raw dot product for comparing embeddings?', a: 'Cosine similarity normalizes by vector magnitude, so it measures pure directional alignment regardless of vector length — important because embedding norms can vary with token frequency or sentence length in ways unrelated to semantic content. Raw dot product conflates magnitude and direction, which can bias similarity rankings toward longer or more "confident" vectors. Most embedding models are trained with a contrastive objective that specifically optimizes cosine similarity, so using anything else at inference is inconsistent with training.', level: 'Mid' },

@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>07 · Inference Optimization — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 </head>
 <body>
 <div class="app-shell">
@@ -39,6 +39,25 @@
             <li class="insight"><strong>The insight:</strong> quantization isn't uniformly lossy across a model — outlier weight values (a small number of unusually large magnitude weights) disproportionately hurt naive quantization schemes, which is why modern quantization methods (like GPTQ, AWQ) specifically identify and handle outliers rather than uniformly rounding every weight.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 158" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Quantization maps a continuous weight range onto fewer discrete levels, and outliers stretch the scale">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">FEWER BITS = FEWER REPRESENTABLE LEVELS</text>
+          <text x="14" y="42" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">fp16</text>
+          <line x1="60" y1="38" x2="330" y2="38" stroke="#5b91bd" stroke-width="2"/>
+          <g fill="#5b91bd"><circle cx="86" cy="38" r="2"/><circle cx="112" cy="38" r="2"/><circle cx="138" cy="38" r="2"/><circle cx="164" cy="38" r="2"/><circle cx="190" cy="38" r="2"/><circle cx="216" cy="38" r="2"/><circle cx="242" cy="38" r="2"/><circle cx="268" cy="38" r="2"/><circle cx="294" cy="38" r="2"/><circle cx="320" cy="38" r="2"/></g>
+          <text x="344" y="42" font-family="Inter" font-size="9" fill="#7b8fb0">smooth · 2 bytes/param</text>
+          <text x="14" y="76" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">int8</text>
+          <line x1="60" y1="72" x2="330" y2="72" stroke="#f9bd67" stroke-width="2"/>
+          <g fill="#f9bd67"><circle cx="86" cy="72" r="3"/><circle cx="146" cy="72" r="3"/><circle cx="206" cy="72" r="3"/><circle cx="266" cy="72" r="3"/><circle cx="326" cy="72" r="3"/></g>
+          <text x="344" y="76" font-family="Inter" font-size="9" fill="#7b8fb0">4× smaller · ~1% quality loss</text>
+          <text x="14" y="110" font-family="JetBrains Mono" font-size="9" fill="#e5484d">int4</text>
+          <line x1="60" y1="106" x2="330" y2="106" stroke="#e5484d" stroke-width="2"/>
+          <g fill="#e5484d"><circle cx="86" cy="106" r="3.5"/><circle cx="206" cy="106" r="3.5"/><circle cx="326" cy="106" r="3.5"/></g>
+          <text x="344" y="110" font-family="Inter" font-size="9" fill="#7b8fb0">8× smaller · needs care</text>
+          <text x="14" y="140" font-family="Inter" font-size="10" fill="#f9bd67">The real problem is outliers:</text>
+          <text x="14" y="154" font-family="Inter" font-size="10" fill="#7b8fb0">a single huge activation stretches the scale so every ordinary weight collapses onto one level. Hence per-channel scales and outlier-aware methods (AWQ, GPTQ).</text>
+          </svg>
+        </div>
         <table class="cmp-table">
           <tr><th>Precision</th><th>Bits/weight</th><th>Relative quality</th><th>Memory vs FP32</th></tr>
           <tr><td>FP32</td><td>32</td><td>baseline</td><td>1x</td></tr>
@@ -70,6 +89,23 @@
             <li class="insight"><strong>The insight:</strong> the KV cache, not model weights, is often the actual memory bottleneck in high-throughput serving — weights are fixed size regardless of traffic, but KV cache memory scales with the number of concurrent requests × their sequence lengths, meaning serving capacity is fundamentally a memory management problem, which is exactly what vLLM's paged attention was built to solve.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Contiguous KV allocation wastes reserved memory; paged attention allocates fixed blocks on demand">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">CONTIGUOUS — reserve for max length</text>
+          <g><rect x="20" y="30" width="60" height="18" fill="rgba(16,185,129,.35)" stroke="#10b981"/><rect x="80" y="30" width="150" height="18" fill="none" stroke="#e5484d" stroke-dasharray="3,2"/></g>
+          <g><rect x="20" y="52" width="34" height="18" fill="rgba(16,185,129,.35)" stroke="#10b981"/><rect x="54" y="52" width="176" height="18" fill="none" stroke="#e5484d" stroke-dasharray="3,2"/></g>
+          <text x="240" y="44" font-family="Inter" font-size="9" fill="#e5484d">dashed = reserved but never used</text>
+          <text x="240" y="60" font-family="Inter" font-size="9" fill="#e5484d">60-80% of KV memory wasted</text>
+          <text x="14" y="94" font-family="JetBrains Mono" font-size="10" fill="#10b981">PAGED — fixed blocks, allocated on demand</text>
+          <g fill="rgba(16,185,129,.30)" stroke="#10b981">
+          <rect x="20" y="106" width="26" height="18"/><rect x="50" y="106" width="26" height="18"/><rect x="80" y="106" width="26" height="18"/>
+          <rect x="116" y="106" width="26" height="18"/><rect x="146" y="106" width="26" height="18"/>
+          <rect x="182" y="106" width="26" height="18"/>
+          </g>
+          <text x="240" y="118" font-family="Inter" font-size="9" fill="#10b981">no reservation, near-zero fragmentation</text>
+          <text x="14" y="146" font-family="Inter" font-size="10" fill="#7b8fb0">Blocks can also be shared across sequences with a common prefix — the same idea as OS virtual memory.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why does memory fragmentation matter for LLM serving throughput specifically?"</div>
@@ -92,6 +128,24 @@
             <li>These strategies exist because GPU utilization for LLM inference is maximized by keeping the batch full — but request lengths vary wildly, so a naive fixed batch wastes compute on padding once shorter sequences finish while longer ones continue.</li>
             <li class="insight"><strong>The insight:</strong> continuous batching is what actually made high-throughput LLM serving practical — treating batching as a per-token decision rather than a per-request decision means a single slow, long-running request no longer blocks the GPU from picking up new, shorter requests, which is the core throughput unlock behind vLLM and similar serving frameworks.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 158" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Static batching idles on finished sequences; continuous batching admits new requests every step">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">STATIC — the batch waits for its slowest member</text>
+          <g>
+          <rect x="60" y="28" width="60" height="14" fill="rgba(91,145,189,.5)"/><rect x="120" y="28" width="140" height="14" fill="none" stroke="#e5484d" stroke-dasharray="3,2"/>
+          <rect x="60" y="46" width="200" height="14" fill="rgba(91,145,189,.5)"/>
+          <rect x="60" y="64" width="90" height="14" fill="rgba(91,145,189,.5)"/><rect x="150" y="64" width="110" height="14" fill="none" stroke="#e5484d" stroke-dasharray="3,2"/>
+          </g>
+          <text x="276" y="52" font-family="Inter" font-size="9" fill="#e5484d">dashed = GPU idle on padding</text>
+          <text x="14" y="102" font-family="JetBrains Mono" font-size="10" fill="#10b981">CONTINUOUS — evict finished, admit waiting</text>
+          <g>
+          <rect x="60" y="112" width="60" height="14" fill="rgba(16,185,129,.5)"/><rect x="122" y="112" width="76" height="14" fill="rgba(249,189,103,.55)"/><rect x="200" y="112" width="60" height="14" fill="rgba(91,145,189,.55)"/>
+          <rect x="60" y="130" width="90" height="14" fill="rgba(16,185,129,.5)"/><rect x="152" y="130" width="108" height="14" fill="rgba(249,189,103,.55)"/>
+          </g>
+          <text x="276" y="128" font-family="Inter" font-size="9" fill="#10b981">slots refill immediately — 2-4× throughput</text>
+          <text x="14" y="154" font-family="Inter" font-size="10" fill="#7b8fb0">Throughput rises; individual latency can worsen slightly. That is the trade you are choosing.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Strategy</th><th>GPU utilization</th><th>Tradeoff</th></tr>
@@ -122,6 +176,22 @@
             <li class="insight"><strong>The insight:</strong> speculative decoding produces mathematically identical output distributions to standard decoding — it's not an approximation that trades quality for speed, it's a verification scheme that only ever accepts tokens the large model would have generated anyway, which is why it's one of the rare "free" speedups in LLM serving.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A small draft model proposes several tokens which the large model verifies in one parallel pass">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">DRAFT CHEAPLY, VERIFY IN ONE PASS</text>
+          <text x="14" y="44" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">draft (small)</text>
+          <g fill="rgba(91,145,189,.30)" stroke="#5b91bd"><rect x="110" y="32" width="46" height="18" rx="3"/><rect x="160" y="32" width="46" height="18" rx="3"/><rect x="210" y="32" width="46" height="18" rx="3"/><rect x="260" y="32" width="46" height="18" rx="3"/></g>
+          <text x="322" y="45" font-family="Inter" font-size="9" fill="#7b8fb0">4 guesses, ~1/10 the cost</text>
+          <text x="14" y="82" font-family="JetBrains Mono" font-size="9" fill="#10b981">verify (large)</text>
+          <g stroke="#10b981" fill="rgba(16,185,129,.24)"><rect x="110" y="70" width="46" height="18" rx="3"/><rect x="160" y="70" width="46" height="18" rx="3"/><rect x="210" y="70" width="46" height="18" rx="3"/></g>
+          <rect x="260" y="70" width="46" height="18" rx="3" fill="rgba(229,72,77,.20)" stroke="#e5484d"/>
+          <text x="268" y="83" font-family="JetBrains Mono" font-size="9" fill="#e5484d">✗</text>
+          <text x="322" y="83" font-family="Inter" font-size="9" fill="#7b8fb0">3 accepted, 1 rejected + corrected</text>
+          <text x="14" y="118" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">KEY PROPERTY</text>
+          <text x="14" y="136" font-family="Inter" font-size="10" fill="#7b8fb0">Output is <tspan fill="#f0f4ff">mathematically identical</tspan> to the large model alone — rejection sampling guarantees it.</text>
+          <text x="14" y="150" font-family="Inter" font-size="10" fill="#7b8fb0">You are buying latency, not trading quality. Gains depend entirely on the acceptance rate.</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
           <div class="tf-row-failure tf-situation">Draft model poorly matched to target (domain or tokenizer)</div><div>Low acceptance rate &mdash; you pay draft + verify and go slower than plain decoding</div>
@@ -149,6 +219,26 @@
             <li>These strategies exist because a single model can exceed a single GPU's memory capacity, and even when it fits, splitting work across GPUs can increase throughput — but each parallelism strategy has a different communication pattern and bottleneck.</li>
             <li class="insight"><strong>The insight:</strong> tensor parallelism requires very high-bandwidth, low-latency interconnects (like NVLink) because it communicates within every single layer's forward pass — this is why tensor parallelism is typically limited to GPUs within the same node, while pipeline parallelism (communicating only between stage boundaries) tolerates slower interconnects and can span across nodes.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 158" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tensor parallelism splits matrices inside a layer; pipeline parallelism splits layers across devices">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">TENSOR — split each matrix</text>
+          <rect x="20" y="30" width="86" height="56" rx="5" fill="none" stroke="#3d4a5c"/>
+          <line x1="63" y1="30" x2="63" y2="86" stroke="#5b91bd" stroke-width="2"/>
+          <text x="30" y="62" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">G0</text>
+          <text x="76" y="62" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">G1</text>
+          <text x="14" y="104" font-family="Inter" font-size="9" fill="#7b8fb0">all-reduce inside every layer</text>
+          <text x="14" y="118" font-family="Inter" font-size="9" fill="#e5484d">needs NVLink — stay in one node</text>
+          <line x1="212" y1="24" x2="212" y2="140" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="240" y="18" font-family="JetBrains Mono" font-size="10" fill="#10b981">PIPELINE — split by layer</text>
+          <g fill="none" stroke="#10b981"><rect x="240" y="30" width="56" height="24" rx="4"/><rect x="304" y="30" width="56" height="24" rx="4"/><rect x="368" y="30" width="56" height="24" rx="4"/></g>
+          <g font-family="JetBrains Mono" font-size="8" fill="#10b981"><text x="252" y="46">L1-8</text><text x="314" y="46">L9-16</text><text x="376" y="46">L17-24</text></g>
+          <g fill="rgba(16,185,129,.30)"><rect x="240" y="62" width="20" height="10"/><rect x="262" y="74" width="20" height="10"/><rect x="284" y="86" width="20" height="10"/></g>
+          <rect x="240" y="74" width="22" height="10" fill="none" stroke="#e5484d" stroke-dasharray="2,2"/>
+          <text x="316" y="82" font-family="Inter" font-size="9" fill="#e5484d">bubble = idle stage</text>
+          <text x="240" y="118" font-family="Inter" font-size="9" fill="#7b8fb0">only boundary activations cross — tolerates slower links</text>
+          <text x="14" y="150" font-family="Inter" font-size="10" fill="#7b8fb0">Frontier runs combine both with data parallelism: pick each axis from the interconnect it must cross.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Strategy</th><th>Splits</th><th>Communication frequency</th><th>Interconnect need</th></tr>
@@ -179,6 +269,23 @@
             <li class="insight"><strong>The insight:</strong> vLLM's biggest wins come specifically from memory efficiency, not raw compute speed — it doesn't make the model's forward pass mathematically faster, it lets you fit far more concurrent requests in the same GPU memory by eliminating KV cache fragmentation and waste, which is a fundamentally different kind of optimization than quantization or kernel fusion.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Prefill is compute bound and parallel, decode is memory bandwidth bound and sequential">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">TWO PHASES WITH OPPOSITE BOTTLENECKS</text>
+          <rect x="20" y="32" width="212" height="72" rx="6" fill="none" stroke="#5b91bd"/>
+          <text x="34" y="52" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">PREFILL — the prompt</text>
+          <text x="34" y="70" font-family="Inter" font-size="9.5" fill="#f0f4ff">all tokens processed in parallel</text>
+          <text x="34" y="86" font-family="Inter" font-size="9.5" fill="#10b981">COMPUTE bound — GPU saturated</text>
+          <text x="34" y="99" font-family="Inter" font-size="9" fill="#7b8fb0">sets time-to-first-token</text>
+          <rect x="268" y="32" width="232" height="72" rx="6" fill="none" stroke="#f9bd67"/>
+          <text x="282" y="52" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">DECODE — each new token</text>
+          <text x="282" y="70" font-family="Inter" font-size="9.5" fill="#f0f4ff">one token at a time, sequential</text>
+          <text x="282" y="86" font-family="Inter" font-size="9.5" fill="#e5484d">MEMORY-BANDWIDTH bound</text>
+          <text x="282" y="99" font-family="Inter" font-size="9" fill="#7b8fb0">re-reads all weights + KV per token</text>
+          <text x="14" y="130" font-family="Inter" font-size="10" fill="#7b8fb0">This is why batching helps decode enormously (amortizes the weight read) and prefill barely at all —</text>
+          <text x="14" y="144" font-family="Inter" font-size="10" fill="#7b8fb0">and why a quantized model speeds up decode more than prefill.</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
           <div class="tf-row-tradeoff tf-situation">Adopting vLLM for a single small model / low traffic</div><div>Operational surface of a serving engine without the concurrency that justifies it</div>
@@ -206,6 +313,18 @@
             <li>Multiple frameworks exist because teams have different constraints: some need the highest raw LLM throughput, some need tight integration with an existing model hub/ecosystem, and some need a single unified serving layer across many model types (not just LLMs) in a broader ML platform.</li>
             <li class="insight"><strong>The insight:</strong> the "best" serving framework depends on organizational scope as much as raw benchmarks — a team serving only LLMs typically gets the most throughput-per-dollar from vLLM specifically, but a platform team serving dozens of heterogeneous model types (vision, tabular, LLM) often standardizes on Triton for one consistent operational surface even at some LLM-specific throughput cost.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 140" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Serving stack layers from client through gateway, scheduler, engine, to hardware">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">WHERE EACH KNOB ACTUALLY LIVES</text>
+          <g>
+          <rect x="20" y="28" width="470" height="20" rx="4" fill="none" stroke="#3d4a5c"/><text x="32" y="42" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">gateway — auth, rate limit, routing, streaming</text>
+          <rect x="20" y="52" width="470" height="20" rx="4" fill="rgba(249,189,103,.10)" stroke="#f9bd67"/><text x="32" y="66" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">scheduler — continuous batching, admission, priority</text>
+          <rect x="20" y="76" width="470" height="20" rx="4" fill="rgba(91,145,189,.10)" stroke="#5b91bd"/><text x="32" y="90" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">engine — paged KV, CUDA graphs, fused kernels</text>
+          <rect x="20" y="100" width="470" height="20" rx="4" fill="none" stroke="#3d4a5c"/><text x="32" y="114" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">hardware — GPU memory bandwidth, interconnect</text>
+          </g>
+          <text x="14" y="136" font-family="Inter" font-size="10" fill="#7b8fb0">Diagnose top-down: a queueing problem at the scheduler looks exactly like a slow model from the client.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Framework</th><th>Scope</th><th>Best for</th></tr>
@@ -236,6 +355,22 @@
             <li class="insight"><strong>The insight:</strong> users experience latency (TTFT, TBT) but the business pays for throughput (tokens/sec/GPU) — these two are frequently in tension, and the "right" operating point is a product decision about acceptable user-perceived latency, not a pure engineering optimization target.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="TTFT is set by prefill, TBT by decode; batching trades one against the other">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">THE USER FEELS TWO DIFFERENT NUMBERS</text>
+          <line x1="60" y1="60" x2="480" y2="60" stroke="#3d4a5c"/>
+          <rect x="60" y="50" width="120" height="20" rx="3" fill="rgba(91,145,189,.35)" stroke="#5b91bd"/>
+          <text x="82" y="64" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">prefill</text>
+          <g fill="rgba(249,189,103,.35)" stroke="#f9bd67"><rect x="184" y="50" width="24" height="20" rx="2"/><rect x="212" y="50" width="24" height="20" rx="2"/><rect x="240" y="50" width="24" height="20" rx="2"/><rect x="268" y="50" width="24" height="20" rx="2"/><rect x="296" y="50" width="24" height="20" rx="2"/></g>
+          <text x="330" y="64" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">decode, one token each</text>
+          <line x1="60" y1="38" x2="180" y2="38" stroke="#5b91bd"/>
+          <text x="82" y="34" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">TTFT</text>
+          <line x1="184" y1="84" x2="208" y2="84" stroke="#f9bd67"/>
+          <text x="176" y="98" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">TBT</text>
+          <text x="14" y="122" font-family="Inter" font-size="10" fill="#7b8fb0">TTFT is "did it hear me" — dominated by prompt length. TBT is "is it fluent" — dominated by memory bandwidth.</text>
+          <text x="14" y="138" font-family="Inter" font-size="10" fill="#e5484d">Bigger batches raise throughput and worsen both. Streaming hides TTFT, never TBT.</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
           <div class="tf-row-tradeoff tf-situation">Maximizing batch size for throughput</div><div>Individual request TTFT increases — user-perceived latency suffers</div>
@@ -263,6 +398,26 @@
             <li>Cost modeling exists as a discipline because the two models scale oppositely: API cost is linear in usage with zero idle cost, while self-hosting has a large fixed floor (GPUs cost the same at 5% and 95% utilization) that amortizes only at sustained volume.</li>
             <li class="insight"><strong>The insight:</strong> the API-vs-self-host breakeven is a utilization question, not a price-list question — a self-hosted 70B deployment that sits idle overnight can cost more per query than a frontier API, while the same hardware at sustained high utilization can be 5-10x cheaper. Prompt caching, batching efficiency, and traffic shape (bursty vs steady) move the breakeven more than the model choice does. Also count the hidden line items: on-call, serving-stack engineering, and eval infrastructure are real costs the API price already includes.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cost levers ordered by effort against savings: caching and routing beat self hosting">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">TRY THESE IN ORDER — CHEAPEST EFFORT FIRST</text>
+          <g>
+          <rect x="20" y="30" width="300" height="18" rx="3" fill="rgba(16,185,129,.30)" stroke="#10b981"/>
+          <text x="30" y="43" font-family="JetBrains Mono" font-size="9" fill="#10b981">prompt caching — shared prefix</text>
+          <text x="330" y="43" font-family="Inter" font-size="9" fill="#7b8fb0">up to 90% off input · hours of work</text>
+          <rect x="20" y="54" width="240" height="18" rx="3" fill="rgba(91,145,189,.30)" stroke="#5b91bd"/>
+          <text x="30" y="67" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">model routing / cascade</text>
+          <text x="330" y="67" font-family="Inter" font-size="9" fill="#7b8fb0">50-90% fewer big-model calls · days</text>
+          <rect x="20" y="78" width="170" height="18" rx="3" fill="rgba(249,189,103,.30)" stroke="#f9bd67"/>
+          <text x="30" y="91" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">distillation</text>
+          <text x="330" y="91" font-family="Inter" font-size="9" fill="#7b8fb0">10-100× on a fixed task · weeks</text>
+          <rect x="20" y="102" width="100" height="18" rx="3" fill="rgba(229,72,77,.24)" stroke="#e5484d"/>
+          <text x="30" y="115" font-family="JetBrains Mono" font-size="9" fill="#e5484d">self-host</text>
+          <text x="330" y="115" font-family="Inter" font-size="9" fill="#7b8fb0">only above high steady volume · months</text>
+          </g>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">Self-hosting pays off only past the utilization where a reserved GPU beats per-token pricing — compute that break-even before committing.</text>
+          </svg>
         </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
@@ -306,7 +461,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Your inference costs have grown linearly with user traffic. What levers would you evaluate to break that linear relationship?', a: 'The first lever is batching efficiency — if you\'re not already on continuous batching, moving to it typically yields a large one-time throughput jump for the same hardware, since idle GPU cycles from padding/waiting are largely eliminated. Second, I\'d evaluate quantization (INT8 or a well-tuned INT4 scheme) to reduce memory footprint per request, which directly increases how many concurrent requests fit per GPU. Third, for workloads with predictable, shorter generations, speculative decoding can meaningfully reduce the number of expensive large-model forward passes needed per token. None of these are mutually exclusive — production systems typically stack quantization, continuous batching, and paged attention together, and the linear cost-scaling problem usually indicates one or more of these isn\'t yet in place rather than needing fundamentally new hardware.', level: 'Senior' },

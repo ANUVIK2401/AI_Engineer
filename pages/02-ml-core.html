@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>02 · ML Core — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -41,7 +41,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 500 230" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Supervised, unsupervised and reinforcement learning compared by the signal each one uses" viewBox="0 0 500 230" xmlns="http://www.w3.org/2000/svg">
             <rect x="20" y="20" width="140" height="160" rx="8" fill="none" stroke="#3d4a5c"/>
             <text x="35" y="45" font-family="JetBrains Mono" font-size="11" fill="#e5484d">SUPERVISED</text>
             <text x="35" y="70" font-family="Inter" font-size="11" fill="#7b8fb0">Labeled data</text>
@@ -91,6 +91,24 @@
           </ul>
         </div>
         <div class="card-visual">
+          <svg viewBox="0 0 520 176" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Least squares fits the line minimizing squared vertical residuals, which is why outliers dominate">
+          <line x1="40" y1="140" x2="300" y2="140" stroke="#3d4a5c"/><line x1="40" y1="140" x2="40" y2="26" stroke="#3d4a5c"/>
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">MINIMIZE SQUARED VERTICAL DISTANCE</text>
+          <line x1="48" y1="126" x2="292" y2="46" stroke="#5b91bd" stroke-width="2"/>
+          <circle cx="80" cy="104" r="3.5" fill="#f0f4ff"/><line x1="80" y1="104" x2="80" y2="116" stroke="#e5484d"/>
+          <circle cx="130" cy="106" r="3.5" fill="#f0f4ff"/><line x1="130" y1="106" x2="130" y2="99" stroke="#e5484d"/>
+          <circle cx="180" cy="72" r="3.5" fill="#f0f4ff"/><line x1="180" y1="72" x2="180" y2="83" stroke="#e5484d"/>
+          <circle cx="238" cy="70" r="3.5" fill="#f0f4ff"/><line x1="238" y1="70" x2="238" y2="64" stroke="#e5484d"/>
+          <text x="52" y="162" font-family="Inter" font-size="9" fill="#e5484d">red = residual</text>
+          <text x="330" y="44" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">WHY SQUARED MATTERS</text>
+          <text x="330" y="66" font-family="Inter" font-size="10" fill="#7b8fb0">A residual of 10 counts</text>
+          <text x="330" y="82" font-family="Inter" font-size="10" fill="#7b8fb0">100× more than one of 1.</text>
+          <text x="330" y="104" font-family="Inter" font-size="10" fill="#7b8fb0">So a single outlier can</text>
+          <text x="330" y="120" font-family="Inter" font-size="10" fill="#7b8fb0">tilt the entire fit — use</text>
+          <text x="330" y="136" font-family="Inter" font-size="10" fill="#7b8fb0">Huber loss if that hurts.</text>
+          </svg>
+        </div>
+        <div class="card-visual">
           $$ \hat{y} = X\beta, \quad \mathcal{L} = \frac{1}{n}\sum_{i=1}^n (y_i - \hat{y}_i)^2, \quad \beta = (X^TX)^{-1}X^Ty $$
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -117,6 +135,26 @@
           </ul>
         </div>
         <div class="card-visual">
+          <svg viewBox="0 0 520 172" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The sigmoid maps any real-valued log-odds into a probability between 0 and 1">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">LINEAR SCORE → SIGMOID → PROBABILITY</text>
+          <line x1="40" y1="96" x2="300" y2="96" stroke="#3d4a5c"/><line x1="170" y1="150" x2="170" y2="36" stroke="#3d4a5c"/>
+          <path d="M 44 144 C 120 143, 150 140, 170 96 C 190 52, 220 48, 296 47" fill="none" stroke="#5b91bd" stroke-width="2"/>
+          <line x1="40" y1="47" x2="300" y2="47" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <line x1="40" y1="144" x2="300" y2="144" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="14" y="50" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">1.0</text>
+          <text x="14" y="148" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">0.0</text>
+          <circle cx="170" cy="96" r="4" fill="#f9bd67"/>
+          <text x="176" y="90" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">z=0 → p=0.5</text>
+          <text x="196" y="166" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">z = w·x + b →</text>
+          <text x="330" y="44" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">THE REAL POINT</text>
+          <text x="330" y="66" font-family="Inter" font-size="10" fill="#7b8fb0">It is linear in log-odds,</text>
+          <text x="330" y="82" font-family="Inter" font-size="10" fill="#7b8fb0">not in probability.</text>
+          <text x="330" y="106" font-family="Inter" font-size="10" fill="#7b8fb0">A one-unit change in x</text>
+          <text x="330" y="122" font-family="Inter" font-size="10" fill="#7b8fb0">shifts p a lot near 0.5</text>
+          <text x="330" y="138" font-family="Inter" font-size="10" fill="#7b8fb0">and barely at the tails.</text>
+          </svg>
+        </div>
+        <div class="card-visual">
           $$ \sigma(z) = \frac{1}{1+e^{-z}}, \quad \mathcal{L} = -\frac{1}{n}\sum_i \left[ y_i \log\hat{y}_i + (1-y_i)\log(1-\hat{y}_i) \right] $$
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -141,6 +179,33 @@
             <li>Ensembling exists because a single deep tree overfits badly (high variance) — averaging many decorrelated trees cancels out individual errors while preserving low bias.</li>
             <li class="insight"><strong>The insight:</strong> random feature subsampling at each split isn't just for speed — it's what decorrelates the trees. Without it, all trees would find the same dominant feature first and the ensemble would barely reduce variance at all.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 178" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A single deep tree overfits; a random forest averages many decorrelated trees to cut variance">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">ONE DEEP TREE</text>
+          <rect x="60" y="30" width="46" height="20" rx="4" fill="none" stroke="#3d4a5c"/>
+          <line x1="72" y1="50" x2="46" y2="70" stroke="#3d4a5c"/><line x1="94" y1="50" x2="120" y2="70" stroke="#3d4a5c"/>
+          <rect x="22" y="70" width="46" height="20" rx="4" fill="none" stroke="#3d4a5c"/>
+          <rect x="98" y="70" width="46" height="20" rx="4" fill="none" stroke="#3d4a5c"/>
+          <line x1="34" y1="90" x2="24" y2="110" stroke="#3d4a5c"/><line x1="56" y1="90" x2="66" y2="110" stroke="#3d4a5c"/>
+          <rect x="8" y="110" width="32" height="18" rx="4" fill="none" stroke="#e5484d"/>
+          <rect x="52" y="110" width="32" height="18" rx="4" fill="none" stroke="#e5484d"/>
+          <text x="16" y="152" font-family="JetBrains Mono" font-size="10" fill="#e5484d">high variance</text>
+          <text x="14" y="168" font-family="Inter" font-size="9" fill="#7b8fb0">memorizes noise, unstable</text>
+          <line x1="190" y1="26" x2="190" y2="150" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="216" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">RANDOM FOREST</text>
+          <g stroke="#5b91bd" fill="none">
+          <rect x="222" y="34" width="34" height="16" rx="3"/><rect x="212" y="60" width="24" height="14" rx="3"/><rect x="244" y="60" width="24" height="14" rx="3"/>
+          <rect x="292" y="34" width="34" height="16" rx="3"/><rect x="282" y="60" width="24" height="14" rx="3"/><rect x="314" y="60" width="24" height="14" rx="3"/>
+          <rect x="362" y="34" width="34" height="16" rx="3"/><rect x="352" y="60" width="24" height="14" rx="3"/><rect x="384" y="60" width="24" height="14" rx="3"/>
+          </g>
+          <text x="424" y="46" font-family="JetBrains Mono" font-size="18" fill="#7b8fb0">…</text>
+          <path d="M 240 80 L 300 100 M 310 80 L 305 100 M 380 80 L 320 100" stroke="#3d4a5c"/>
+          <rect x="248" y="102" width="146" height="26" rx="5" fill="none" stroke="#10b981"/>
+          <text x="262" y="119" font-family="JetBrains Mono" font-size="10" fill="#10b981">average the votes</text>
+          <text x="216" y="152" font-family="JetBrains Mono" font-size="10" fill="#10b981">variance drops</text>
+          <text x="216" y="168" font-family="Inter" font-size="9" fill="#7b8fb0">bootstrap rows + subsample features = decorrelated trees</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Method</th><th>Bias</th><th>Variance</th><th>Interpretability</th></tr>
@@ -171,6 +236,26 @@
             <li class="insight"><strong>The insight:</strong> the kernel trick lets SVMs operate in an implicit, possibly infinite-dimensional feature space without ever computing coordinates in that space explicitly — you only ever need the kernel function (a similarity measure), not the transformed vectors themselves.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 180" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="An SVM maximizes the margin; only the support vectors on the boundary determine it">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">MAXIMUM MARGIN — ONLY THE EDGE POINTS MATTER</text>
+          <line x1="46" y1="150" x2="286" y2="34" stroke="#f0f4ff" stroke-width="2"/>
+          <line x1="46" y1="122" x2="286" y2="6" stroke="#7b8fb0" stroke-dasharray="4,3"/>
+          <line x1="46" y1="178" x2="286" y2="62" stroke="#7b8fb0" stroke-dasharray="4,3"/>
+          <circle cx="96" cy="66" r="4" fill="#5b91bd"/><circle cx="140" cy="52" r="4" fill="#5b91bd"/><circle cx="196" cy="40" r="4" fill="#5b91bd"/>
+          <circle cx="120" cy="96" r="5.5" fill="none" stroke="#5b91bd" stroke-width="2"/><circle cx="120" cy="96" r="2.5" fill="#5b91bd"/>
+          <circle cx="204" cy="62" r="5.5" fill="none" stroke="#5b91bd" stroke-width="2"/><circle cx="204" cy="62" r="2.5" fill="#5b91bd"/>
+          <circle cx="112" cy="160" r="4" fill="#e5484d"/><circle cx="176" cy="146" r="4" fill="#e5484d"/><circle cx="236" cy="122" r="4" fill="#e5484d"/>
+          <circle cx="150" cy="132" r="5.5" fill="none" stroke="#e5484d" stroke-width="2"/><circle cx="150" cy="132" r="2.5" fill="#e5484d"/>
+          <text x="308" y="44" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">SUPPORT VECTORS</text>
+          <text x="308" y="66" font-family="Inter" font-size="10" fill="#7b8fb0">Circled points alone set</text>
+          <text x="308" y="82" font-family="Inter" font-size="10" fill="#7b8fb0">the boundary. Delete any</text>
+          <text x="308" y="98" font-family="Inter" font-size="10" fill="#7b8fb0">other point and the fit</text>
+          <text x="308" y="114" font-family="Inter" font-size="10" fill="#7b8fb0">is unchanged.</text>
+          <text x="308" y="140" font-family="Inter" font-size="10" fill="#7b8fb0">That sparsity is also why</text>
+          <text x="308" y="156" font-family="Inter" font-size="10" fill="#7b8fb0">SVMs scale poorly: O(n²).</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"You have 10M labeled samples. Why is a kernel SVM a bad choice here, and what would you use instead?"</div>
@@ -193,6 +278,33 @@
             <li>Multiple metrics exist because "correct" means different things depending on the cost of false positives versus false negatives — a single number can't capture that asymmetry.</li>
             <li class="insight"><strong>The insight:</strong> accuracy is actively misleading on imbalanced data — a model predicting the majority class every time scores high accuracy while being useless, which is exactly why fraud, medical, and rare-event models are evaluated on precision/recall/AUC instead.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 196" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Confusion matrix showing where precision and recall each read from">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">CONFUSION MATRIX — PRECISION AND RECALL READ DIFFERENT EDGES</text>
+          <text x="112" y="42" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">PREDICTED +</text>
+          <text x="222" y="42" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">PREDICTED −</text>
+          <text x="14" y="72" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">ACTUAL +</text>
+          <text x="14" y="126" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">ACTUAL −</text>
+          <rect x="100" y="50" width="106" height="42" rx="5" fill="rgba(16,185,129,.14)" stroke="#10b981"/>
+          <text x="138" y="76" font-family="JetBrains Mono" font-size="12" fill="#10b981">TP</text>
+          <rect x="214" y="50" width="106" height="42" rx="5" fill="rgba(229,72,77,.12)" stroke="#e5484d"/>
+          <text x="252" y="76" font-family="JetBrains Mono" font-size="12" fill="#e5484d">FN</text>
+          <rect x="100" y="100" width="106" height="42" rx="5" fill="rgba(249,189,103,.12)" stroke="#f9bd67"/>
+          <text x="138" y="126" font-family="JetBrains Mono" font-size="12" fill="#f9bd67">FP</text>
+          <rect x="214" y="100" width="106" height="42" rx="5" fill="none" stroke="#3d4a5c"/>
+          <text x="252" y="126" font-family="JetBrains Mono" font-size="12" fill="#7b8fb0">TN</text>
+          <line x1="96" y1="46" x2="96" y2="146" stroke="#f9bd67" stroke-width="2"/>
+          <text x="30" y="166" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">precision = TP/(TP+FP)</text>
+          <line x1="96" y1="46" x2="324" y2="46" stroke="#e5484d" stroke-width="2"/>
+          <text x="230" y="166" font-family="JetBrains Mono" font-size="9" fill="#e5484d">recall = TP/(TP+FN)</text>
+          <text x="346" y="72" font-family="Inter" font-size="10" fill="#7b8fb0">Accuracy counts the</text>
+          <text x="346" y="88" font-family="Inter" font-size="10" fill="#7b8fb0">whole grid — so when</text>
+          <text x="346" y="104" font-family="Inter" font-size="10" fill="#7b8fb0">TN dwarfs everything,</text>
+          <text x="346" y="120" font-family="Inter" font-size="10" fill="#7b8fb0">it reports success</text>
+          <text x="346" y="136" font-family="Inter" font-size="10" fill="#7b8fb0">while TP stays zero.</text>
+          <text x="14" y="190" font-family="Inter" font-size="10" fill="#7b8fb0">Which error costs more decides which of the two you optimize.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Metric</th><th>Formula</th><th>Use when</th></tr>
@@ -229,6 +341,26 @@
             <li class="insight"><strong>The insight:</strong> cross-validation only estimates generalization correctly if the fold split respects the real deployment distribution — time-series data needs time-based splits (not random k-fold) or you leak future information into training, silently inflating your reported metrics.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 176" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="K-fold cross validation rotates the validation fold; time series must use forward chaining instead">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">5-FOLD — EVERY ROW IS VALIDATED EXACTLY ONCE</text>
+          <g font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">
+          <text x="14" y="42">FOLD 1</text><text x="14" y="66">FOLD 2</text><text x="14" y="90">FOLD 3</text>
+          </g>
+          <g>
+          <rect x="62" y="30" width="52" height="15" rx="3" fill="#e5484d"/><rect x="118" y="30" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/><rect x="174" y="30" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/><rect x="230" y="30" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/><rect x="286" y="30" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/>
+          <rect x="62" y="54" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/><rect x="118" y="54" width="52" height="15" rx="3" fill="#e5484d"/><rect x="174" y="54" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/><rect x="230" y="54" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/><rect x="286" y="54" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/>
+          <rect x="62" y="78" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/><rect x="118" y="78" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/><rect x="174" y="78" width="52" height="15" rx="3" fill="#e5484d"/><rect x="230" y="78" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/><rect x="286" y="78" width="52" height="15" rx="3" fill="none" stroke="#3d4a5c"/>
+          </g>
+          <rect x="360" y="30" width="12" height="12" rx="2" fill="#e5484d"/><text x="378" y="40" font-family="Inter" font-size="9" fill="#7b8fb0">validate</text>
+          <rect x="360" y="50" width="12" height="12" rx="2" fill="none" stroke="#3d4a5c"/><text x="378" y="60" font-family="Inter" font-size="9" fill="#7b8fb0">train</text>
+          <text x="14" y="122" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">TIME SERIES CANNOT DO THIS</text>
+          <rect x="62" y="132" width="90" height="15" rx="3" fill="none" stroke="#10b981"/><rect x="156" y="132" width="46" height="15" rx="3" fill="#10b981"/>
+          <rect x="62" y="152" width="136" height="15" rx="3" fill="none" stroke="#10b981"/><rect x="202" y="152" width="46" height="15" rx="3" fill="#10b981"/>
+          <text x="272" y="144" font-family="Inter" font-size="10" fill="#7b8fb0">Forward chaining only: shuffling</text>
+          <text x="272" y="160" font-family="Inter" font-size="10" fill="#7b8fb0">trains on the future to predict the past.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why is a single holdout split sometimes insufficient, and when is k-fold still the wrong tool?"</div>
@@ -262,7 +394,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why does gradient boosting typically require more careful hyperparameter tuning than random forests?', a: 'Random forest trees are built independently and in parallel, and averaging naturally controls variance regardless of how deep individual trees are, so it\'s fairly robust to default settings. Gradient boosting builds trees sequentially, each correcting the previous ensemble\'s residual errors, which means it can overfit if the learning rate is too high or too many boosting rounds are run — there\'s no averaging effect to protect you. This is why boosting libraries expose learning rate, number of estimators, and early stopping as first-class controls that materially change outcomes.', level: 'Mid' },

@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>11 · Generative Models &amp; Vision — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -40,6 +40,25 @@
             <li class="insight"><strong>The insight:</strong> there's a recurring trilemma — high sample quality, broad mode coverage, and fast sampling; pick two. GANs gave quality and speed but drop modes. Diffusion gives quality and coverage but needs many sequential denoising steps. Autoregressive models give coverage and exact likelihood but sample sequentially. Every recent advance (consistency models, distilled diffusion, speculative decoding) is an attempt to buy back the third corner.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 158" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="The generative trilemma: quality, mode coverage and fast sampling, pick two">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">PICK TWO — EVERY RECENT ADVANCE CHASES THE THIRD</text>
+          <polygon points="150,36 66,124 234,124" fill="none" stroke="#3d4a5c"/>
+          <text x="112" y="30" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">QUALITY</text>
+          <text x="14" y="138" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">COVERAGE</text>
+          <text x="216" y="138" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">FAST SAMPLING</text>
+          <line x1="150" y1="42" x2="228" y2="118" stroke="#e5484d" stroke-width="2"/>
+          <text x="248" y="60" font-family="JetBrains Mono" font-size="9" fill="#e5484d">GAN</text>
+          <text x="284" y="60" font-family="Inter" font-size="9" fill="#7b8fb0">quality + speed, drops modes</text>
+          <line x1="146" y1="42" x2="70" y2="118" stroke="#10b981" stroke-width="2"/>
+          <text x="248" y="86" font-family="JetBrains Mono" font-size="9" fill="#10b981">DIFFUSION</text>
+          <text x="320" y="86" font-family="Inter" font-size="9" fill="#7b8fb0">quality + coverage, slow</text>
+          <line x1="74" y1="124" x2="226" y2="124" stroke="#5b91bd" stroke-width="2"/>
+          <text x="248" y="112" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">AUTOREGRESSIVE</text>
+          <text x="352" y="112" font-family="Inter" font-size="9" fill="#7b8fb0">coverage + exact likelihood</text>
+          <text x="14" y="154" font-family="Inter" font-size="10" fill="#7b8fb0">Consistency models and step distillation buy diffusion speed; speculative decoding buys AR parallelism.</text>
+          </svg>
+        </div>
         <table class="cmp-table">
           <tr><th></th><th>Autoregressive</th><th>VAE</th><th>GAN</th><th>Diffusion</th></tr>
           <tr><td>Likelihood</td><td>exact</td><td>lower bound</td><td>none</td><td>bound / tractable</td></tr>
@@ -71,6 +90,22 @@
             <li>They matter for representation learning, anomaly detection via reconstruction error, and — most importantly today — as the latent-space compressor inside latent diffusion models like Stable Diffusion.</li>
             <li class="insight"><strong>The insight:</strong> the KL term is what makes a VAE generative rather than just a compressor. Without it the latent space is full of holes — points between two valid codes decode to garbage, so you can't sample. The KL forces the latents to fill a known, continuous distribution you can actually draw from. The cost is the classic blurriness: the reconstruction loss is typically a Gaussian likelihood, so the optimal output under uncertainty is an average of plausible images, which looks blurry.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A plain autoencoder latent space has holes; the KL term makes it continuous and samplable">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">AUTOENCODER — latent space full of holes</text>
+          <rect x="20" y="30" width="170" height="66" rx="5" fill="none" stroke="#3d4a5c"/>
+          <g fill="#5b91bd"><circle cx="50" cy="50" r="4"/><circle cx="120" cy="44" r="4"/><circle cx="70" cy="82" r="4"/><circle cx="160" cy="76" r="4"/></g>
+          <circle cx="96" cy="64" r="4" fill="none" stroke="#e5484d"/>
+          <line x1="92" y1="60" x2="100" y2="68" stroke="#e5484d"/><line x1="100" y1="60" x2="92" y2="68" stroke="#e5484d"/>
+          <text x="20" y="112" font-family="Inter" font-size="9" fill="#e5484d">sample between two codes → garbage decode</text>
+          <line x1="238" y1="24" x2="238" y2="134" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="262" y="18" font-family="JetBrains Mono" font-size="10" fill="#10b981">VAE — KL fills the space</text>
+          <rect x="262" y="30" width="170" height="66" rx="5" fill="rgba(16,185,129,.08)" stroke="#10b981"/>
+          <g fill="#10b981" opacity=".85"><circle cx="292" cy="50" r="3"/><circle cx="330" cy="44" r="3"/><circle cx="368" cy="52" r="3"/><circle cx="306" cy="72" r="3"/><circle cx="348" cy="76" r="3"/><circle cx="392" cy="68" r="3"/><circle cx="326" cy="60" r="3"/><circle cx="404" cy="46" r="3"/></g>
+          <text x="262" y="112" font-family="Inter" font-size="9" fill="#10b981">any point decodes to something plausible — so you can sample</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">The price is blur: a Gaussian reconstruction loss makes the optimal output an average of plausible images.</text>
+          </svg>
         </div>
         <div class="card-visual">
           $$ \mathcal{L}_{\text{VAE}} = \underbrace{\mathbb{E}_{q(z|x)}[\log p(x|z)]}_{\text{reconstruction}} - \underbrace{D_{KL}\big(q(z|x)\,\|\,p(z)\big)}_{\text{regularizer}} $$
@@ -105,7 +140,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Forward noising process and the learned reverse denoising process" viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg">
             <text x="16" y="22" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">FORWARD — fixed, adds noise (no learning)</text>
             <rect x="20" y="32" width="52" height="34" rx="4" fill="none" stroke="#58b58e"/>
             <text x="34" y="53" font-family="JetBrains Mono" font-size="10" fill="#58b58e">x₀</text>
@@ -145,6 +180,26 @@
             <li class="insight"><strong>The insight:</strong> there's no loss curve to read. Generator and discriminator losses move against each other, so a decreasing generator loss can mean the discriminator got worse rather than the samples got better. That's why GAN evaluation depends on sample-distribution metrics like FID, and why "just train longer" is unreliable advice — you can train past the good checkpoint without any number telling you.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Generator and discriminator train adversarially, and neither loss curve indicates sample quality">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">A GAME, NOT AN OPTIMIZATION — NO LOSS TO READ</text>
+          <rect x="20" y="34" width="96" height="30" rx="5" fill="none" stroke="#5b91bd"/>
+          <text x="32" y="53" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">generator</text>
+          <rect x="200" y="34" width="110" height="30" rx="5" fill="none" stroke="#e5484d"/>
+          <text x="212" y="53" font-family="JetBrains Mono" font-size="9" fill="#e5484d">discriminator</text>
+          <line x1="116" y1="49" x2="198" y2="49" stroke="#3d4a5c" marker-end="url(#g1)"/>
+          <text x="126" y="42" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">fake</text>
+          <path d="M 255 64 C 255 88, 68 88, 68 66" fill="none" stroke="#f9bd67" marker-end="url(#g1)"/>
+          <text x="130" y="84" font-family="JetBrains Mono" font-size="8" fill="#f9bd67">gradient: "you were caught"</text>
+          <rect x="336" y="34" width="164" height="30" rx="5" fill="none" stroke="#3d4a5c"/>
+          <text x="348" y="53" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">real data</text>
+          <line x1="336" y1="49" x2="312" y2="49" stroke="#3d4a5c"/>
+          <text x="14" y="112" font-family="JetBrains Mono" font-size="9" fill="#e5484d">MODE COLLAPSE</text>
+          <text x="14" y="128" font-family="Inter" font-size="10" fill="#7b8fb0">A generator that finds one convincing output satisfies the objective forever — it was never asked to cover</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">the distribution. Individual samples look perfect, which is why you need FID rather than eyeballing.</text>
+          <defs><marker id="g1" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#7b8fb0"/></marker></defs>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
           <div class="tf-row-failure tf-situation">Mode collapse</div><div>Generator emits a few outputs; FID is bad, samples look fine individually</div>
@@ -174,6 +229,22 @@
             <li>It matters because vision is where transfer learning was proven, and because most real CV work is fine-tuning a pretrained backbone rather than designing architecture.</li>
             <li class="insight"><strong>The insight:</strong> CNNs bake in the inductive biases of locality and translation equivariance, which is prior knowledge you get for free. ViTs have almost none of that, so they underperform CNNs on small datasets and overtake them given enough data — the crossover is roughly tens of millions of images, or any amount if you start from a pretrained ViT. This is the general lesson of the scaling era: architectural priors help when data is scarce and become a ceiling when it isn't.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CNN inductive bias wins on small data, ViT overtakes given enough data">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">INDUCTIVE BIAS HELPS WHEN DATA IS SCARCE, CAPS WHEN IT IS NOT</text>
+          <line x1="52" y1="112" x2="470" y2="112" stroke="#3d4a5c"/><line x1="52" y1="112" x2="52" y2="34" stroke="#3d4a5c"/>
+          <text x="14" y="40" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">acc</text>
+          <text x="180" y="130" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">TRAINING SET SIZE (log) →</text>
+          <path d="M 56 88 C 130 60, 220 48, 466 42" fill="none" stroke="#5b91bd" stroke-width="2"/>
+          <path d="M 56 106 C 150 100, 230 62, 466 30" fill="none" stroke="#10b981" stroke-width="2"/>
+          <circle cx="272" cy="52" r="4" fill="#f9bd67"/>
+          <line x1="272" y1="34" x2="272" y2="112" stroke="#f9bd67" stroke-dasharray="3,3"/>
+          <text x="280" y="46" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">crossover</text>
+          <text x="88" y="80" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">CNN</text>
+          <text x="380" y="34" font-family="JetBrains Mono" font-size="9" fill="#10b981">ViT</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">With 4,000 images the decision is not CNN vs ViT — it is fine-tune a pretrained backbone, which erases the gap.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th></th><th>CNN</th><th>Vision Transformer</th></tr>
@@ -207,6 +278,26 @@
             <li class="insight"><strong>The insight:</strong> contrastive training gives you alignment, not compositional understanding. CLIP reliably matches "a photo of a dog" to dog images, but struggles to distinguish "the red cube on the blue sphere" from "the blue cube on the red sphere" — the training objective only requires distinguishing a caption from other captions in the batch, which rarely requires parsing spatial relations. Knowing what the objective does and doesn't force is how you predict where a model breaks.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="CLIP aligns image and text in one space but the contrastive objective never forces compositional parsing">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">ONE SHARED SPACE — TEXT QUERIES RETRIEVE IMAGES DIRECTLY</text>
+          <rect x="20" y="32" width="90" height="26" rx="4" fill="none" stroke="#5b91bd"/>
+          <text x="38" y="49" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">image enc</text>
+          <rect x="20" y="70" width="90" height="26" rx="4" fill="none" stroke="#10b981"/>
+          <text x="42" y="87" font-family="JetBrains Mono" font-size="9" fill="#10b981">text enc</text>
+          <rect x="150" y="42" width="110" height="44" rx="6" fill="rgba(145,165,180,.07)" stroke="#3d4a5c"/>
+          <circle cx="186" cy="60" r="3.5" fill="#5b91bd"/><circle cx="192" cy="66" r="3.5" fill="#10b981"/>
+          <circle cx="228" cy="72" r="3.5" fill="#5b91bd"/><circle cx="222" cy="66" r="3.5" fill="#10b981"/>
+          <text x="162" y="102" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">matched pairs pulled together</text>
+          <line x1="110" y1="45" x2="148" y2="55" stroke="#3d4a5c"/><line x1="110" y1="83" x2="148" y2="74" stroke="#3d4a5c"/>
+          <rect x="292" y="32" width="208" height="64" rx="5" fill="none" stroke="#e5484d"/>
+          <text x="304" y="50" font-family="JetBrains Mono" font-size="9" fill="#e5484d">WHERE IT BREAKS</text>
+          <text x="304" y="68" font-family="Inter" font-size="9" fill="#7b8fb0">"red cube on blue sphere" ≈</text>
+          <text x="304" y="82" font-family="Inter" font-size="9" fill="#7b8fb0">"blue cube on red sphere"</text>
+          <text x="14" y="128" font-family="Inter" font-size="10" fill="#7b8fb0">The objective only had to tell one caption from the others in a batch — that rarely requires parsing which</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">adjective binds to which noun. Predict failures from the objective, not from the architecture.</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
           <div class="tf-row-failure tf-situation">Compositional / relational prompts</div><div>Contrastive objective never required parsing them; attribute binding fails</div>
@@ -238,7 +329,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 120" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Voice pipeline latency budget across streaming ASR, endpointing, LLM and streaming TTS" viewBox="0 0 520 120" xmlns="http://www.w3.org/2000/svg">
             <rect x="14" y="40" width="74" height="36" rx="5" fill="none" stroke="#5b91bd"/>
             <text x="26" y="63" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">STREAM ASR</text>
             <rect x="112" y="40" width="86" height="36" rx="5" fill="none" stroke="#f9bd67"/>
@@ -277,6 +368,22 @@
             <li>They matter because serving cost is the dominant line item in production LLM systems, and each of these buys a different point on the quality/cost curve.</li>
             <li class="insight"><strong>The insight:</strong> MoE changes what "model size" means. A 400B-parameter MoE with 40B active per token has the memory footprint of the former and the compute cost of the latter — so it needs the VRAM of a huge model while running at the speed of a small one. That's why MoE is a datacenter win and often an edge-deployment non-starter, and why "parameters" alone stopped being a meaningful comparison.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Soft targets from a teacher carry more information than hard labels">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">SOFT TARGETS CARRY WHAT HARD LABELS THROW AWAY</text>
+          <text x="14" y="44" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">hard label</text>
+          <g><rect x="100" y="32" width="30" height="16" fill="#3d4a5c"/><rect x="134" y="32" width="30" height="16" fill="none" stroke="#3d4a5c"/><rect x="168" y="32" width="30" height="16" fill="none" stroke="#3d4a5c"/></g>
+          <text x="212" y="45" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">[1, 0, 0]</text>
+          <text x="290" y="45" font-family="Inter" font-size="9" fill="#e5484d">"it is a cat" — nothing else</text>
+          <text x="14" y="80" font-family="JetBrains Mono" font-size="9" fill="#10b981">teacher soft</text>
+          <g><rect x="100" y="68" width="30" height="16" fill="rgba(16,185,129,.75)"/><rect x="134" y="68" width="30" height="16" fill="rgba(16,185,129,.30)"/><rect x="168" y="68" width="30" height="16" fill="rgba(16,185,129,.08)"/></g>
+          <text x="212" y="81" font-family="JetBrains Mono" font-size="9" fill="#10b981">[.7, .25, .05]</text>
+          <text x="290" y="81" font-family="Inter" font-size="9" fill="#10b981">"cat, but lynx is plausible"</text>
+          <text x="14" y="118" font-family="Inter" font-size="10" fill="#7b8fb0">That relative structure — which classes are confusable — is the extra signal that lets a small student match</text>
+          <text x="14" y="132" font-family="Inter" font-size="10" fill="#7b8fb0">a large teacher on a narrow task. Distill on real production traffic, not synthetic inputs.</text>
+          <text x="14" y="146" font-family="Inter" font-size="10" fill="#f9bd67">Try prompt caching and a confidence cascade first — same savings, far less engineering.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Technique</th><th>Buys you</th><th>Costs you</th></tr>
@@ -326,7 +433,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Explain the generative trilemma and place diffusion, GANs, and autoregressive models on it.', a: 'The trilemma is that high sample quality, broad mode coverage, and fast sampling are hard to get simultaneously. GANs deliver quality and single-pass speed but drop modes, because the adversarial objective only requires fooling a discriminator, which one convincing mode can do. Diffusion delivers quality and coverage — it is trained to model the whole distribution with a stable regression objective — but pays with many sequential denoising steps. Autoregressive models give exact likelihood and excellent coverage but sample token by token. Every major recent result is an attempt to buy the missing corner: consistency and distillation models give diffusion fast sampling, speculative decoding gives autoregressive models parallelism.', level: 'Senior' },

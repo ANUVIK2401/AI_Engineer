@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>04 · Transformers & LLMs — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -41,6 +41,31 @@
           </ul>
         </div>
         <div class="card-visual">
+          <svg viewBox="0 0 520 176" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Query dot key gives a score, softmax turns scores into weights, output is the weighted sum of values">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">"it" LOOKS BACK — Q·K SCORES, SOFTMAX WEIGHTS, WEIGHTED V</text>
+          <text x="24" y="46" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">The</text>
+          <text x="72" y="46" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">cat</text>
+          <text x="120" y="46" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">sat</text>
+          <text x="168" y="46" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">because</text>
+          <text x="248" y="46" font-family="JetBrains Mono" font-size="11" fill="#e5484d">it</text>
+          <text x="278" y="46" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">was tired</text>
+          <path d="M 250 52 C 220 78, 110 78, 80 54" fill="none" stroke="#e5484d" stroke-width="3"/>
+          <path d="M 250 52 C 236 72, 148 72, 130 54" fill="none" stroke="#e5484d" stroke-width="1" opacity=".45"/>
+          <path d="M 250 52 C 240 70, 44 74, 32 54" fill="none" stroke="#e5484d" stroke-width="1" opacity=".25"/>
+          <text x="60" y="96" font-family="JetBrains Mono" font-size="9" fill="#e5484d">0.71</text>
+          <text x="116" y="92" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">0.15</text>
+          <text x="20" y="90" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">0.06</text>
+          <rect x="24" y="110" width="118" height="30" rx="5" fill="none" stroke="#5b91bd"/>
+          <text x="36" y="129" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">Q·Kᵀ / √d_k</text>
+          <rect x="158" y="110" width="98" height="30" rx="5" fill="none" stroke="#f9bd67"/>
+          <text x="170" y="129" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">softmax</text>
+          <rect x="272" y="110" width="120" height="30" rx="5" fill="none" stroke="#10b981"/>
+          <text x="284" y="129" font-family="JetBrains Mono" font-size="9" fill="#10b981">Σ weight × V</text>
+          <line x1="142" y1="125" x2="156" y2="125" stroke="#3d4a5c"/><line x1="256" y1="125" x2="270" y2="125" stroke="#3d4a5c"/>
+          <text x="14" y="166" font-family="Inter" font-size="10" fill="#7b8fb0">√d_k stops large dot products from saturating softmax into a near-zero gradient.</text>
+          </svg>
+        </div>
+        <div class="card-visual">
           $$ \text{Attention}(Q,K,V) = \text{softmax}\left(\frac{QK^T}{\sqrt{d_k}}\right)V $$
         </div>
         <div class="tf-grid">
@@ -71,6 +96,25 @@
             <li class="insight"><strong>The insight:</strong> heads aren't explicitly assigned roles during training — interpretability research shows some heads emerge specializing in syntax, others in positional patterns, purely as a byproduct of gradient descent optimizing the loss, not by design.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 160" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Multi-head attention splits the embedding so each head learns a different relation, then concatenates">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">SPLIT d_model INTO h HEADS — EACH LEARNS A DIFFERENT RELATION</text>
+          <rect x="20" y="34" width="80" height="30" rx="5" fill="none" stroke="#3d4a5c"/>
+          <text x="30" y="53" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">d_model=512</text>
+          <g stroke="#3d4a5c"><line x1="100" y1="49" x2="140" y2="44"/><line x1="100" y1="49" x2="140" y2="72"/><line x1="100" y1="49" x2="140" y2="100"/><line x1="100" y1="49" x2="140" y2="128"/></g>
+          <g>
+          <rect x="142" y="32" width="120" height="24" rx="4" fill="none" stroke="#e5484d"/><text x="152" y="48" font-family="JetBrains Mono" font-size="9" fill="#e5484d">head 1 · syntax</text>
+          <rect x="142" y="60" width="120" height="24" rx="4" fill="none" stroke="#5b91bd"/><text x="152" y="76" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">head 2 · coreference</text>
+          <rect x="142" y="88" width="120" height="24" rx="4" fill="none" stroke="#10b981"/><text x="152" y="104" font-family="JetBrains Mono" font-size="9" fill="#10b981">head 3 · position</text>
+          <rect x="142" y="116" width="120" height="24" rx="4" fill="none" stroke="#f9bd67"/><text x="152" y="132" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">head 4 · rare tokens</text>
+          </g>
+          <g font-family="JetBrains Mono" font-size="8" fill="#7b8fb0"><text x="268" y="48">64</text><text x="268" y="76">64</text><text x="268" y="104">64</text><text x="268" y="132">64</text></g>
+          <g stroke="#3d4a5c"><line x1="288" y1="44" x2="330" y2="80"/><line x1="288" y1="72" x2="330" y2="80"/><line x1="288" y1="100" x2="330" y2="82"/><line x1="288" y1="128" x2="330" y2="86"/></g>
+          <rect x="332" y="66" width="76" height="30" rx="5" fill="none" stroke="#f0f4ff"/>
+          <text x="342" y="85" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">concat + Wᴼ</text>
+          <text x="14" y="156" font-family="Inter" font-size="10" fill="#7b8fb0">Total compute is unchanged — the same 512 dims, partitioned. Multiple views, one cost.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why use multiple attention heads instead of one larger head?"</div>
@@ -93,6 +137,25 @@
             <li>Positional encoding exists because self-attention alone is permutation-invariant — without it, the model can't distinguish token order at all.</li>
             <li class="insight"><strong>The insight:</strong> RoPE's rotation trick means relative position is naturally encoded in the dot product between rotated Q and K vectors — it extrapolates to longer sequences at inference than were seen during training far better than fixed absolute encodings, which is exactly why it's the default choice for modern long-context LLMs (LLaMA, GPT-NeoX).</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 168" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Self attention is permutation invariant, so position must be injected explicitly">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">ATTENTION SEES A SET, NOT A SEQUENCE</text>
+          <rect x="20" y="32" width="200" height="52" rx="6" fill="none" stroke="#e5484d"/>
+          <text x="34" y="52" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">dog bites man</text>
+          <text x="34" y="72" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">man bites dog</text>
+          <text x="232" y="62" font-family="JetBrains Mono" font-size="13" fill="#e5484d">identical</text>
+          <text x="232" y="78" font-family="Inter" font-size="9" fill="#7b8fb0">without position</text>
+          <text x="14" y="108" font-family="JetBrains Mono" font-size="10" fill="#10b981">ADD A POSITION SIGNAL PER SLOT</text>
+          <g>
+          <rect x="20" y="118" width="46" height="24" rx="4" fill="none" stroke="#10b981"/><text x="32" y="134" font-family="JetBrains Mono" font-size="9" fill="#10b981">dog+p₀</text>
+          <rect x="72" y="118" width="52" height="24" rx="4" fill="none" stroke="#10b981"/><text x="82" y="134" font-family="JetBrains Mono" font-size="9" fill="#10b981">bites+p₁</text>
+          <rect x="130" y="118" width="52" height="24" rx="4" fill="none" stroke="#10b981"/><text x="142" y="134" font-family="JetBrains Mono" font-size="9" fill="#10b981">man+p₂</text>
+          </g>
+          <text x="204" y="134" font-family="Inter" font-size="10" fill="#7b8fb0">RoPE rotates Q and K by angle ∝ position, so</text>
+          <text x="204" y="150" font-family="Inter" font-size="10" fill="#7b8fb0">the dot product encodes <tspan fill="#f0f4ff">relative</tspan> distance — which</text>
+          <text x="204" y="164" font-family="Inter" font-size="10" fill="#7b8fb0">is why it extends past the trained length.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Method</th><th>Extrapolates to longer seqs?</th><th>Used by</th></tr>
@@ -124,7 +187,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="A transformer block: attention, residual add and norm, feed-forward, then add and norm again" viewBox="0 0 300 340" xmlns="http://www.w3.org/2000/svg">
             <rect x="40" y="10" width="220" height="50" rx="6" fill="none" stroke="#e5484d"/>
             <text x="70" y="40" font-family="JetBrains Mono" font-size="12" fill="#e5484d">Multi-Head Attention</text>
             <line x1="150" y1="60" x2="150" y2="85" stroke="#3d4a5c"/>
@@ -164,6 +227,27 @@
             <li class="insight"><strong>The insight:</strong> decoder-only architectures won out for general-purpose LLMs not because bidirectional context is useless, but because a single unified autoregressive objective scales more simply across arbitrarily many tasks framed as text generation — you don't need task-specific encoder/decoder architecture decisions, just more data and parameters.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 164" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Encoder attends bidirectionally, decoder is causally masked so a token cannot see the future">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">ENCODER — bidirectional</text>
+          <g><circle cx="40" cy="46" r="8" fill="none" stroke="#5b91bd"/><circle cx="80" cy="46" r="8" fill="none" stroke="#5b91bd"/><circle cx="120" cy="46" r="8" fill="none" stroke="#5b91bd"/><circle cx="160" cy="46" r="8" fill="none" stroke="#5b91bd"/></g>
+          <g stroke="#5b91bd" opacity=".5" fill="none">
+          <path d="M 80 38 Q 100 22 118 38"/><path d="M 120 38 Q 100 22 82 38"/><path d="M 40 38 Q 80 14 158 38"/><path d="M 160 54 Q 100 74 42 54"/>
+          </g>
+          <text x="14" y="78" font-family="Inter" font-size="9" fill="#7b8fb0">every token sees every other — good for classification</text>
+          <line x1="212" y1="26" x2="212" y2="150" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="238" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">DECODER — causally masked</text>
+          <g><circle cx="260" cy="46" r="8" fill="none" stroke="#e5484d"/><circle cx="300" cy="46" r="8" fill="none" stroke="#e5484d"/><circle cx="340" cy="46" r="8" fill="none" stroke="#e5484d"/><circle cx="380" cy="46" r="8" fill="none" stroke="#e5484d"/></g>
+          <g stroke="#e5484d" opacity=".6" fill="none">
+          <path d="M 300 38 Q 280 22 262 38"/><path d="M 340 38 Q 300 16 262 38"/><path d="M 340 38 Q 320 22 302 38"/><path d="M 380 38 Q 320 12 262 38"/>
+          </g>
+          <text x="238" y="78" font-family="Inter" font-size="9" fill="#7b8fb0">token t sees only ≤ t — required for generation</text>
+          <rect x="238" y="90" width="240" height="46" rx="5" fill="none" stroke="#3d4a5c"/>
+          <text x="250" y="108" font-family="Inter" font-size="9.5" fill="#f9bd67">Why the mask is not optional:</text>
+          <text x="250" y="124" font-family="Inter" font-size="9.5" fill="#7b8fb0">without it the model reads the answer it is</text>
+          <text x="250" y="136" font-family="Inter" font-size="9.5" fill="#7b8fb0">predicting — trains fine, generates nonsense.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why did GPT-style decoder-only models become the dominant architecture over encoder-decoder models like T5?"</div>
@@ -186,6 +270,25 @@
             <li>Subword tokenization exists to balance vocabulary size against sequence length — word-level tokenization can't handle unseen words (out-of-vocabulary), while character-level tokenization makes sequences impractically long.</li>
             <li class="insight"><strong>The insight:</strong> vocabulary size is a direct tradeoff against sequence length and embedding table size — a larger vocab means shorter sequences per input (cheaper attention, which scales quadratically) but a bigger embedding/output matrix, so vocab size is a deliberate engineering choice, not just "bigger is better."</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 158" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BPE splits rare words into many subword pieces, which is why cost and arithmetic behave oddly">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">SUBWORD SPLITTING IS NOT UNIFORM</text>
+          <text x="14" y="44" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">common word</text>
+          <rect x="120" y="32" width="66" height="20" rx="3" fill="rgba(16,185,129,.16)" stroke="#10b981"/>
+          <text x="132" y="46" font-family="JetBrains Mono" font-size="10" fill="#10b981">the</text>
+          <text x="200" y="46" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">1 token</text>
+          <text x="14" y="76" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">rare word</text>
+          <g><rect x="120" y="64" width="42" height="20" rx="3" fill="rgba(249,189,103,.14)" stroke="#f9bd67"/><rect x="164" y="64" width="38" height="20" rx="3" fill="rgba(249,189,103,.14)" stroke="#f9bd67"/><rect x="204" y="64" width="42" height="20" rx="3" fill="rgba(249,189,103,.14)" stroke="#f9bd67"/><rect x="248" y="64" width="34" height="20" rx="3" fill="rgba(249,189,103,.14)" stroke="#f9bd67"/></g>
+          <g font-family="JetBrains Mono" font-size="9" fill="#f9bd67"><text x="128" y="78">un</text><text x="170" y="78">ambig</text><text x="212" y="78">uous</text><text x="256" y="78">ly</text></g>
+          <text x="296" y="78" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">4 tokens</text>
+          <text x="14" y="108" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">a number</text>
+          <g><rect x="120" y="96" width="34" height="20" rx="3" fill="rgba(229,72,77,.14)" stroke="#e5484d"/><rect x="156" y="96" width="34" height="20" rx="3" fill="rgba(229,72,77,.14)" stroke="#e5484d"/></g>
+          <g font-family="JetBrains Mono" font-size="9" fill="#e5484d"><text x="128" y="110">127</text><text x="166" y="110">53</text></g>
+          <text x="200" y="110" font-family="Inter" font-size="9" fill="#e5484d">"12753" splits arbitrarily — that is why LLMs fumble arithmetic</text>
+          <text x="14" y="140" font-family="Inter" font-size="10" fill="#7b8fb0">Consequences: non-English text costs more tokens, character counting is unreliable,</text>
+          <text x="14" y="154" font-family="Inter" font-size="10" fill="#7b8fb0">and perplexity is not comparable across two different tokenizers.</text>
+          </svg>
         </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
@@ -217,6 +320,34 @@
             <li class="insight"><strong>The insight:</strong> attention cost scales quadratically with sequence length (every token attends to every other token) while KV cache memory grows linearly per request — doubling context roughly quadruples attention compute but "only" doubles cache memory. Both matter: quadratic compute dominates prefill cost, and the linear-but-per-request cache is what eats GPU memory and caps concurrency in serving.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 170" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Without a KV cache every step recomputes all previous keys and values, giving quadratic work">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">NO CACHE — recompute everything each step</text>
+          <g fill="none" stroke="#e5484d" opacity=".8">
+          <rect x="20" y="28" width="16" height="14"/><rect x="20" y="46" width="16" height="14"/><rect x="38" y="46" width="16" height="14"/>
+          <rect x="20" y="64" width="16" height="14"/><rect x="38" y="64" width="16" height="14"/><rect x="56" y="64" width="16" height="14"/>
+          <rect x="20" y="82" width="16" height="14"/><rect x="38" y="82" width="16" height="14"/><rect x="56" y="82" width="16" height="14"/><rect x="74" y="82" width="16" height="14"/>
+          </g>
+          <text x="104" y="60" font-family="JetBrains Mono" font-size="10" fill="#e5484d">O(n²) total work</text>
+          <text x="104" y="76" font-family="Inter" font-size="9" fill="#7b8fb0">every past token re-encoded</text>
+          <line x1="248" y1="22" x2="248" y2="150" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="266" y="18" font-family="JetBrains Mono" font-size="10" fill="#10b981">WITH KV CACHE — reuse, append one</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="272" y="28" width="16" height="14"/>
+          <rect x="272" y="46" width="16" height="14"/><rect x="290" y="46" width="16" height="14"/>
+          <rect x="272" y="64" width="16" height="14"/><rect x="290" y="64" width="16" height="14"/><rect x="308" y="64" width="16" height="14"/>
+          <rect x="272" y="82" width="16" height="14"/><rect x="290" y="82" width="16" height="14"/><rect x="308" y="82" width="16" height="14"/>
+          </g>
+          <g fill="rgba(16,185,129,.30)" stroke="#10b981">
+          <rect x="290" y="46" width="16" height="14"/><rect x="308" y="64" width="16" height="14"/><rect x="326" y="82" width="16" height="14"/>
+          </g>
+          <text x="356" y="60" font-family="JetBrains Mono" font-size="10" fill="#10b981">O(n) — one new column</text>
+          <text x="356" y="76" font-family="Inter" font-size="9" fill="#7b8fb0">grey = read from cache</text>
+          <text x="14" y="128" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">THE TRADE YOU JUST MADE</text>
+          <text x="14" y="146" font-family="Inter" font-size="10" fill="#7b8fb0">Compute drops, memory grows linearly with context × batch × layers. Decoding becomes</text>
+          <text x="14" y="162" font-family="Inter" font-size="10" fill="#7b8fb0">memory-bandwidth-bound, and GQA/MQA exist to shrink that cache.</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
           <div class="tf-row-tradeoff tf-situation">Longer context window</div><div>Quadratic attention compute + linearly growing KV cache memory</div>
@@ -245,6 +376,28 @@
             <li class="insight"><strong>The insight — the classic gotcha:</strong> greedy decoding is deterministic and often produces worse quality output than sampling with a moderate temperature, because always taking the locally most-probable token can lead down a path that's globally suboptimal — greedy is locally optimal per step, not sequence-optimal, so it's not a "safe default."</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 176" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Temperature reshapes the probability distribution; top-p truncates it before sampling">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">TEMPERATURE RESHAPES · TOP-P TRUNCATES</text>
+          <text x="26" y="40" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">T = 0.2 (sharp)</text>
+          <g fill="#5b91bd"><rect x="26" y="76" width="16" height="44"/><rect x="46" y="108" width="16" height="12"/><rect x="66" y="114" width="16" height="6"/><rect x="86" y="117" width="16" height="3"/></g>
+          <line x1="20" y1="120" x2="112" y2="120" stroke="#3d4a5c"/>
+          <text x="24" y="138" font-family="Inter" font-size="9" fill="#7b8fb0">near-deterministic</text>
+          <text x="176" y="40" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">T = 1.2 (flat)</text>
+          <g fill="#f9bd67"><rect x="176" y="94" width="16" height="26"/><rect x="196" y="98" width="16" height="22"/><rect x="216" y="102" width="16" height="18"/><rect x="236" y="105" width="16" height="15"/></g>
+          <line x1="170" y1="120" x2="262" y2="120" stroke="#3d4a5c"/>
+          <text x="174" y="138" font-family="Inter" font-size="9" fill="#7b8fb0">creative, riskier</text>
+          <text x="326" y="40" font-family="JetBrains Mono" font-size="9" fill="#10b981">TOP-P = 0.9</text>
+          <g fill="#10b981"><rect x="326" y="82" width="16" height="38"/><rect x="346" y="100" width="16" height="20"/><rect x="366" y="110" width="16" height="10"/></g>
+          <g fill="none" stroke="#e5484d" stroke-dasharray="2,2"><rect x="386" y="116" width="16" height="4"/><rect x="406" y="118" width="16" height="2"/></g>
+          <line x1="320" y1="120" x2="432" y2="120" stroke="#3d4a5c"/>
+          <line x1="384" y1="72" x2="384" y2="126" stroke="#e5484d"/>
+          <text x="392" y="70" font-family="JetBrains Mono" font-size="8" fill="#e5484d">cut</text>
+          <text x="324" y="138" font-family="Inter" font-size="9" fill="#7b8fb0">tail removed, then renormalized</text>
+          <text x="14" y="164" font-family="Inter" font-size="10" fill="#7b8fb0">Top-p adapts to the distribution's shape; top-k does not. Temperature 0 is greedy —</text>
+          <text x="14" y="176" font-family="Inter" font-size="10" fill="#7b8fb0">reproducible, but prone to repetition loops.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why wouldn't you always use greedy decoding if you want the 'best' possible output?"</div>
@@ -270,7 +423,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 480 140" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="RLHF pipeline from pretraining through supervised fine-tuning and reward modeling to policy optimization" viewBox="0 0 480 140" xmlns="http://www.w3.org/2000/svg">
             <rect x="10" y="45" width="120" height="50" rx="6" fill="none" stroke="#3d4a5c"/>
             <text x="25" y="75" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">SFT Model</text>
             <path d="M130 70 L 170 70" stroke="#3d4a5c" marker-end="url(#arrow)"/>
@@ -314,6 +467,28 @@
             <li>Parameter-efficient methods exist because full fine-tuning of a multi-billion parameter model requires prohibitive GPU memory (for both weights and optimizer states) that most teams can't afford for every downstream task.</li>
             <li class="insight"><strong>The insight:</strong> LoRA works because weight updates during fine-tuning empirically have low "intrinsic rank" — the actual change needed to adapt a pretrained model to a new task lives in a much lower-dimensional subspace than the full parameter space, so you can approximate it with two small matrices instead of updating the whole weight matrix.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 164" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="LoRA freezes base weights and trains two small low-rank matrices added to the output">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">LoRA — FREEZE W, LEARN A LOW-RANK CORRECTION</text>
+          <rect x="30" y="40" width="86" height="86" rx="5" fill="rgba(91,145,189,.12)" stroke="#5b91bd"/>
+          <text x="46" y="80" font-family="JetBrains Mono" font-size="11" fill="#5b91bd">W 🔒</text>
+          <text x="38" y="98" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">d × d</text>
+          <text x="34" y="146" font-family="Inter" font-size="9" fill="#7b8fb0">frozen — 0 trained params</text>
+          <text x="132" y="88" font-family="JetBrains Mono" font-size="16" fill="#7b8fb0">+</text>
+          <rect x="160" y="40" width="24" height="86" rx="4" fill="rgba(16,185,129,.18)" stroke="#10b981"/>
+          <text x="164" y="88" font-family="JetBrains Mono" font-size="10" fill="#10b981">B</text>
+          <rect x="190" y="76" width="86" height="24" rx="4" fill="rgba(16,185,129,.18)" stroke="#10b981"/>
+          <text x="226" y="92" font-family="JetBrains Mono" font-size="10" fill="#10b981">A</text>
+          <text x="160" y="146" font-family="Inter" font-size="9" fill="#10b981">rank r ≈ 8-64 — the only trained tensors</text>
+          <text x="296" y="46" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">WHY IT FITS ON ONE GPU</text>
+          <text x="296" y="68" font-family="Inter" font-size="10" fill="#7b8fb0">Adam state is per trained</text>
+          <text x="296" y="84" font-family="Inter" font-size="10" fill="#7b8fb0">parameter. Train 0.1% of</text>
+          <text x="296" y="100" font-family="Inter" font-size="10" fill="#7b8fb0">them and the optimizer</text>
+          <text x="296" y="116" font-family="Inter" font-size="10" fill="#7b8fb0">memory nearly vanishes.</text>
+          <text x="296" y="140" font-family="Inter" font-size="10" fill="#7b8fb0">Ceiling: shifts needing more</text>
+          <text x="296" y="156" font-family="Inter" font-size="10" fill="#7b8fb0">than rank r cannot be learned.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Method</th><th>Trainable params</th><th>Memory need</th><th>Best for</th></tr>
@@ -364,7 +539,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why does attention have O(n²) complexity with respect to sequence length, and what are two distinct approaches to reducing it?', a: 'Every token must compute an attention score against every other token to know how much to weight each one, so for a sequence of length n you compute n² pairwise scores per attention layer — this is inherent to the full self-attention formulation. Two distinct mitigation approaches are sparse/local attention patterns (only attending to a fixed window or strided subset of tokens, trading some global context for linear-ish complexity) and linear attention approximations (reformulating attention to avoid materializing the full n×n score matrix, using kernel tricks, at some cost to exact equivalence). FlashAttention takes a third, orthogonal approach — it doesn\'t reduce the FLOP count but reduces memory movement, since the n² matrix is never fully materialized in slow GPU memory, making it much faster in practice without changing the underlying math.', level: 'Senior' },

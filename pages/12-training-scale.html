@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>12 · Training &amp; Scale — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -40,6 +40,24 @@
             <li class="insight"><strong>The insight:</strong> Adam stores two extra fp32 tensors per parameter, so at fp32 the optimizer state is roughly 8 bytes per parameter on top of 4 for weights and 4 for gradients — meaning a 7B model needs about 112GB before a single activation is stored. That single fact is why ZeRO sharding, 8-bit optimizers, and LoRA exist, and why "the model fits in memory" is never the right calculation.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Optimizer state dominates training memory: weights, gradients and two Adam moments">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">7B MODEL, ADAMW, fp32 STATE — BEFORE ANY ACTIVATIONS</text>
+          <text x="14" y="44" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">weights</text>
+          <rect x="100" y="34" width="70" height="14" fill="#5b91bd"/>
+          <text x="182" y="45" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">28 GB</text>
+          <text x="14" y="68" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">gradients</text>
+          <rect x="100" y="58" width="70" height="14" fill="#5b91bd"/>
+          <text x="182" y="69" font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">28 GB</text>
+          <text x="14" y="92" font-family="JetBrains Mono" font-size="9" fill="#e5484d">Adam m + v</text>
+          <rect x="100" y="82" width="140" height="14" fill="#e5484d"/>
+          <text x="252" y="93" font-family="JetBrains Mono" font-size="9" fill="#e5484d">56 GB — the biggest single term</text>
+          <line x1="100" y1="102" x2="240" y2="102" stroke="#3d4a5c"/>
+          <text x="14" y="118" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">TOTAL 112 GB</text>
+          <text x="182" y="118" font-family="Inter" font-size="9" fill="#7b8fb0">— will not fit an 80GB card</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">This single line explains ZeRO sharding, 8-bit optimizers, and LoRA. "Does the model fit" is never the right question.</text>
+          </svg>
+        </div>
         <table class="cmp-table">
           <tr><th>Component</th><th>Bytes / param (fp32 states)</th><th>7B model</th></tr>
           <tr><td>Weights</td><td>4</td><td>28 GB</td></tr>
@@ -72,7 +90,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Learning rate warming up linearly then decaying on a cosine curve" viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg">
             <line x1="46" y1="118" x2="480" y2="118" stroke="#3d4a5c"/>
             <line x1="46" y1="118" x2="46" y2="26" stroke="#3d4a5c"/>
             <path d="M 46 118 L 118 36" fill="none" stroke="#58b58e" stroke-width="2"/>
@@ -109,6 +127,24 @@
             <li class="insight"><strong>The insight:</strong> range matters more than precision for training. Gradients span many orders of magnitude, so fp16 overflows at the top and underflows at the bottom — hence loss scaling, which is a workaround for insufficient exponent bits. bf16 has fp32's exponent range and simply doesn't need loss scaling, which is why it became the default on hardware that supports it despite having fewer mantissa bits.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="fp16 has a narrow exponent range needing loss scaling; bf16 keeps fp32 range with fewer mantissa bits">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">RANGE MATTERS MORE THAN PRECISION FOR TRAINING</text>
+          <text x="14" y="44" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">fp32</text>
+          <rect x="76" y="34" width="26" height="14" fill="#5b91bd"/><rect x="104" y="34" width="150" height="14" fill="#10b981"/>
+          <text x="266" y="45" font-family="JetBrains Mono" font-size="8.5" fill="#7b8fb0">8 exp · 23 mantissa</text>
+          <text x="14" y="72" font-family="JetBrains Mono" font-size="9" fill="#e5484d">fp16</text>
+          <rect x="76" y="62" width="16" height="14" fill="#e5484d"/><rect x="94" y="62" width="66" height="14" fill="#10b981"/>
+          <text x="266" y="73" font-family="JetBrains Mono" font-size="8.5" fill="#e5484d">5 exp — overflows, needs loss scaling</text>
+          <text x="14" y="100" font-family="JetBrains Mono" font-size="9" fill="#10b981">bf16</text>
+          <rect x="76" y="90" width="26" height="14" fill="#5b91bd"/><rect x="104" y="90" width="46" height="14" fill="#10b981"/>
+          <text x="266" y="101" font-family="JetBrains Mono" font-size="8.5" fill="#10b981">8 exp — fp32 range, no loss scaling</text>
+          <rect x="70" y="28" width="4" height="82" fill="none"/>
+          <text x="76" y="122" font-family="JetBrains Mono" font-size="8" fill="#5b91bd">exponent</text>
+          <text x="140" y="122" font-family="JetBrains Mono" font-size="8" fill="#10b981">mantissa</text>
+          <text x="14" y="144" font-family="Inter" font-size="10" fill="#7b8fb0">Keep fp32 master weights regardless: with 7 mantissa bits a tiny late-training update rounds to nothing and vanishes silently.</text>
+          </svg>
+        </div>
         <table class="cmp-table">
           <tr><th>Format</th><th>Exponent</th><th>Mantissa</th><th>Needs loss scaling</th><th>Use</th></tr>
           <tr><td>fp32</td><td>8</td><td>23</td><td>no</td><td>master weights, reductions</td></tr>
@@ -138,6 +174,25 @@
             <li>They matter because past a few billion parameters no single device holds the training state, and picking the wrong parallelism strategy wastes most of a cluster on communication.</li>
             <li class="insight"><strong>The insight:</strong> each strategy trades memory for a different communication pattern, and the right choice follows the interconnect. Tensor parallelism communicates inside every layer, so it demands NVLink-class bandwidth and stays within a node. Pipeline parallelism communicates only at stage boundaries, so it tolerates slower links across nodes but introduces bubble overhead. FSDP sits between them. Real frontier runs combine all three — that's the "3D parallelism" you'll be asked about.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ZeRO stages progressively shard optimizer state, gradients and parameters across ranks">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">EACH ZeRO STAGE SHARDS ONE MORE THING</text>
+          <g font-family="JetBrains Mono" font-size="8.5" fill="#7b8fb0">
+          <text x="14" y="44">DDP</text><text x="14" y="68">ZeRO-1</text><text x="14" y="92">ZeRO-2</text><text x="14" y="116">ZeRO-3</text>
+          </g>
+          <g>
+          <rect x="76" y="34" width="60" height="14" fill="#5b91bd"/><rect x="140" y="34" width="60" height="14" fill="#5b91bd"/><rect x="204" y="34" width="120" height="14" fill="#e5484d"/>
+          <rect x="76" y="58" width="60" height="14" fill="#5b91bd"/><rect x="140" y="58" width="60" height="14" fill="#5b91bd"/><rect x="204" y="58" width="30" height="14" fill="#10b981"/>
+          <rect x="76" y="82" width="60" height="14" fill="#5b91bd"/><rect x="140" y="82" width="15" height="14" fill="#10b981"/><rect x="204" y="82" width="30" height="14" fill="#10b981"/>
+          <rect x="76" y="106" width="15" height="14" fill="#10b981"/><rect x="140" y="106" width="15" height="14" fill="#10b981"/><rect x="204" y="106" width="30" height="14" fill="#10b981"/>
+          </g>
+          <g font-family="JetBrains Mono" font-size="8" fill="#7b8fb0"><text x="86" y="30">params</text><text x="150" y="30">grads</text><text x="228" y="30">optim state</text></g>
+          <text x="344" y="45" font-family="Inter" font-size="9" fill="#e5484d">every rank holds everything</text>
+          <text x="344" y="93" font-family="Inter" font-size="9" fill="#10b981">green = sharded across ranks</text>
+          <text x="344" y="117" font-family="Inter" font-size="9" fill="#10b981">gather each layer just in time</text>
+          <text x="14" y="144" font-family="Inter" font-size="10" fill="#7b8fb0">More sharding buys memory and costs communication. Choose the axis that matches your interconnect.</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Strategy</th><th>Shards</th><th>Comm pattern</th><th>Use when</th></tr>
@@ -169,6 +224,23 @@
             <li>They matter because they turn "how big should the model be" from a guess into an estimate, and because they let you predict a large run's loss from a ladder of small ones before spending the budget.</li>
             <li class="insight"><strong>The insight:</strong> compute-optimal is not deployment-optimal. Chinchilla minimizes training loss per unit of training compute, but a deployed model's cost is dominated by inference over its lifetime. If you serve billions of tokens, it's rational to train a smaller model far past its compute-optimal token count — spending more training compute for a permanently cheaper model. That's exactly why modern open models are trained on token counts many times the Chinchilla ratio.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Compute-optimal training minimizes training loss per FLOP but deployment favors smaller over-trained models">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">COMPUTE-OPTIMAL ≠ DEPLOYMENT-OPTIMAL</text>
+          <rect x="20" y="30" width="228" height="76" rx="6" fill="none" stroke="#5b91bd"/>
+          <text x="32" y="48" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">CHINCHILLA-OPTIMAL</text>
+          <text x="32" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">≈ 20 tokens per parameter</text>
+          <text x="32" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">best loss per training FLOP</text>
+          <text x="32" y="96" font-family="Inter" font-size="9" fill="#e5484d">bigger model = costly forever</text>
+          <rect x="268" y="30" width="232" height="76" rx="6" fill="none" stroke="#10b981"/>
+          <text x="280" y="48" font-family="JetBrains Mono" font-size="9" fill="#10b981">OVER-TRAINED SMALL MODEL</text>
+          <text x="280" y="66" font-family="Inter" font-size="9" fill="#f0f4ff">100-200+ tokens per parameter</text>
+          <text x="280" y="80" font-family="Inter" font-size="9" fill="#7b8fb0">worse loss per training FLOP</text>
+          <text x="280" y="96" font-family="Inter" font-size="9" fill="#10b981">cheaper on every inference call</text>
+          <text x="14" y="130" font-family="Inter" font-size="10" fill="#7b8fb0">Training compute is paid once; inference compute is paid forever. High-volume serving justifies training past optimal —</text>
+          <text x="14" y="144" font-family="Inter" font-size="10" fill="#7b8fb0">which is exactly why modern open models exceed the Chinchilla ratio many times over.</text>
+          </svg>
         </div>
         <div class="card-visual">
           $$ L(N, D) \approx L_\infty + \frac{A}{N^{\alpha}} + \frac{B}{D^{\beta}} \qquad C \approx 6ND $$
@@ -203,6 +275,27 @@
             <li class="insight"><strong>The insight:</strong> deduplication is not a cleanliness nicety, it changes what the model learns. Duplicated documents get effectively upweighted, increasing memorization and verbatim regurgitation while wasting compute on repeated content — and near-duplicates are the majority of the problem, so exact hashing alone misses most of it. For instruction tuning, the well-replicated finding is that a few thousand carefully curated examples beat hundreds of thousands of scraped ones.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Pretraining data pipeline: filter, deduplicate, decontaminate, then mix">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">EACH STAGE REMOVES A DIFFERENT KIND OF DAMAGE</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="16" y="34" width="88" height="32" rx="5"/><rect x="120" y="34" width="88" height="32" rx="5"/>
+          </g>
+          <rect x="224" y="34" width="106" height="32" rx="5" fill="rgba(229,72,77,.10)" stroke="#e5484d"/>
+          <rect x="346" y="34" width="88" height="32" rx="5" fill="none" stroke="#3d4a5c"/>
+          <g font-family="JetBrains Mono" font-size="9" fill="#f0f4ff">
+          <text x="34" y="54">filter</text><text x="132" y="54">dedup</text><text x="358" y="54">mix</text>
+          </g>
+          <text x="230" y="54" font-family="JetBrains Mono" font-size="9" fill="#e5484d">decontaminate</text>
+          <g stroke="#3d4a5c"><line x1="104" y1="50" x2="118" y2="50"/><line x1="208" y1="50" x2="222" y2="50"/><line x1="330" y1="50" x2="344" y2="50"/></g>
+          <g font-family="Inter" font-size="8" fill="#7b8fb0">
+          <text x="16" y="80">quality classifier</text><text x="120" y="80">MinHash, not just exact</text><text x="224" y="80">remove eval overlap</text><text x="346" y="80">domain weights</text>
+          </g>
+          <text x="14" y="110" font-family="Inter" font-size="10" fill="#7b8fb0">Dedup is not tidiness: duplicates are effectively upweighted, increasing memorization and wasting compute —</text>
+          <text x="14" y="124" font-family="Inter" font-size="10" fill="#7b8fb0">and near-duplicates are most of the problem, so exact hashing alone misses it.</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#e5484d">Skip decontamination and every benchmark number afterwards measures memorization.</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
           <div class="tf-row-failure tf-situation">Benchmark contamination</div><div>Eval scores measure memorization; every model comparison is invalid</div>
@@ -232,6 +325,19 @@
             <li>It matters because context length is a headline product feature, and because the difference between "supports 200k tokens" and "uses 200k tokens well" is where systems quietly fail.</li>
             <li class="insight"><strong>The insight:</strong> FlashAttention is not an approximation — it computes exactly the same attention, just with an IO-aware algorithm that avoids writing the score matrix to slow memory. That distinction matters in interviews: people often lump it with sparse attention, but one is a memory-access optimization with identical outputs and the other is a modeling approximation with different outputs. Separately, long context degrades quality in the middle of the window ("lost in the middle"), so retrieval into a shorter context often beats stuffing everything in.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Retrieval accuracy dips for content in the middle of a long context window">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">LOST IN THE MIDDLE — MORE CONTEXT IS NOT MONOTONICALLY BETTER</text>
+          <line x1="52" y1="104" x2="470" y2="104" stroke="#3d4a5c"/><line x1="52" y1="104" x2="52" y2="34" stroke="#3d4a5c"/>
+          <text x="10" y="40" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">recall</text>
+          <path d="M 56 44 C 140 96, 200 100, 260 98 C 330 96, 400 62, 466 42" fill="none" stroke="#e5484d" stroke-width="2"/>
+          <text x="58" y="122" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">start</text>
+          <text x="240" y="122" font-family="JetBrains Mono" font-size="8" fill="#e5484d">middle</text>
+          <text x="440" y="122" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">end</text>
+          <text x="200" y="82" font-family="Inter" font-size="9" fill="#e5484d">buried facts get missed</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">So retrieval into a moderate window usually beats stuffing everything in — and prefill cost is linear in tokens either way.</text>
+          </svg>
         </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
@@ -263,6 +369,33 @@
             <li>It matters because training failures are expensive and mostly silent: the loss curve looks plausible while something specific and fixable is wrong.</li>
             <li class="insight"><strong>The insight:</strong> the update-to-weight ratio is the most underused signal available. Roughly 1e-3 per step is healthy — much smaller means the model is effectively frozen regardless of what the LR says, much larger means it's being destroyed. It catches problems the loss curve hides, like a learning rate that's fine globally but wrong for one parameter group, and it's a single scalar per group you can log for free.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 152" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Loss curve shapes and the specific cause each one indicates">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">READ THE SHAPE, NOT JUST THE NUMBER</text>
+          <g stroke="#3d4a5c"><line x1="20" y1="92" x2="120" y2="92"/><line x1="20" y1="92" x2="20" y2="34"/></g>
+          <line x1="24" y1="44" x2="116" y2="46" stroke="#e5484d" stroke-width="2"/>
+          <text x="20" y="112" font-family="JetBrains Mono" font-size="8.5" fill="#e5484d">FLAT</text>
+          <text x="20" y="126" font-family="Inter" font-size="8.5" fill="#7b8fb0">LR too low, or</text>
+          <text x="20" y="138" font-family="Inter" font-size="8.5" fill="#7b8fb0">gradients not flowing</text>
+          <g stroke="#3d4a5c"><line x1="148" y1="92" x2="248" y2="92"/><line x1="148" y1="92" x2="148" y2="34"/></g>
+          <path d="M 152 44 C 170 66, 176 76, 182 78" fill="none" stroke="#e5484d" stroke-width="2"/>
+          <line x1="182" y1="78" x2="184" y2="36" stroke="#e5484d" stroke-width="2"/>
+          <text x="148" y="112" font-family="JetBrains Mono" font-size="8.5" fill="#e5484d">NaN SPIKE</text>
+          <text x="148" y="126" font-family="Inter" font-size="8.5" fill="#7b8fb0">no warmup, fp16</text>
+          <text x="148" y="138" font-family="Inter" font-size="8.5" fill="#7b8fb0">overflow, or bad batch</text>
+          <g stroke="#3d4a5c"><line x1="276" y1="92" x2="376" y2="92"/><line x1="276" y1="92" x2="276" y2="34"/></g>
+          <path d="M 280 44 C 320 78, 340 84, 372 86" fill="none" stroke="#10b981" stroke-width="2"/>
+          <path d="M 280 46 C 316 74, 330 68, 372 50" fill="none" stroke="#e5484d" stroke-width="2"/>
+          <text x="276" y="112" font-family="JetBrains Mono" font-size="8.5" fill="#e5484d">VAL TURNS UP</text>
+          <text x="276" y="126" font-family="Inter" font-size="8.5" fill="#7b8fb0">overfitting —</text>
+          <text x="276" y="138" font-family="Inter" font-size="8.5" fill="#7b8fb0">early stop here</text>
+          <g stroke="#3d4a5c"><line x1="404" y1="92" x2="500" y2="92"/><line x1="404" y1="92" x2="404" y2="34"/></g>
+          <path d="M 408 46 C 440 60, 460 62, 496 62" fill="none" stroke="#f9bd67" stroke-width="2"/>
+          <text x="404" y="112" font-family="JetBrains Mono" font-size="8.5" fill="#f9bd67">BOTH PLATEAU</text>
+          <text x="404" y="126" font-family="Inter" font-size="8.5" fill="#7b8fb0">underfitting or a</text>
+          <text x="404" y="138" font-family="Inter" font-size="8.5" fill="#7b8fb0">data bug — decode a batch</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Symptom</th><th>Most likely cause</th><th>First check</th></tr>
@@ -315,7 +448,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Walk me through the memory budget of fine-tuning a 7B model with AdamW in mixed precision.', a: 'Weights in fp32 master copy are 4 bytes per parameter, 28GB. Gradients are another 4 bytes, 28GB. AdamW keeps two moment estimates at fp32, 8 bytes, 56GB. That is 112GB of static state before a single activation, which is why a 7B model does not fine-tune on an 80GB card naively. Activations add on top and scale with batch size, sequence length, and depth — activation checkpointing trades roughly 30% extra compute to cut that term substantially. The standard mitigations are ZeRO or FSDP sharding of the optimizer state and gradients across ranks, 8-bit optimizers which quantize m and v block-wise, and LoRA, which removes the optimizer state for all but a tiny fraction of parameters and is why QLoRA fits a 70B model on a single node.', level: 'Senior' },

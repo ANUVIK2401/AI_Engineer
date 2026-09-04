@@ -93,6 +93,7 @@ code, pre, .mono { font-family: var(--font-mono); }
 .app-shell {
   display: flex;
   min-height: 100vh;
+  min-height: 100dvh; /* iOS/iPadOS: vh ignores the dynamic toolbar */
 }
 
 .sidebar {
@@ -108,6 +109,7 @@ code, pre, .mono { font-family: var(--font-mono); }
   position: sticky;
   top: 0;
   height: 100vh;
+  height: 100dvh; /* iPad Safari: keep the pinned footer on screen */
   /* the list scrolls, not the whole rail — otherwise the pinned footer
      scrolls out of reach and the module list clips silently */
   overflow: hidden;
@@ -1778,7 +1780,7 @@ details.collapsible[open] summary::before { transform: rotate(90deg); }
 .card-core > ul { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0; list-style: none; }
 .card-core > ul > li { margin: 0; padding: 15px 16px; border: 1px solid rgba(145,165,180,0.13); border-radius: 9px; background: rgba(7,16,24,0.35); color: var(--text-secondary); font-size: 14px; line-height: 1.65; }
 .card-core > ul > li.insight { grid-column: 1 / -1; border-color: rgba(255,115,92,0.24); background: rgba(255,115,92,0.055); color: var(--text-secondary); }
-.learning-cue { display: block; margin-bottom: 7px; color: var(--cyan) !important; font: 600 9px var(--font-mono) !important; letter-spacing: 0.1em; text-transform: uppercase; }
+.learning-cue { display: block; width: fit-content; margin-bottom: 7px; color: var(--cyan) !important; font: 600 9px var(--font-mono) !important; letter-spacing: 0.1em; text-transform: uppercase; }
 .card-core li.insight .learning-cue { color: var(--accent) !important; }
 .card-visual { padding: 20px; border-radius: 10px; background: rgba(4,12,18,0.75); }
 
@@ -2266,4 +2268,60 @@ body:not(.recall-mode) .card-recall-kicker::after { content: ' · turn on recall
   .card:not(.is-revealed) .code-block,
   .card:not(.is-revealed) .card-summary-bar,
   .card:not(.is-revealed) .interview-toggle { filter: none; opacity: 1; }
+}
+
+
+/* ============================================================
+   iPad and MacBook fit
+   ============================================================ */
+
+/* Notched and rounded displays: env() only resolves once the page opts in
+   with viewport-fit=cover, so pad the rails that reach a screen edge. */
+@supports (padding: env(safe-area-inset-left)) {
+  .sidebar { padding-left: max(14px, env(safe-area-inset-left)); }
+  .main { padding-bottom: max(90px, env(safe-area-inset-bottom)); }
+}
+
+/* iPad portrait (744-1023px) has room for the rail, but not for a 260px one
+   beside a readable column — narrow it rather than dropping to mobile nav. */
+@media (min-width: 744px) and (max-width: 1023px) and (orientation: portrait) {
+  :root { --sidebar-w: 208px; }
+  .sidebar { padding: 18px 10px 14px; }
+  .sidebar-nav li a { font-size: 12px; padding: 8px; }
+  .sidebar-overview small,
+  .sidebar-status { display: none; }
+}
+
+/* Short landscape tablets: three stacked sticky bars eat the whole viewport,
+   so only the topic navigator stays pinned. */
+@media (max-height: 850px) and (orientation: landscape) {
+  .qa-toolbar { position: static; }
+  body.focus-mode .study-navigator { position: static; }
+}
+
+/* Touch devices resolve :hover on tap and then keep it stuck until the next
+   tap elsewhere. Give them a real pressed state instead. */
+@media (hover: none) {
+  .card:active { border-color: var(--border-bright); }
+  .module-card:active,
+  .knowledge-node:active,
+  .study-topic:active { transform: scale(.99); }
+  .card-recall-toggle:active,
+  .sim-show-btn:active,
+  .focus-toggle:active,
+  .recall-toggle:active { background: rgba(114,31,45,.44); }
+}
+
+/* Trackpad and touch scrolling inside the wide elements, without the page
+   itself ever scrolling sideways. */
+.card-visual,
+.study-topic-list,
+.sidebar-nav { -webkit-overflow-scrolling: touch; }
+.card-visual svg { min-width: 0; }
+
+/* A retina MacBook can render the reading column wider without hurting
+   line length, since the diagrams scale with it. */
+@media (min-width: 1600px) {
+  .main > :not(.main-inner) { width: min(100%, 1240px); }
+  .home-page .main-inner { width: min(100%, 1240px); }
 }

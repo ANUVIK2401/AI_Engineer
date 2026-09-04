@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>03 · Deep Learning — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -41,7 +41,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Input flowing through weighted layers to an output prediction" viewBox="0 0 480 200" xmlns="http://www.w3.org/2000/svg">
             <circle cx="40" cy="60" r="14" fill="none" stroke="#e5484d"/>
             <circle cx="40" cy="110" r="14" fill="none" stroke="#e5484d"/>
             <circle cx="40" cy="160" r="14" fill="none" stroke="#e5484d"/>
@@ -90,6 +90,30 @@
           </ul>
         </div>
         <div class="card-visual">
+          <svg viewBox="0 0 520 168" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Backpropagation multiplies local derivatives backward through the chain rule, which is why gradients vanish or explode">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">FORWARD →   values     BACKWARD ←   gradients</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="20" y="46" width="64" height="34" rx="5"/><rect x="128" y="46" width="64" height="34" rx="5"/><rect x="236" y="46" width="64" height="34" rx="5"/><rect x="344" y="46" width="64" height="34" rx="5"/>
+          </g>
+          <g font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">
+          <text x="42" y="67">L1</text><text x="150" y="67">L2</text><text x="258" y="67">L3</text><text x="366" y="67">loss</text>
+          </g>
+          <g stroke="#5b91bd" marker-end="url(#fw)">
+          <line x1="84" y1="58" x2="126" y2="58"/><line x1="192" y1="58" x2="234" y2="58"/><line x1="300" y1="58" x2="342" y2="58"/>
+          </g>
+          <g stroke="#e5484d">
+          <line x1="342" y1="72" x2="302" y2="72"/><line x1="234" y1="72" x2="194" y2="72"/><line x1="126" y1="72" x2="86" y2="72"/>
+          </g>
+          <text x="94" y="98" font-family="JetBrains Mono" font-size="9" fill="#e5484d">×0.3</text>
+          <text x="202" y="98" font-family="JetBrains Mono" font-size="9" fill="#e5484d">×0.3</text>
+          <text x="310" y="98" font-family="JetBrains Mono" font-size="9" fill="#e5484d">×0.3</text>
+          <text x="14" y="126" font-family="JetBrains Mono" font-size="10" fill="#e5484d">0.3 × 0.3 × 0.3 = 0.027 — the gradient reaching L1 is 3% of the one at the loss</text>
+          <text x="14" y="148" font-family="Inter" font-size="10" fill="#7b8fb0">Each layer multiplies its local derivative. Below 1 they vanish; above 1 they explode.</text>
+          <text x="14" y="164" font-family="Inter" font-size="10" fill="#7b8fb0">Residual connections add a ×1 path so the signal survives depth.</text>
+          <defs><marker id="fw" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#5b91bd"/></marker></defs>
+          </svg>
+        </div>
+        <div class="card-visual">
           $$ \frac{\partial \mathcal{L}}{\partial w^{(1)}} = \frac{\partial \mathcal{L}}{\partial a^{(L)}} \cdot \frac{\partial a^{(L)}}{\partial a^{(L-1)}} \cdots \frac{\partial a^{(2)}}{\partial w^{(1)}} $$
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
@@ -114,6 +138,23 @@
             <li>Multiple activations exist because each makes a different tradeoff between gradient flow, computational cost, and output range needs.</li>
             <li class="insight"><strong>The insight:</strong> ReLU's "dying neuron" problem (gradient is exactly zero for negative inputs) is a feature as much as a bug — it induces sparsity — but GELU's smooth, probabilistic gating avoids the hard cutoff entirely, which is why transformers (BERT, GPT) use GELU instead of ReLU.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 164" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sigmoid saturates and kills gradients, ReLU stays linear but can die, GELU is smooth near zero">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">WHY THE SHAPE DECIDES WHETHER GRADIENTS SURVIVE</text>
+          <g stroke="#3d4a5c"><line x1="24" y1="96" x2="150" y2="96"/><line x1="87" y1="130" x2="87" y2="40"/></g>
+          <path d="M 26 126 C 66 125, 76 122, 87 96 C 98 70, 108 67, 148 66" fill="none" stroke="#e5484d" stroke-width="2"/>
+          <text x="40" y="150" font-family="JetBrains Mono" font-size="10" fill="#e5484d">sigmoid</text>
+          <text x="24" y="164" font-family="Inter" font-size="8.5" fill="#7b8fb0">flat tails = dead gradient</text>
+          <g stroke="#3d4a5c"><line x1="196" y1="96" x2="322" y2="96"/><line x1="259" y1="130" x2="259" y2="40"/></g>
+          <path d="M 198 96 L 259 96 L 318 48" fill="none" stroke="#5b91bd" stroke-width="2"/>
+          <text x="214" y="150" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">ReLU</text>
+          <text x="196" y="164" font-family="Inter" font-size="8.5" fill="#7b8fb0">cheap, but neurons can die</text>
+          <g stroke="#3d4a5c"><line x1="368" y1="96" x2="494" y2="96"/><line x1="431" y1="130" x2="431" y2="40"/></g>
+          <path d="M 370 99 C 400 100, 418 102, 431 96 C 448 88, 470 62, 490 48" fill="none" stroke="#10b981" stroke-width="2"/>
+          <text x="386" y="150" font-family="JetBrains Mono" font-size="10" fill="#10b981">GELU</text>
+          <text x="368" y="164" font-family="Inter" font-size="8.5" fill="#7b8fb0">smooth, small negative pass</text>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th>Function</th><th>Range</th><th>Saturates?</th><th>Typical use</th></tr>
@@ -145,6 +186,31 @@
             <li class="insight"><strong>The insight:</strong> batch norm's statistics depend on other examples in the batch, which breaks down for variable-length sequences and small/streaming batches (like autoregressive generation) — that's precisely why transformers use layer norm, which normalizes independently per token regardless of batch size or sequence position.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 168" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="BatchNorm normalizes across the batch dimension, LayerNorm across features within one sample">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">SAME MATH, DIFFERENT AXIS — THAT IS THE WHOLE DIFFERENCE</text>
+          <text x="34" y="42" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">BATCH NORM</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="34" y="52" width="34" height="20"/><rect x="70" y="52" width="34" height="20"/><rect x="106" y="52" width="34" height="20"/><rect x="142" y="52" width="34" height="20"/>
+          <rect x="34" y="74" width="34" height="20"/><rect x="70" y="74" width="34" height="20"/><rect x="106" y="74" width="34" height="20"/><rect x="142" y="74" width="34" height="20"/>
+          <rect x="34" y="96" width="34" height="20"/><rect x="70" y="96" width="34" height="20"/><rect x="106" y="96" width="34" height="20"/><rect x="142" y="96" width="34" height="20"/>
+          </g>
+          <rect x="70" y="52" width="34" height="64" fill="rgba(91,145,189,.30)" stroke="#5b91bd" stroke-width="2"/>
+          <text x="14" y="88" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0" transform="rotate(-90 14 88)">BATCH</text>
+          <text x="60" y="134" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">FEATURES →</text>
+          <text x="34" y="152" font-family="Inter" font-size="9" fill="#e5484d">depends on batch size;</text>
+          <text x="34" y="164" font-family="Inter" font-size="9" fill="#e5484d">needs running stats at test</text>
+          <text x="300" y="42" font-family="JetBrains Mono" font-size="10" fill="#10b981">LAYER NORM</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="300" y="52" width="34" height="20"/><rect x="336" y="52" width="34" height="20"/><rect x="372" y="52" width="34" height="20"/><rect x="408" y="52" width="34" height="20"/>
+          <rect x="300" y="74" width="34" height="20"/><rect x="336" y="74" width="34" height="20"/><rect x="372" y="74" width="34" height="20"/><rect x="408" y="74" width="34" height="20"/>
+          <rect x="300" y="96" width="34" height="20"/><rect x="336" y="96" width="34" height="20"/><rect x="372" y="96" width="34" height="20"/><rect x="408" y="96" width="34" height="20"/>
+          </g>
+          <rect x="300" y="74" width="142" height="20" fill="rgba(16,185,129,.28)" stroke="#10b981" stroke-width="2"/>
+          <text x="300" y="152" font-family="Inter" font-size="9" fill="#10b981">independent per sample —</text>
+          <text x="300" y="164" font-family="Inter" font-size="9" fill="#10b981">works at batch size 1, so transformers use it</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
           <div class="tf-row-failure tf-situation">Batch norm with batch size 1 (inference/streaming)</div><div>Statistics become unstable or meaningless</div>
@@ -173,6 +239,26 @@
             <li class="insight"><strong>The insight — the classic interview gotcha:</strong> dropout must be disabled at inference time, and the remaining activations must be rescaled (inverted dropout divides by keep-probability during training) so that expected activation magnitude matches between train and inference — forgetting this silently degrades model output without throwing any error.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 162" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dropout randomly disables neurons during training and is switched off at inference">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">TRAINING — random neurons dropped each step</text>
+          <g><circle cx="40" cy="52" r="9" fill="none" stroke="#5b91bd"/><circle cx="40" cy="86" r="9" fill="none" stroke="#5b91bd"/><circle cx="40" cy="120" r="9" fill="none" stroke="#5b91bd"/></g>
+          <g><circle cx="130" cy="42" r="9" fill="none" stroke="#5b91bd"/><circle cx="130" cy="76" r="9" fill="none" stroke="#3d4a5c" stroke-dasharray="2,2"/><line x1="124" y1="70" x2="136" y2="82" stroke="#e5484d"/><line x1="136" y1="70" x2="124" y2="82" stroke="#e5484d"/><circle cx="130" cy="110" r="9" fill="none" stroke="#5b91bd"/><circle cx="130" cy="144" r="9" fill="none" stroke="#3d4a5c" stroke-dasharray="2,2"/><line x1="124" y1="138" x2="136" y2="150" stroke="#e5484d"/><line x1="136" y1="138" x2="124" y2="150" stroke="#e5484d"/></g>
+          <g><circle cx="220" cy="76" r="9" fill="none" stroke="#5b91bd"/><circle cx="220" cy="110" r="9" fill="none" stroke="#5b91bd"/></g>
+          <g stroke="#3d4a5c" opacity=".55">
+          <line x1="49" y1="52" x2="121" y2="42"/><line x1="49" y1="86" x2="121" y2="110"/><line x1="49" y1="120" x2="121" y2="110"/>
+          <line x1="139" y1="42" x2="211" y2="76"/><line x1="139" y1="110" x2="211" y2="110"/>
+          </g>
+          <line x1="264" y1="26" x2="264" y2="150" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="292" y="18" font-family="JetBrains Mono" font-size="10" fill="#10b981">INFERENCE — every neuron active</text>
+          <g><circle cx="316" cy="52" r="9" fill="none" stroke="#10b981"/><circle cx="316" cy="86" r="9" fill="none" stroke="#10b981"/><circle cx="316" cy="120" r="9" fill="none" stroke="#10b981"/></g>
+          <g><circle cx="406" cy="42" r="9" fill="none" stroke="#10b981"/><circle cx="406" cy="76" r="9" fill="none" stroke="#10b981"/><circle cx="406" cy="110" r="9" fill="none" stroke="#10b981"/><circle cx="406" cy="144" r="9" fill="none" stroke="#10b981"/></g>
+          <g stroke="#10b981" opacity=".4">
+          <line x1="325" y1="52" x2="397" y2="42"/><line x1="325" y1="52" x2="397" y2="76"/><line x1="325" y1="86" x2="397" y2="110"/><line x1="325" y1="120" x2="397" y2="144"/>
+          </g>
+          <text x="292" y="162" font-family="Inter" font-size="9.5" fill="#7b8fb0">Inverted dropout rescales during training, so no test-time scaling is needed.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"What happens if you forget to disable dropout at inference time?"</div>
@@ -196,6 +282,31 @@
             <li class="insight"><strong>The insight:</strong> CNNs encode a strong inductive bias — locality and translation invariance — which is exactly right for images but exactly wrong for tasks without spatial locality, which is part of why attention-based architectures (with no such bias) generalize better across modalities.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 156" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A convolution slides one shared kernel across the image, so features are learned once and reused everywhere">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">ONE KERNEL, SLID EVERYWHERE — WEIGHT SHARING</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="20" y="34" width="104" height="104"/>
+          <line x1="46" y1="34" x2="46" y2="138"/><line x1="72" y1="34" x2="72" y2="138"/><line x1="98" y1="34" x2="98" y2="138"/>
+          <line x1="20" y1="60" x2="124" y2="60"/><line x1="20" y1="86" x2="124" y2="86"/><line x1="20" y1="112" x2="124" y2="112"/>
+          </g>
+          <rect x="20" y="34" width="52" height="52" fill="rgba(229,72,77,.18)" stroke="#e5484d" stroke-width="2"/>
+          <rect x="46" y="60" width="52" height="52" fill="none" stroke="#e5484d" stroke-dasharray="3,2"/>
+          <rect x="72" y="86" width="52" height="52" fill="none" stroke="#e5484d" stroke-dasharray="3,2"/>
+          <text x="20" y="152" font-family="Inter" font-size="9" fill="#7b8fb0">same weights at every position</text>
+          <line x1="132" y1="86" x2="176" y2="86" stroke="#3d4a5c"/>
+          <rect x="180" y="52" width="68" height="68" rx="4" fill="none" stroke="#5b91bd"/>
+          <text x="192" y="90" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">feature</text>
+          <text x="196" y="104" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">map</text>
+          <text x="278" y="46" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">WHY THIS WINS</text>
+          <text x="278" y="68" font-family="Inter" font-size="10" fill="#7b8fb0">A dense layer would learn</text>
+          <text x="278" y="84" font-family="Inter" font-size="10" fill="#7b8fb0">"edge" separately for every</text>
+          <text x="278" y="100" font-family="Inter" font-size="10" fill="#7b8fb0">pixel location. Sharing one</text>
+          <text x="278" y="116" font-family="Inter" font-size="10" fill="#7b8fb0">kernel cuts parameters by</text>
+          <text x="278" y="132" font-family="Inter" font-size="10" fill="#7b8fb0">orders of magnitude and</text>
+          <text x="278" y="148" font-family="Inter" font-size="10" fill="#7b8fb0">builds in translation invariance.</text>
+          </svg>
+        </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
           <div class="interview-q">"Why does parameter sharing in convolutions matter beyond just saving memory?"</div>
@@ -218,6 +329,25 @@
             <li>Gating exists because vanilla RNNs suffer from vanishing/exploding gradients across long sequences — repeatedly multiplying the same recurrent weight matrix during backprop-through-time shrinks or blows up gradients exponentially with sequence length.</li>
             <li class="insight"><strong>The insight:</strong> transformers didn't replace RNNs because attention is inherently "smarter" — they replaced RNNs because sequential recurrence can't be parallelized across time steps during training, while attention computes all pairwise interactions simultaneously, making transformers dramatically more efficient to train at scale on modern hardware.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 158" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="An RNN processes tokens sequentially so training cannot parallelize across the sequence">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">SEQUENTIAL BY CONSTRUCTION</text>
+          <g fill="none" stroke="#3d4a5c">
+          <rect x="24" y="46" width="52" height="34" rx="5"/><rect x="112" y="46" width="52" height="34" rx="5"/><rect x="200" y="46" width="52" height="34" rx="5"/><rect x="288" y="46" width="52" height="34" rx="5"/>
+          </g>
+          <g font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">
+          <text x="42" y="67">h₁</text><text x="130" y="67">h₂</text><text x="218" y="67">h₃</text><text x="306" y="67">h₄</text>
+          </g>
+          <g stroke="#e5484d" marker-end="url(#sq)">
+          <line x1="76" y1="63" x2="110" y2="63"/><line x1="164" y1="63" x2="198" y2="63"/><line x1="252" y1="63" x2="286" y2="63"/>
+          </g>
+          <g stroke="#3d4a5c"><line x1="50" y1="98" x2="50" y2="82"/><line x1="138" y1="98" x2="138" y2="82"/><line x1="226" y1="98" x2="226" y2="82"/><line x1="314" y1="98" x2="314" y2="82"/></g>
+          <g font-family="JetBrains Mono" font-size="9" fill="#7b8fb0"><text x="42" y="112">tok1</text><text x="130" y="112">tok2</text><text x="218" y="112">tok3</text><text x="306" y="112">tok4</text></g>
+          <text x="14" y="138" font-family="Inter" font-size="10" fill="#e5484d">h₂ cannot start until h₁ exists — no GPU parallelism within a sequence.</text>
+          <text x="14" y="154" font-family="Inter" font-size="10" fill="#7b8fb0">LSTM gates fixed the vanishing gradient. Only attention fixed the sequencing.</text>
+          <defs><marker id="sq" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#e5484d"/></marker></defs>
+          </svg>
         </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What breaks or costs</div>
@@ -246,6 +376,35 @@
             <li>It exists because training from scratch requires enormous labeled data and compute that most tasks don't have — pretrained representations already encode broadly useful features (edges, syntax, semantics) that transfer across tasks.</li>
             <li class="insight"><strong>The insight:</strong> which layers to freeze depends on how similar the new task is to the pretraining task — early layers learn generic, broadly transferable features (edges, low-level syntax) while later layers specialize toward the original task, so the more dissimilar your target task, the more layers you should unfreeze and retrain.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 156" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Transfer learning reuses pretrained early layers and retrains only the task head">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">EARLY LAYERS ARE GENERIC — ONLY THE HEAD IS TASK-SPECIFIC</text>
+          <g>
+          <rect x="26" y="38" width="86" height="26" rx="4" fill="rgba(91,145,189,.16)" stroke="#5b91bd"/>
+          <rect x="26" y="70" width="86" height="26" rx="4" fill="rgba(91,145,189,.16)" stroke="#5b91bd"/>
+          <rect x="26" y="102" width="86" height="26" rx="4" fill="none" stroke="#e5484d"/>
+          </g>
+          <text x="36" y="55" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">edges/texture</text>
+          <text x="38" y="87" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">shapes/parts</text>
+          <text x="46" y="119" font-family="JetBrains Mono" font-size="9" fill="#e5484d">classifier</text>
+          <text x="26" y="146" font-family="Inter" font-size="9" fill="#7b8fb0">pretrained on 1M+ images</text>
+          <text x="150" y="60" font-family="JetBrains Mono" font-size="18" fill="#3d4a5c">→</text>
+          <g>
+          <rect x="196" y="38" width="86" height="26" rx="4" fill="rgba(91,145,189,.16)" stroke="#5b91bd"/>
+          <rect x="196" y="70" width="86" height="26" rx="4" fill="rgba(91,145,189,.16)" stroke="#5b91bd"/>
+          <rect x="196" y="102" width="86" height="26" rx="4" fill="rgba(16,185,129,.18)" stroke="#10b981"/>
+          </g>
+          <text x="212" y="55" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">frozen 🔒</text>
+          <text x="212" y="87" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">frozen 🔒</text>
+          <text x="206" y="119" font-family="JetBrains Mono" font-size="9" fill="#10b981">retrained</text>
+          <text x="196" y="146" font-family="Inter" font-size="9" fill="#7b8fb0">fine-tuned on 4,000 images</text>
+          <text x="316" y="56" font-family="Inter" font-size="10" fill="#7b8fb0">The features that detect</text>
+          <text x="316" y="72" font-family="Inter" font-size="10" fill="#7b8fb0">an edge are the same for</text>
+          <text x="316" y="88" font-family="Inter" font-size="10" fill="#7b8fb0">cats and for defects, so</text>
+          <text x="316" y="104" font-family="Inter" font-size="10" fill="#7b8fb0">only the last layer needs</text>
+          <text x="316" y="120" font-family="Inter" font-size="10" fill="#7b8fb0">your (scarce) labels.</text>
+          </svg>
         </div>
         <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
         <div class="interview-content">
@@ -280,7 +439,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Walk through what specifically causes vanishing gradients in a deep vanilla RNN.', a: 'Backpropagation through time multiplies the same recurrent weight matrix (and the derivative of the activation function) once per time step as the gradient flows backward through the sequence. If the largest eigenvalue of that weight matrix is less than 1, repeated multiplication shrinks the gradient exponentially with sequence length; if greater than 1, it explodes exponentially instead. This is why LSTMs introduce a separate cell state with an additive (not multiplicative) update path gated by the forget gate — additive updates don\'t suffer the same exponential decay, giving gradients a much more direct path back through time.', level: 'Senior' },

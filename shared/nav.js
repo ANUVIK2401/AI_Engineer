@@ -413,7 +413,9 @@ function enhanceLearningCards() {
     const cues = ['What it is', 'Why it matters'];
     points.slice(0, 2).forEach((point, pointIndex) => {
       if (!point.querySelector('.learning-cue')) {
-        point.insertAdjacentHTML('afterbegin', `<span class="learning-cue">${cues[pointIndex]}</span>`);
+        // trailing space is a real text node: the label must stay separated
+        // from the sentence even if the stylesheet fails or is overridden
+        point.insertAdjacentHTML('afterbegin', `<span class="learning-cue">${cues[pointIndex]}</span> `);
       }
     });
 
@@ -422,6 +424,8 @@ function enhanceLearningCards() {
     if (insightLead) {
       insightLead.classList.add('learning-cue');
       insightLead.textContent = 'Remember this';
+      // the source markup is "<strong>The insight:</strong> text" — the space
+      // already follows in the sibling text node, so nothing to add here
     }
 
     if (!card.querySelector('.card-summary-bar')) {

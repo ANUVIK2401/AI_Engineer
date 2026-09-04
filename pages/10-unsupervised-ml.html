@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>10 · Unsupervised &amp; Applied ML — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260903b">
+<link rel="stylesheet" href="../shared/styles.css?v=20260904a">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -40,6 +40,20 @@
             <li class="insight"><strong>The insight:</strong> k-means minimizes variance, which means it implicitly assumes clusters are spherical, similarly sized, and equally dense. Feed it two concentric rings and it will confidently split them down the middle — not because it failed, but because it optimized exactly what you asked. DBSCAN handles arbitrary shapes and rejects outliers, but degrades badly in high dimensions where distances concentrate and a single ε stops separating anything.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 154" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="K-means cuts concentric rings in half because it minimizes variance; DBSCAN follows density">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">K-MEANS — assumes spherical clusters</text>
+          <g fill="none" stroke="#7b8fb0"><circle cx="110" cy="80" r="42"/><circle cx="110" cy="80" r="18"/></g>
+          <line x1="110" y1="34" x2="110" y2="126" stroke="#e5484d" stroke-width="2" stroke-dasharray="4,3"/>
+          <text x="20" y="146" font-family="Inter" font-size="9" fill="#e5484d">splits both rings down the middle — low inertia, wrong answer</text>
+          <line x1="252" y1="24" x2="252" y2="140" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="278" y="18" font-family="JetBrains Mono" font-size="10" fill="#10b981">DBSCAN — follows density</text>
+          <circle cx="374" cy="80" r="42" fill="none" stroke="#10b981" stroke-width="2"/>
+          <circle cx="374" cy="80" r="18" fill="none" stroke="#5b91bd" stroke-width="2"/>
+          <circle cx="440" cy="42" r="3" fill="#e5484d"/><circle cx="318" cy="130" r="3" fill="#e5484d"/>
+          <text x="278" y="146" font-family="Inter" font-size="9" fill="#10b981">recovers both rings; red points labeled noise, not forced into a cluster</text>
+          </svg>
+        </div>
         <table class="cmp-table">
           <tr><th></th><th>K-Means</th><th>DBSCAN</th><th>Hierarchical</th></tr>
           <tr><td>Needs k upfront</td><td>yes</td><td>no</td><td>no — cut the tree later</td></tr>
@@ -71,6 +85,24 @@
             <li class="insight"><strong>The insight:</strong> in a t-SNE or UMAP plot, cluster sizes and the distances between clusters are not meaningful. The algorithms optimize local neighborhood preservation and explicitly sacrifice global geometry — two clusters drawn far apart may be adjacent in the original space. People make architecture decisions from these plots constantly, and it's one of the most common analysis errors in ML.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="In a t-SNE or UMAP plot cluster sizes and between-cluster distances are not meaningful">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">THE MOST COMMON MISREADING IN ML</text>
+          <g fill="#5b91bd"><circle cx="70" cy="60" r="3"/><circle cx="82" cy="68" r="3"/><circle cx="62" cy="74" r="3"/><circle cx="76" cy="54" r="3"/></g>
+          <circle cx="72" cy="64" r="24" fill="none" stroke="#5b91bd" stroke-dasharray="3,2"/>
+          <g fill="#10b981"><circle cx="220" cy="58" r="3"/><circle cx="240" cy="70" r="3"/><circle cx="210" cy="80" r="3"/><circle cx="248" cy="52" r="3"/><circle cx="228" cy="94" r="3"/></g>
+          <circle cx="228" cy="70" r="42" fill="none" stroke="#10b981" stroke-dasharray="3,2"/>
+          <line x1="96" y1="64" x2="186" y2="68" stroke="#f9bd67" stroke-dasharray="3,3"/>
+          <text x="106" y="58" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">this gap</text>
+          <rect x="304" y="34" width="196" height="82" rx="5" fill="none" stroke="#e5484d"/>
+          <text x="316" y="52" font-family="JetBrains Mono" font-size="9" fill="#e5484d">NOT MEANINGFUL</text>
+          <text x="316" y="70" font-family="Inter" font-size="9" fill="#7b8fb0">· distance between clusters</text>
+          <text x="316" y="84" font-family="Inter" font-size="9" fill="#7b8fb0">· relative cluster size</text>
+          <text x="316" y="98" font-family="Inter" font-size="9" fill="#7b8fb0">· density within a blob</text>
+          <text x="316" y="112" font-family="Inter" font-size="9" fill="#10b981">only local neighborhood is preserved</text>
+          <text x="14" y="144" font-family="Inter" font-size="10" fill="#7b8fb0">Re-run with a different seed and the layout changes. Use it to spot structure, never to measure it.</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
           <div class="tf-row-failure tf-situation">Reading distances off a t-SNE plot</div><div>Between-cluster distance and cluster size are artifacts, not signal</div>
@@ -101,6 +133,25 @@
             <li>They matter because gradient-boosted trees remain the strongest default for tabular data — they beat deep learning on most structured business problems, which is still the majority of production ML.</li>
             <li class="insight"><strong>The insight:</strong> bagging and boosting attack opposite halves of the error decomposition. Bagging averages away variance and therefore cannot overfit much by adding trees — more trees only stabilize the estimate. Boosting reduces bias by fitting residuals, so more rounds keep lowering training error and it <em>will</em> overfit without early stopping. That single asymmetry explains why random forests are nearly hyperparameter-free while GBMs need careful tuning.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bagging trains trees in parallel to cut variance, boosting trains sequentially on residuals to cut bias">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">BAGGING — parallel, independent</text>
+          <g fill="none" stroke="#5b91bd"><rect x="20" y="30" width="40" height="20" rx="3"/><rect x="68" y="30" width="40" height="20" rx="3"/><rect x="116" y="30" width="40" height="20" rx="3"/></g>
+          <line x1="40" y1="50" x2="88" y2="66" stroke="#3d4a5c"/><line x1="88" y1="50" x2="88" y2="66" stroke="#3d4a5c"/><line x1="136" y1="50" x2="88" y2="66" stroke="#3d4a5c"/>
+          <rect x="48" y="68" width="80" height="20" rx="3" fill="none" stroke="#10b981"/>
+          <text x="60" y="82" font-family="JetBrains Mono" font-size="9" fill="#10b981">average</text>
+          <text x="20" y="108" font-family="Inter" font-size="9" fill="#5b91bd">cuts VARIANCE</text>
+          <text x="20" y="122" font-family="Inter" font-size="9" fill="#7b8fb0">more trees never hurt</text>
+          <line x1="216" y1="24" x2="216" y2="138" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <text x="242" y="18" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">BOOSTING — sequential on residuals</text>
+          <g fill="none" stroke="#f9bd67"><rect x="242" y="30" width="40" height="20" rx="3"/><rect x="306" y="30" width="40" height="20" rx="3"/><rect x="370" y="30" width="40" height="20" rx="3"/></g>
+          <g stroke="#f9bd67" marker-end="url(#b1)"><line x1="282" y1="40" x2="304" y2="40"/><line x1="346" y1="40" x2="368" y2="40"/></g>
+          <g font-family="JetBrains Mono" font-size="8" fill="#7b8fb0"><text x="276" y="62">err</text><text x="340" y="62">err</text></g>
+          <text x="242" y="108" font-family="Inter" font-size="9" fill="#f9bd67">cuts BIAS</text>
+          <text x="242" y="122" font-family="Inter" font-size="9" fill="#e5484d">more rounds WILL overfit — needs early stopping</text>
+          <defs><marker id="b1" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#f9bd67"/></marker></defs>
+          </svg>
         </div>
         <table class="cmp-table">
           <tr><th></th><th>Bagging / Random Forest</th><th>Boosting / GBM</th></tr>
@@ -134,6 +185,20 @@
             <li class="insight"><strong>The insight:</strong> target encoding is the highest-leverage and most dangerous transform in the toolkit. Computing a category's mean target using rows that include the row you're encoding leaks the label directly into the feature — validation looks superb and production collapses. It must be computed out-of-fold, within the cross-validation loop, with smoothing toward the global mean for rare categories.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Target encoding computed in-fold leaks the label; out-of-fold encoding is the safe form">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">TARGET ENCODING — THE HIGHEST-LEVERAGE, MOST DANGEROUS TRANSFORM</text>
+          <text x="14" y="42" font-family="JetBrains Mono" font-size="9" fill="#e5484d">NAIVE (leaks)</text>
+          <g><rect x="112" y="30" width="46" height="16" rx="2" fill="rgba(229,72,77,.30)" stroke="#e5484d"/><rect x="160" y="30" width="46" height="16" rx="2" fill="rgba(229,72,77,.30)" stroke="#e5484d"/><rect x="208" y="30" width="46" height="16" rx="2" fill="rgba(229,72,77,.30)" stroke="#e5484d"/></g>
+          <text x="266" y="42" font-family="Inter" font-size="9" fill="#e5484d">mean includes THIS row's own label</text>
+          <text x="112" y="62" font-family="Inter" font-size="9" fill="#7b8fb0">for a rare category the feature ≈ the label itself</text>
+          <text x="14" y="92" font-family="JetBrains Mono" font-size="9" fill="#10b981">OUT-OF-FOLD</text>
+          <g><rect x="112" y="80" width="46" height="16" rx="2" fill="none" stroke="#10b981"/><rect x="160" y="80" width="46" height="16" rx="2" fill="rgba(16,185,129,.30)" stroke="#10b981"/><rect x="208" y="80" width="46" height="16" rx="2" fill="none" stroke="#10b981"/></g>
+          <text x="266" y="92" font-family="Inter" font-size="9" fill="#10b981">encode fold 2 using folds 1 and 3 only</text>
+          <text x="112" y="112" font-family="Inter" font-size="9" fill="#7b8fb0">+ smooth toward the global mean for rare categories</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">Symptom of getting this wrong: excellent validation, collapse in production. Same signature as temporal leakage.</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
           <div class="tf-row-failure tf-situation">Target encoding computed in-fold</div><div>Label leakage; validation score is fiction</div>
@@ -166,7 +231,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 170" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Precision and recall crossing as the decision threshold moves, with the cost-optimal point marked" viewBox="0 0 520 170" xmlns="http://www.w3.org/2000/svg">
             <text x="16" y="22" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">COST-AWARE THRESHOLD</text>
             <line x1="50" y1="130" x2="470" y2="130" stroke="#3d4a5c"/>
             <line x1="50" y1="130" x2="50" y2="40" stroke="#3d4a5c"/>
@@ -204,6 +269,20 @@
             <li class="insight"><strong>The insight:</strong> anomaly detection is not classification with a rare class. You typically have no labeled anomalies, the anomalies are not drawn from a single coherent distribution, and next month's anomalies won't resemble last month's. That means offline evaluation is fundamentally hard: you're modeling normality and flagging deviation, so the operating point is set by how many alerts your reviewers can actually process, not by a threshold that optimizes a score.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Isolation Forest isolates anomalies in few random splits while normal points need many">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">ANOMALIES ISOLATE FAST — THAT IS THE WHOLE ALGORITHM</text>
+          <rect x="20" y="30" width="180" height="90" rx="4" fill="none" stroke="#3d4a5c"/>
+          <g fill="#5b91bd"><circle cx="70" cy="76" r="2.5"/><circle cx="82" cy="86" r="2.5"/><circle cx="64" cy="92" r="2.5"/><circle cx="88" cy="70" r="2.5"/><circle cx="76" cy="98" r="2.5"/><circle cx="94" cy="88" r="2.5"/></g>
+          <circle cx="170" cy="46" r="4" fill="#e5484d"/>
+          <line x1="130" y1="30" x2="130" y2="120" stroke="#f9bd67"/>
+          <line x1="130" y1="60" x2="200" y2="60" stroke="#f9bd67"/>
+          <text x="212" y="48" font-family="JetBrains Mono" font-size="9" fill="#e5484d">2 splits to isolate</text>
+          <text x="212" y="92" font-family="JetBrains Mono" font-size="9" fill="#5b91bd">~9 splits for a dense point</text>
+          <text x="212" y="106" font-family="Inter" font-size="9" fill="#7b8fb0">short average path = anomaly score</text>
+          <text x="14" y="142" font-family="Inter" font-size="10" fill="#7b8fb0">With no labels, the operating point is set by reviewer capacity: report precision@k, not accuracy.</text>
+          </svg>
+        </div>
         <table class="cmp-table">
           <tr><th>Method</th><th>Assumes</th><th>Scales</th><th>Best when</th></tr>
           <tr><td>Z-score / IQR</td><td>roughly known distribution</td><td>trivially</td><td>univariate, well-behaved</td></tr>
@@ -236,7 +315,7 @@
           </ul>
         </div>
         <div class="card-visual">
-          <svg viewBox="0 0 520 130" xmlns="http://www.w3.org/2000/svg">
+          <svg role="img" aria-label="Recommender funnel from a large catalog through retrieval and ranking to a final slate" viewBox="0 0 520 130" xmlns="http://www.w3.org/2000/svg">
             <rect x="16" y="42" width="96" height="42" rx="6" fill="none" stroke="#3d4a5c"/>
             <text x="30" y="60" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">CATALOG</text>
             <text x="30" y="76" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">10M items</text>
@@ -278,6 +357,22 @@
             <li class="insight"><strong>The insight:</strong> every ordinary cross-validation habit is wrong here. Random k-fold shuffles future data into the training set, so the model interpolates rather than extrapolates and reports a score it can never achieve in production. Use rolling-origin (walk-forward) validation, and always compare against the seasonal naive baseline — "the value from the same weekday last week" beats a surprising number of sophisticated models, and any model that can't beat it isn't earning its maintenance cost.</li>
           </ul>
         </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 148" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Random k-fold trains on the future; rolling origin validation mirrors real use">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#e5484d">RANDOM K-FOLD IS DISQUALIFYING HERE</text>
+          <g><rect x="20" y="30" width="34" height="16" rx="2" fill="none" stroke="#3d4a5c"/><rect x="56" y="30" width="34" height="16" rx="2" fill="#e5484d"/><rect x="92" y="30" width="34" height="16" rx="2" fill="none" stroke="#3d4a5c"/><rect x="128" y="30" width="34" height="16" rx="2" fill="#e5484d"/><rect x="164" y="30" width="34" height="16" rx="2" fill="none" stroke="#3d4a5c"/></g>
+          <text x="212" y="42" font-family="Inter" font-size="9" fill="#e5484d">trains on later points to predict earlier ones</text>
+          <text x="14" y="74" font-family="JetBrains Mono" font-size="10" fill="#10b981">ROLLING ORIGIN — mirrors production</text>
+          <g>
+          <rect x="20" y="84" width="106" height="14" rx="2" fill="none" stroke="#10b981"/><rect x="128" y="84" width="34" height="14" rx="2" fill="#10b981"/>
+          <rect x="20" y="102" width="142" height="14" rx="2" fill="none" stroke="#10b981"/><rect x="164" y="102" width="34" height="14" rx="2" fill="#10b981"/>
+          <rect x="20" y="120" width="178" height="14" rx="2" fill="none" stroke="#10b981"/><rect x="200" y="120" width="34" height="14" rx="2" fill="#10b981"/>
+          </g>
+          <text x="252" y="96" font-family="Inter" font-size="9" fill="#7b8fb0">train on the past, forecast forward, advance,</text>
+          <text x="252" y="110" font-family="Inter" font-size="9" fill="#7b8fb0">repeat — gives variance across periods too</text>
+          <text x="252" y="130" font-family="Inter" font-size="9" fill="#f9bd67">always report seasonal-naive alongside</text>
+          </svg>
+        </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
           <div class="tf-row-failure tf-situation">Random k-fold CV</div><div>Leaks the future; offline score is unachievable in production</div>
@@ -308,6 +403,25 @@
             <li>It matters because regulated domains require explanations, because attributions are how you find leakage and bugs, and because downstream decisions that use probabilities as costs need those probabilities to be true.</li>
             <li class="insight"><strong>The insight:</strong> feature attribution is not causal. SHAP tells you what the model used, not what drives the outcome — with correlated features, attribution splits arbitrarily among them, and removing a "high-SHAP" feature may not degrade the model at all because a correlate absorbs its role. Presenting SHAP values as causal claims to a business stakeholder is one of the fastest ways to lose credibility when the intervention they inspire does nothing.</li>
           </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 146" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="A model can rank perfectly while its probabilities are miscalibrated">
+          <text x="14" y="18" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">RANKING AND CALIBRATION ARE DIFFERENT PROPERTIES</text>
+          <line x1="46" y1="112" x2="200" y2="112" stroke="#3d4a5c"/><line x1="46" y1="112" x2="46" y2="34" stroke="#3d4a5c"/>
+          <line x1="46" y1="112" x2="196" y2="38" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+          <path d="M 50 106 C 90 96, 120 66, 194 44" fill="none" stroke="#e5484d" stroke-width="2"/>
+          <text x="16" y="32" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">actual</text>
+          <text x="120" y="128" font-family="JetBrains Mono" font-size="8" fill="#7b8fb0">predicted →</text>
+          <text x="56" y="60" font-family="JetBrains Mono" font-size="8.5" fill="#3d4a5c">perfect</text>
+          <text x="96" y="98" font-family="JetBrains Mono" font-size="8.5" fill="#e5484d">overconfident</text>
+          <rect x="244" y="34" width="256" height="80" rx="5" fill="none" stroke="#f9bd67"/>
+          <text x="256" y="52" font-family="JetBrains Mono" font-size="9" fill="#f9bd67">WHY IT MATTERS</text>
+          <text x="256" y="70" font-family="Inter" font-size="9.5" fill="#7b8fb0">AUC measures order only. A model can rank</text>
+          <text x="256" y="84" font-family="Inter" font-size="9.5" fill="#7b8fb0">every customer correctly and still say 0.9</text>
+          <text x="256" y="98" font-family="Inter" font-size="9.5" fill="#7b8fb0">where the truth is 0.5 — so any expected-value</text>
+          <text x="256" y="108" font-family="Inter" font-size="9.5" fill="#e5484d">or budget calculation built on it is wrong.</text>
+          <text x="14" y="140" font-family="Inter" font-size="10" fill="#7b8fb0">Fix with Platt or isotonic on a held-out set. And remember SHAP explains the model, never the world.</text>
+          </svg>
         </div>
         <div class="tf-grid">
           <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
@@ -356,7 +470,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260903b"></script>
+<script src="../shared/nav.js?v=20260904a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why can k-means confidently produce a completely wrong clustering, and how would you detect that?', a: 'K-means minimizes within-cluster sum of squares, which implicitly assumes clusters are convex, roughly spherical, and similar in size and density. Given concentric rings or elongated manifolds it returns a low-inertia solution that cuts straight through the true structure — the objective is satisfied, the answer is wrong, and no internal metric complains. I would detect it by visualizing with UMAP, checking silhouette per cluster rather than the average since one bad cluster hides in the mean, and testing stability across bootstrap refits. If structure is non-convex I would switch to DBSCAN or spectral clustering rather than tuning k further.', level: 'Mid' },

@@ -88,7 +88,8 @@ test('every page shares one responsive stylesheet version and a viewport contrac
 
   for (const pagePath of pagePaths) {
     const html = await read(pagePath);
-    assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1\.0">/, pagePath);
+    // viewport-fit=cover is required or env(safe-area-inset-*) resolves to 0
+    assert.match(html, /<meta name="viewport" content="width=device-width, initial-scale=1\.0, viewport-fit=cover">/, pagePath);
     const version = html.match(/shared\/styles\.css\?v=([^"']+)/)?.[1];
     assert.ok(version, `${pagePath} must load the shared stylesheet`);
     versions.add(version);
@@ -240,4 +241,39 @@ test('sidebar scrolls its module list, not the whole rail', async () => {
     assert.ok(rule, `${selector} rule must exist`);
     assert.match(rule, /flex-shrink:\s*0/, `${selector} must not shrink`);
   }
+});
+
+test('every topic card carries a diagram', async () => {
+  const nav = await read('shared/nav.js');
+  const modulePaths = [...nav.matchAll(/path:\s*'(pages\/[^']+)'/g)].map(m => m[1]);
+
+  let cards = 0;
+  for (const path of modulePaths) {
+    const page = await read(path);
+    for (const card of page.split(/(?=<div class="card" data-topic-id=)/).slice(1)) {
+      const id = card.match(/data-topic-id="([^"]+)"/)[1];
+      cards += 1;
+      assert.ok(card.includes('<svg'), `${path}#${id} has no diagram`);
+      // a diagram nobody can describe is decoration, not a learning aid
+      assert.match(card, /<svg[^>]*role="img"[^>]*aria-label|aria-label[^>]*>/,
+        `${path}#${id} diagram needs an aria-label`);
+    }
+  }
+  assert.equal(cards, 104);
+});
+
+test('iPad and MacBook fit rules are present', async () => {
+  const css = await read('shared/styles.css');
+
+  // iOS vh excludes the dynamic toolbar, which pushed the pinned sidebar
+  // footer below the fold — dvh tracks the visible height instead
+  assert.match(css, /height: 100dvh/);
+  assert.match(css, /min-height: 100dvh/);
+  assert.match(css, /@supports \(padding: env\(safe-area-inset-left\)\)/);
+  // iPad portrait keeps the rail but narrows it
+  assert.match(css, /@media \(min-width: 744px\) and \(max-width: 1023px\) and \(orientation: portrait\)/);
+  // short landscape tablets must not stack three sticky bars
+  assert.match(css, /@media \(max-height: 850px\) and \(orientation: landscape\)/);
+  // touch devices need a pressed state, not a stuck :hover
+  assert.match(css, /@media \(hover: none\)/);
 });
