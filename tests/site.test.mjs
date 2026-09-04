@@ -72,10 +72,11 @@ test('every page shares one responsive stylesheet version and a viewport contrac
   const pagePaths = [
     'index.html',
     'interview.html',
-    ...Array.from({ length: 8 }, (_, index) => `pages/0${index + 1}-${[
-      'foundations', 'ml-core', 'deep-learning', 'transformers-llms',
-      'rag-vectordb', 'agents-langchain', 'inference-optimization', 'mlops-production'
-    ][index]}.html`),
+    ...[
+      '01-foundations', '02-ml-core', '03-deep-learning', '04-transformers-llms',
+      '05-rag-vectordb', '06-agents-langchain', '07-inference-optimization', '08-mlops-production',
+      '09-classical-nlp', '10-unsupervised-ml', '11-generative-vision', '12-training-scale'
+    ].map(name => `pages/${name}.html`),
     ...[
       '01-llm-fundamentals', '02-prompt-engineering', '03-rag', '04-vector-db',
       '05-agents', '06-fine-tuning', '07-system-design', '08-llmops',
@@ -154,7 +155,7 @@ test('module metadata stays consistent with every learning page', async () => {
   const modulePattern = /slug:\s*'([^']+)'[^\n]+path:\s*'([^']+)'[^\n]+topics:\s*(\d+)/g;
   const modules = [...nav.matchAll(modulePattern)].map(([, slug, path, topics]) => ({ slug, path, topics: Number(topics) }));
 
-  assert.equal(modules.length, 8);
+  assert.equal(modules.length, 12);
   for (const module of modules) {
     await access(new URL(module.path, root));
     const page = await read(module.path);
@@ -163,5 +164,54 @@ test('module metadata stays consistent with every learning page', async () => {
     assert.equal(new Set(topicIds).size, topicIds.length, `${module.slug} topic IDs must be unique`);
   }
 
-  assert.equal(modules.reduce((sum, module) => sum + module.topics, 0), 70);
+  assert.equal(modules.reduce((sum, module) => sum + module.topics, 0), 104);
+});
+
+test('every module card exposes the recall prompt the recall layer depends on', async () => {
+  const nav = await read('shared/nav.js');
+  const modulePaths = [...nav.matchAll(/path:\s*'(pages\/[^']+)'/g)].map(m => m[1]);
+  assert.equal(modulePaths.length, 12);
+
+  for (const path of modulePaths) {
+    const page = await read(path);
+    const cardCount = [...page.matchAll(/data-topic-id="/g)].length;
+    // enhanceLearningCards() builds .card-recall from .interview-q; a card
+    // without one silently renders with no recall prompt.
+    const questionCount = [...page.matchAll(/class="interview-q"/g)].length;
+    assert.equal(questionCount, cardCount, `${path}: every topic card needs an .interview-q`);
+
+    // the recall reveal gates .card-core, so a card missing it would show nothing
+    const coreCount = [...page.matchAll(/class="card-core"/g)].length;
+    assert.equal(coreCount, cardCount, `${path}: every topic card needs a .card-core`);
+  }
+});
+
+test('recall-first reveal, topic filter, and keyboard stepping are wired up', async () => {
+  const nav = await read('shared/nav.js');
+  const css = await read('shared/styles.css');
+
+  assert.match(nav, /function initRecallToggles\(/);
+  assert.match(nav, /function initTopicFilter\(/);
+  assert.match(nav, /function initCardKeyboardNav\(/);
+  // outside recall mode nothing hides; inside it, read topics still open
+  assert.match(nav, /setState\(!document\.body\.classList\.contains\('recall-mode'\) \|\| card\.classList\.contains\('is-read'\)\)/);
+  assert.match(nav, /id="topic-filter"/);
+  assert.match(nav, /aria-live="polite"/);
+  // all three initializers must actually run on load
+  for (const fn of ['initRecallToggles', 'initTopicFilter', 'initCardKeyboardNav']) {
+    assert.match(nav, new RegExp(`\\n  ${fn}\\(\\);`), `${fn} must run on DOMContentLoaded`);
+  }
+
+  assert.match(css, /\.card-recall \{/);
+  // blur must be gated behind recall mode: plain reading is never obscured
+  assert.match(css, /\.recall-mode \.card:not\(\.is-revealed\) \.card-core/);
+  assert.doesNotMatch(css, /\n\.card:not\(\.is-revealed\) \.card-core/);
+  assert.match(css, /\.card\.is-revealed \.card-core/);
+  assert.match(css, /\.recall-toggle\[aria-pressed="true"\]/);
+  assert.match(nav, /function applyRecall|const applyRecall/);
+  assert.match(nav, /RECALL_MODE_KEY/);
+  assert.match(css, /\.study-filter input/);
+  assert.match(css, /\.sr-only \{/);
+  // printing must never hand the reader a page of blurred boxes
+  assert.match(css, /@media print \{[\s\S]*?is-revealed\) \.card-core/);
 });

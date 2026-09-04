@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>07 · Inference Optimization — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260831f">
+<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
 </head>
 <body>
 <div class="app-shell">
@@ -306,7 +306,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260831f"></script>
+<script src="../shared/nav.js?v=20260903a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Your inference costs have grown linearly with user traffic. What levers would you evaluate to break that linear relationship?', a: 'The first lever is batching efficiency — if you\'re not already on continuous batching, moving to it typically yields a large one-time throughput jump for the same hardware, since idle GPU cycles from padding/waiting are largely eliminated. Second, I\'d evaluate quantization (INT8 or a well-tuned INT4 scheme) to reduce memory footprint per request, which directly increases how many concurrent requests fit per GPU. Third, for workloads with predictable, shorter generations, speculative decoding can meaningfully reduce the number of expensive large-model forward passes needed per token. None of these are mutually exclusive — production systems typically stack quantization, continuous batching, and paged attention together, and the linear cost-scaling problem usually indicates one or more of these isn\'t yet in place rather than needing fundamentally new hardware.', level: 'Senior' },

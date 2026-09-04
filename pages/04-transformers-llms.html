@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>04 · Transformers & LLMs — AI Eng Prep</title>
-<link rel="stylesheet" href="../shared/styles.css?v=20260831f">
+<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
 <script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 </head>
 <body>
@@ -364,7 +364,7 @@
   </div>
 </div>
 
-<script src="../shared/nav.js?v=20260831f"></script>
+<script src="../shared/nav.js?v=20260903a"></script>
 <script>
   const SIM_QUESTIONS = [
     { q: 'Why does attention have O(n²) complexity with respect to sequence length, and what are two distinct approaches to reducing it?', a: 'Every token must compute an attention score against every other token to know how much to weight each one, so for a sequence of length n you compute n² pairwise scores per attention layer — this is inherent to the full self-attention formulation. Two distinct mitigation approaches are sparse/local attention patterns (only attending to a fixed window or strided subset of tokens, trading some global context for linear-ish complexity) and linear attention approximations (reformulating attention to avoid materializing the full n×n score matrix, using kernel tricks, at some cost to exact equivalence). FlashAttention takes a third, orthogonal approach — it doesn\'t reduce the FLOP count but reduces memory movement, since the n² matrix is never fully materialized in slow GPU memory, making it much faster in practice without changing the underlying math.', level: 'Senior' },

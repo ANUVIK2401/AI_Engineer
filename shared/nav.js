@@ -11,6 +11,10 @@ const NAV_MODULES = [
   { id: '06', slug: 'agents-langchain',      label: 'Agents & LangChain',      path: 'pages/06-agents-langchain.html',       topics: 10 },
   { id: '07', slug: 'inference-optimization',label: 'Inference Optimization',  path: 'pages/07-inference-optimization.html', topics: 9  },
   { id: '08', slug: 'mlops-production',      label: 'MLOps & Production',      path: 'pages/08-mlops-production.html',       topics: 10 },
+  { id: '09', slug: 'classical-nlp',         label: 'Classical NLP',           path: 'pages/09-classical-nlp.html',          topics: 9  },
+  { id: '10', slug: 'unsupervised-ml',       label: 'Unsupervised & Applied ML', path: 'pages/10-unsupervised-ml.html',      topics: 9  },
+  { id: '11', slug: 'generative-vision',     label: 'Generative & Vision',     path: 'pages/11-generative-vision.html',      topics: 8  },
+  { id: '12', slug: 'training-scale',        label: 'Training & Scale',        path: 'pages/12-training-scale.html',         topics: 8  },
 ];
 
 const MODULE_LEARNING_GUIDES = {
@@ -56,6 +60,30 @@ const MODULE_LEARNING_GUIDES = {
     blindspots: ['People know terms like vLLM but not when to use them.', 'Optimization answers skip memory bandwidth constraints.', 'Tradeoffs are incomplete when quality impact is ignored.'],
     studyMove: 'Translate every optimization into a sentence that starts with: this is worth it when...'
   },
+  'classical-nlp': {
+    promise: 'Understand what transformers replaced, and why the old tools survive.',
+    checkpoints: ['Explain why BM25 still beats embeddings on exact matches.', 'Trace the path from n-grams through seq2seq to attention.', 'Name the right metric for each NLP task shape.'],
+    blindspots: ['People skip pre-transformer NLP and cannot explain what problem attention solved.', 'BLEU and ROUGE get quoted without knowing what they fail to measure.', 'Static versus contextual embeddings get blurred together.'],
+    studyMove: 'For each classical method, name the exact limitation that motivated its replacement.'
+  },
+  'unsupervised-ml': {
+    promise: 'Handle the majority of real ML work: no labels, imbalanced data, tabular features.',
+    checkpoints: ['Choose a clustering method from the shape of the data.', 'Spot leakage in a feature pipeline before it ships.', 'Set a decision threshold from cost, not from 0.5.'],
+    blindspots: ['Cluster counts get picked by elbow plot instead of by decision.', 'Target encoding leaks and nobody notices until production.', 'SHAP gets presented to stakeholders as if it were causal.'],
+    studyMove: 'For each technique, ask what silently breaks and whether any metric would tell you.'
+  },
+  'generative-vision': {
+    promise: 'See every generative family as a different answer to one modeling question.',
+    checkpoints: ['Place VAEs, GANs, diffusion, and autoregressive models on the trilemma.', 'Explain why latent diffusion works and where its ceiling is.', 'Predict where CLIP and VLMs break from their training objective.'],
+    blindspots: ['Generative AI gets treated as synonymous with LLMs.', 'Diffusion is described as newer rather than more trainable.', 'Inductive bias is skipped when comparing CNNs and ViTs.'],
+    studyMove: 'For each model, name the training objective, then predict a failure it must have.'
+  },
+  'training-scale': {
+    promise: 'Reason about the memory, precision, and data decisions that make a run work.',
+    checkpoints: ['Compute a training memory budget from parameters up.', 'Explain warmup, bf16, and clipping as fixes for specific failures.', 'Pick a parallelism strategy from the interconnect.'],
+    blindspots: ['Model size gets equated with memory, ignoring optimizer state.', 'NaN losses get fixed by lowering the LR without diagnosing why.', 'Scaling laws get quoted without separating training from inference cost.'],
+    studyMove: 'For every failure symptom, name the single number you would log to confirm it.'
+  },
   'mlops-production': {
     promise: 'Turn model delivery into an end-to-end operating discipline.',
     checkpoints: ['Describe the ML lifecycle from experiment to monitoring.', 'Explain drift, evaluation, rollback, and observability clearly.', 'Talk about production systems in terms of reliability loops.'],
@@ -66,6 +94,7 @@ const MODULE_LEARNING_GUIDES = {
 
 const PROGRESS_KEY = 'ai_eng_progress_v2';
 const FOCUS_MODE_KEY = 'ai_eng_focus_mode_v1';
+const RECALL_MODE_KEY = 'ai_eng_recall_mode_v1';
 
 function getBasePath() {
   return window.location.pathname.includes('/pages/') ? '../' : './';
@@ -158,7 +187,7 @@ function buildSidebar() {
         <span class="nav-icon" aria-hidden="true">⌂</span>
         <span><strong>Overview</strong><small>Your learning dashboard</small></span>
       </a>
-      <div class="sidebar-section-label"><span>Curriculum</span><span>8 modules</span></div>
+      <div class="sidebar-section-label"><span>Curriculum</span><span>12 modules</span></div>
       <ul class="sidebar-nav">${links}</ul>
       <div class="sidebar-footer">
         <div class="sidebar-overall">
@@ -396,23 +425,35 @@ function enhanceLearningCards() {
     }
 
     if (!card.querySelector('.card-summary-bar')) {
-      const recallPrompt = stripText(card.querySelector('.interview-q')?.textContent || '');
+      const recallPrompt = stripText(card.querySelector('.interview-q')?.textContent || '').replace(/^"|"$/g, '');
       const firstPoint = firstSentence(points[0]?.textContent || '');
       const secondPoint = firstSentence(points[1]?.textContent || '');
       const summaryItems = [
         { label: 'Core idea', value: shortenText(firstPoint, 16) },
-        { label: 'Why it matters', value: shortenText(secondPoint, 16) },
-        { label: 'Try saying this', value: shortenText(recallPrompt.replace(/^"|"$/g, ''), 14) }
+        { label: 'Why it matters', value: shortenText(secondPoint, 16) }
       ].filter((item) => item.value);
 
-      card.querySelector('.card-body')?.insertAdjacentHTML('afterbegin', `
+      const scanStrip = summaryItems.length ? `
         <div class="card-summary-bar" aria-label="Quick topic scan">
           ${summaryItems.map((item) => `
             <div class="card-summary-item">
               <span>${item.label}</span>
               <strong>${item.value}</strong>
             </div>`).join('')}
-        </div>`);
+        </div>` : '';
+
+      // Recall before reading: the prompt sits above the explanation so the
+      // page asks the question first and the answer is a deliberate reveal.
+      const recallBlock = recallPrompt ? `
+        <div class="card-recall" data-recall-state="hidden">
+          <div class="card-recall-head">
+            <span class="card-recall-kicker">Answer this first</span>
+            <button class="card-recall-toggle" type="button" aria-expanded="false">Reveal the explanation</button>
+          </div>
+          <p class="card-recall-q">${recallPrompt}</p>
+        </div>` : '';
+
+      card.querySelector('.card-body')?.insertAdjacentHTML('afterbegin', recallBlock + scanStrip);
     }
 
     card.style.setProperty('--reveal-order', index);
@@ -461,7 +502,17 @@ function buildStudyNavigator() {
     <nav class="study-navigator" aria-label="Topics in this module">
       <div class="study-nav-head">
         <div><span class="section-kicker">In this module</span><strong>Jump to a topic</strong></div>
-        <button class="focus-toggle" type="button" aria-pressed="false"><span aria-hidden="true">◉</span> Focus mode</button>
+        <div class="study-nav-actions">
+          <button class="recall-toggle" type="button" aria-pressed="false"><span aria-hidden="true">◈</span> Recall mode</button>
+          <button class="focus-toggle" type="button" aria-pressed="false"><span aria-hidden="true">◉</span> Focus mode</button>
+        </div>
+      </div>
+      <div class="study-filter-row">
+        <label class="study-filter">
+          <span class="sr-only">Filter topics in this module</span>
+          <input id="topic-filter" type="search" placeholder="Filter topics…  (press / )" autocomplete="off">
+        </label>
+        <p class="study-filter-status" id="topic-filter-status" role="status" aria-live="polite"></p>
       </div>
       <div class="study-topic-list">${links}</div>
     </nav>`);
@@ -481,7 +532,123 @@ function buildStudyNavigator() {
     applyFocus(next);
   });
 
+  // Recall mode is opt-in: default reading shows everything, and turning it on
+  // re-hides only the topics you have not marked read yet.
+  const recallButton = document.querySelector('.recall-toggle');
+  const applyRecall = (active) => {
+    document.body.classList.toggle('recall-mode', active);
+    recallButton.setAttribute('aria-pressed', String(active));
+    recallButton.lastChild.textContent = active ? ' Exit recall' : ' Recall mode';
+    document.querySelectorAll('.card[data-topic-id]').forEach(card => {
+      const revealed = !active || card.classList.contains('is-read');
+      card.classList.toggle('is-revealed', revealed);
+      const toggle = card.querySelector('.card-recall-toggle');
+      if (toggle) {
+        toggle.setAttribute('aria-expanded', String(revealed));
+        toggle.textContent = revealed ? 'Hide the explanation' : 'Reveal the explanation';
+      }
+    });
+  };
+  let savedRecall = false;
+  try { savedRecall = localStorage.getItem(RECALL_MODE_KEY) === 'true'; } catch {}
+  applyRecall(savedRecall);
+  recallButton.addEventListener('click', () => {
+    const next = !document.body.classList.contains('recall-mode');
+    try { localStorage.setItem(RECALL_MODE_KEY, String(next)); } catch {}
+    applyRecall(next);
+  });
+
   updateStudyNavigator();
+}
+
+/* ── Recall-first card reveal ────────────────────────────── */
+
+function initRecallToggles() {
+  document.querySelectorAll('.card-recall-toggle').forEach(button => {
+    const card = button.closest('.card');
+    if (!card) return;
+    const setState = (revealed) => {
+      card.classList.toggle('is-revealed', revealed);
+      button.setAttribute('aria-expanded', String(revealed));
+      button.textContent = revealed ? 'Hide the explanation' : 'Reveal the explanation';
+    };
+    // outside recall mode nothing is hidden; inside it, a topic already marked
+    // read has nothing left to quiz, so it opens outright
+    setState(!document.body.classList.contains('recall-mode') || card.classList.contains('is-read'));
+    button.addEventListener('click', () => setState(!card.classList.contains('is-revealed')));
+  });
+}
+
+/* ── Topic filter ────────────────────────────────────────── */
+
+function initTopicFilter() {
+  const input = document.getElementById('topic-filter');
+  if (!input) return;
+  const cards = [...document.querySelectorAll('.card[data-topic-id]')];
+  const links = [...document.querySelectorAll('.study-topic')];
+  const status = document.getElementById('topic-filter-status');
+
+  // index once: heading + body text per card, so filtering is a cheap substring test
+  const haystacks = new Map(cards.map(card => [card, stripText(card.textContent).toLowerCase()]));
+
+  const apply = () => {
+    const query = input.value.trim().toLowerCase();
+    let shown = 0;
+    cards.forEach(card => {
+      const match = !query || haystacks.get(card).includes(query);
+      card.hidden = !match;
+      if (match) shown += 1;
+    });
+    links.forEach(link => {
+      const card = cards.find(c => c.dataset.topicId === link.dataset.topicId);
+      link.hidden = !!card && card.hidden;
+    });
+    if (status) {
+      status.textContent = query
+        ? `${shown} of ${cards.length} topics match "${input.value.trim()}"`
+        : `${cards.length} topics in this module`;
+    }
+  };
+
+  input.addEventListener('input', apply);
+  input.addEventListener('keydown', event => {
+    if (event.key === 'Escape') { input.value = ''; apply(); }
+  });
+  apply();
+}
+
+/* ── Keyboard topic stepping ─────────────────────────────── */
+
+function initCardKeyboardNav() {
+  const visibleCards = () => [...document.querySelectorAll('.card[data-topic-id]')].filter(card => !card.hidden);
+  if (!visibleCards().length) return;
+
+  const isTypingTarget = (el) => el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA' || el.isContentEditable);
+
+  document.addEventListener('keydown', event => {
+    if (event.metaKey || event.ctrlKey || event.altKey || isTypingTarget(event.target)) return;
+    const key = event.key.toLowerCase();
+    if (key !== 'j' && key !== 'k' && key !== '/') return;
+
+    if (key === '/') {
+      const input = document.getElementById('topic-filter');
+      if (!input) return;
+      event.preventDefault();
+      input.focus();
+      input.select();
+      return;
+    }
+
+    const cards = visibleCards();
+    // "current" is the last card whose top has passed the sticky-header line
+    const marker = window.scrollY + 100;
+    let index = cards.findIndex(card => card.getBoundingClientRect().top + window.scrollY > marker);
+    if (index === -1) index = cards.length;
+    const target = key === 'j' ? cards[Math.min(index, cards.length - 1)] : cards[Math.max(index - 2, 0)];
+    if (!target) return;
+    event.preventDefault();
+    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -490,6 +657,9 @@ document.addEventListener('DOMContentLoaded', () => {
   injectModuleSnapshot();
   enhanceLearningCards();
   buildStudyNavigator();
+  initRecallToggles();
+  initTopicFilter();
+  initCardKeyboardNav();
   initInterviewToggles();
   initSimulator();
   scrollToHashCard();

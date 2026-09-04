@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>10 · Unsupervised &amp; Applied ML — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>10 · Unsupervised &amp; Applied ML</h1>
+      <div class="tag-row">
+        <span class="tag">9 topics</span>
+        <span class="tag">~60 min deep-read</span>
+        <span class="tag">Breadth</span>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
+      </div>
+      <p class="why-line">Interviewers ask about this because most real ML work has no labels and no LLM in it — clustering, anomaly detection, imbalance, and feature engineering are where projects actually succeed or quietly fail, and a GenAI-only answer here reveals a narrow foundation.</p>
+    </div>
+
+    <div class="card" data-topic-id="clustering">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Clustering: K-Means, DBSCAN &amp; Hierarchical</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>K-means alternates assigning points to the nearest of k centroids and recomputing those centroids, minimizing within-cluster variance; DBSCAN grows clusters from dense regions defined by a radius (ε) and a minimum neighbor count, labeling sparse points as noise; hierarchical clustering builds a merge tree you can cut at any level.</li>
+            <li>They matter because unlabeled grouping is the most common form of exploratory analysis — customer segmentation, deduplication, log grouping, and the clustering stage of modern topic modeling all run on these.</li>
+            <li class="insight"><strong>The insight:</strong> k-means minimizes variance, which means it implicitly assumes clusters are spherical, similarly sized, and equally dense. Feed it two concentric rings and it will confidently split them down the middle — not because it failed, but because it optimized exactly what you asked. DBSCAN handles arbitrary shapes and rejects outliers, but degrades badly in high dimensions where distances concentrate and a single ε stops separating anything.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th></th><th>K-Means</th><th>DBSCAN</th><th>Hierarchical</th></tr>
+          <tr><td>Needs k upfront</td><td>yes</td><td>no</td><td>no — cut the tree later</td></tr>
+          <tr><td>Cluster shape</td><td>spherical only</td><td>arbitrary</td><td>depends on linkage</td></tr>
+          <tr><td>Handles outliers</td><td>no — forces assignment</td><td>yes — labels noise</td><td>no</td></tr>
+          <tr><td>Complexity</td><td>O(nkd) per iteration</td><td>O(n log n) with index</td><td>O(n²) to O(n³)</td></tr>
+          <tr><td>Scales to millions</td><td>yes (minibatch)</td><td>moderate</td><td>no</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How do you choose k for k-means?"</div>
+          <div class="interview-weak">"I'd use the elbow method and pick where the curve bends."</div>
+          <div class="interview-strong">The elbow method is a starting point, but on real data the curve is usually smooth with no clear elbow, so it's often a Rorschach test. I'd combine silhouette score, which measures how much better each point fits its own cluster than the next-nearest one and has an actual optimum rather than a monotone curve, with gap statistic if I want a principled comparison against a null reference distribution. But the more important point is that k is usually a business decision, not a statistical one: if marketing can run four campaigns, k=4 is the answer regardless of what the silhouette says. I'd also sanity-check stability — refit on bootstrap samples and see whether the same structure appears, because a k that changes cluster membership wildly across resamples isn't describing anything real.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why does k-means fail on concentric circles?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="dimensionality-reduction">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>PCA, t-SNE &amp; UMAP</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>PCA finds orthogonal directions of maximum variance via eigendecomposition of the covariance matrix — a linear projection that is deterministic, invertible, and preserves global structure; t-SNE and UMAP are nonlinear methods that preserve local neighborhoods, optimizing so that nearby points in high dimensions stay nearby in 2D.</li>
+            <li>They matter for compressing features before modeling, for reducing embedding dimensionality to cut vector-DB cost and latency, and for the visual sanity checks that catch data problems no metric surfaces.</li>
+            <li class="insight"><strong>The insight:</strong> in a t-SNE or UMAP plot, cluster sizes and the distances between clusters are not meaningful. The algorithms optimize local neighborhood preservation and explicitly sacrifice global geometry — two clusters drawn far apart may be adjacent in the original space. People make architecture decisions from these plots constantly, and it's one of the most common analysis errors in ML.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-failure tf-situation">Reading distances off a t-SNE plot</div><div>Between-cluster distance and cluster size are artifacts, not signal</div>
+          <div class="tf-row-tradeoff tf-situation">PCA before a nonlinear model</div><div>Cheap and stable, but discards low-variance directions that may be predictive</div>
+          <div class="tf-row-failure tf-situation">PCA without standardizing features</div><div>Whichever feature has the largest units dominates every component</div>
+          <div class="tf-row-tradeoff tf-situation">UMAP vs t-SNE</div><div>UMAP is faster and preserves more global structure; both are stochastic</div>
+          <div class="tf-row-failure tf-situation">Fitting the reducer on train+test</div><div>Data leakage — fit on train only, then transform</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your embeddings are 1536-dimensional and the vector DB is too expensive. What are your options?"</div>
+          <div class="interview-weak">"Run PCA down to 128 dimensions."</div>
+          <div class="interview-strong">There are three levers and I'd try them in cost order. First, check whether the embedding model supports Matryoshka representation learning — models trained that way let you simply truncate the vector to a prefix with graceful quality loss, which costs nothing to implement. Second, quantize: scalar quantization to int8 cuts memory 4× with typically under 1% recall loss, and binary quantization cuts it 32× with a rescoring pass over the top candidates to recover precision — this is usually the best ratio of savings to effort. Third, PCA or a learned projection, fit on a representative sample of the corpus, which works but requires re-fitting when the corpus distribution shifts and makes the index non-portable. Whichever I pick, I'd measure recall@k against the full-precision index on real queries before and after, because the only number that matters is retrieval quality at the top of the ranking, not reconstruction error.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does binary quantization still retrieve accurately?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="ensembles-boosting">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Bagging, Boosting &amp; Gradient Boosted Trees</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Bagging trains many models in parallel on bootstrap samples and averages them, reducing variance (random forests add feature subsampling at each split); boosting trains models sequentially where each new model fits the residual errors of the ensemble so far, reducing bias; XGBoost, LightGBM, and CatBoost are gradient-boosting implementations differing mainly in split-finding strategy and categorical handling.</li>
+            <li>They matter because gradient-boosted trees remain the strongest default for tabular data — they beat deep learning on most structured business problems, which is still the majority of production ML.</li>
+            <li class="insight"><strong>The insight:</strong> bagging and boosting attack opposite halves of the error decomposition. Bagging averages away variance and therefore cannot overfit much by adding trees — more trees only stabilize the estimate. Boosting reduces bias by fitting residuals, so more rounds keep lowering training error and it <em>will</em> overfit without early stopping. That single asymmetry explains why random forests are nearly hyperparameter-free while GBMs need careful tuning.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th></th><th>Bagging / Random Forest</th><th>Boosting / GBM</th></tr>
+          <tr><td>Training</td><td>parallel, independent</td><td>sequential, each fits residuals</td></tr>
+          <tr><td>Reduces</td><td>variance</td><td>bias</td></tr>
+          <tr><td>Overfits with more trees</td><td>practically no</td><td>yes — needs early stopping</td></tr>
+          <tr><td>Base learner</td><td>deep trees (low bias)</td><td>shallow trees (weak learners)</td></tr>
+          <tr><td>Tuning burden</td><td>low</td><td>high (lr, depth, rounds, regularization)</td></tr>
+          <tr><td>Typical accuracy</td><td>strong baseline</td><td>usually best on tabular</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"When would you use a neural network instead of XGBoost on tabular data?"</div>
+          <div class="interview-weak">"Neural networks are more powerful, so for any large dataset."</div>
+          <div class="interview-strong">Rarely, and only for specific structural reasons rather than raw capacity. Gradient-boosted trees handle heterogeneous feature scales, missing values, and non-smooth decision boundaries natively, and they're far cheaper to train and tune — the published benchmarks consistently show them matching or beating deep models on typical tabular sizes. I'd reach for a neural network when the tabular data has structure trees can't exploit: high-cardinality categoricals where a learned embedding beats one-hot or target encoding, multi-modal inputs where I need to fuse text or image features with tabular ones in one model, multi-task setups sharing a representation across objectives, or when I need the model to be fine-tunable end-to-end as part of a larger system. If I just have a wide CSV and a target column, XGBoost or LightGBM is the right call and the deep model is usually engineering theater.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does LightGBM's leaf-wise growth differ from XGBoost's?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="feature-engineering">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Feature Engineering &amp; Encoding</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Core moves: scaling (standardization vs min-max vs robust), categorical encoding (one-hot for low cardinality, target/mean encoding for high cardinality, learned embeddings for very high), binning continuous variables, interaction and ratio features, and cyclical encoding of time via sine/cosine pairs so 23:00 and 01:00 are close.</li>
+            <li>It matters because on tabular problems feature quality dominates model choice — a well-engineered feature set with logistic regression routinely beats raw features with a tuned GBM, and it's cheaper to maintain.</li>
+            <li class="insight"><strong>The insight:</strong> target encoding is the highest-leverage and most dangerous transform in the toolkit. Computing a category's mean target using rows that include the row you're encoding leaks the label directly into the feature — validation looks superb and production collapses. It must be computed out-of-fold, within the cross-validation loop, with smoothing toward the global mean for rare categories.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-failure tf-situation">Target encoding computed in-fold</div><div>Label leakage; validation score is fiction</div>
+          <div class="tf-row-failure tf-situation">Scaler fit on the full dataset</div><div>Test statistics leak into training preprocessing</div>
+          <div class="tf-row-tradeoff tf-situation">One-hot on high-cardinality IDs</div><div>Dimension explosion and sparsity; prefer target encoding or embeddings</div>
+          <div class="tf-row-failure tf-situation">Raw hour-of-day as a number</div><div>Model believes 23 and 0 are 23 units apart; use sin/cos pair</div>
+          <div class="tf-row-tradeoff tf-situation">Aggregations over time windows</div><div>Powerful, but must respect the prediction-time cutoff or you leak the future</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your model scores 0.94 AUC offline and 0.71 in production. Where do you look first?"</div>
+          <div class="interview-weak">"The production data must have drifted from the training distribution."</div>
+          <div class="interview-strong">Drift is possible but it's rarely that large that fast, so I'd start with leakage, which produces exactly this signature. Three specific checks in order. First, temporal leakage: was the split random when it should have been chronological, and does any aggregate feature compute over a window that includes data after the prediction timestamp? Second, target leakage: is there a feature that is a downstream consequence of the label rather than an antecedent — a status field written after the outcome is known is the classic one. Third, preprocessing leakage: were the scaler, imputer, or target encoding fit on the full dataset instead of inside the CV folds. I'd also verify that the production feature pipeline computes each feature identically to training — training/serving skew from two separate implementations of the same feature is the other common cause, and it's why feature stores exist.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you detect temporal leakage automatically?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="imbalanced-data">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Imbalanced Data &amp; Threshold Selection</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Options for class imbalance: resample (random undersampling of the majority, SMOTE synthetic oversampling of the minority), reweight the loss by inverse class frequency, or leave the data alone and move the decision threshold — plus evaluate with PR-AUC rather than ROC-AUC, since ROC is optimistic under heavy imbalance.</li>
+            <li>It matters because the high-value ML problems are nearly all imbalanced: fraud, churn, defect detection, medical screening, incident prediction.</li>
+            <li class="insight"><strong>The insight:</strong> a well-calibrated model on imbalanced data is usually not broken — the default 0.5 threshold is. Resampling changes the base rate the model learns, so its outputs stop being calibrated probabilities and you've traded a threshold problem for a calibration problem. Tune the threshold on a validation set against the actual cost matrix first; reach for resampling only when the minority class is so rare the model has too few gradient signals to learn anything at all.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 170" xmlns="http://www.w3.org/2000/svg">
+            <text x="16" y="22" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">COST-AWARE THRESHOLD</text>
+            <line x1="50" y1="130" x2="470" y2="130" stroke="#3d4a5c"/>
+            <line x1="50" y1="130" x2="50" y2="40" stroke="#3d4a5c"/>
+            <text x="240" y="152" font-family="Inter" font-size="10" fill="#7b8fb0">decision threshold →</text>
+            <path d="M 60 55 C 160 70, 240 118, 460 126" fill="none" stroke="#e5484d" stroke-width="2"/>
+            <path d="M 60 126 C 200 120, 300 72, 460 50" fill="none" stroke="#58b58e" stroke-width="2"/>
+            <text x="300" y="52" font-family="JetBrains Mono" font-size="10" fill="#58b58e">precision</text>
+            <text x="70" y="50" font-family="JetBrains Mono" font-size="10" fill="#e5484d">recall</text>
+            <line x1="258" y1="40" x2="258" y2="130" stroke="#f9bd67" stroke-dasharray="4,3"/>
+            <text x="266" y="46" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">pick where</text>
+            <text x="266" y="60" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">cost is lowest</text>
+            <text x="16" y="166" font-family="Inter" font-size="10" fill="#7b8fb0">0.5 is a default, not a decision. Optimize the threshold against the real cost of each error type.</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Fraud is 0.3% of transactions. Walk me through how you'd build and evaluate the model."</div>
+          <div class="interview-weak">"I'd use SMOTE to balance the classes and then optimize F1."</div>
+          <div class="interview-strong">I'd start without resampling: train a gradient-boosted model with class weights or scale_pos_weight, keep the outputs calibrated, and evaluate with PR-AUC because ROC-AUC is misleadingly high when true negatives dominate. Then the real work is the threshold. A missed fraud costs the chargeback amount; a false positive costs a blocked legitimate customer, which has a churn cost the business can estimate. I'd sweep the threshold on a chronologically held-out validation set to minimize expected cost, not maximize F1 — F1 implicitly asserts precision and recall are equally valuable, which is almost never true. I'd split evaluation by transaction value too, since the cost matrix isn't uniform. On SMOTE specifically: it interpolates between minority points, which in high dimensions can synthesize instances that don't lie on the real data manifold, and it destroys calibration. I'd only try it if the model was failing to learn the minority class at all, and I'd verify it helped on a real holdout rather than assuming.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why is ROC-AUC optimistic under heavy imbalance?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="anomaly-detection">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Anomaly &amp; Outlier Detection</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Main families: statistical (z-score, IQR, distribution fitting), distance and density based (kNN distance, Local Outlier Factor), isolation-based (Isolation Forest, which exploits the fact that anomalies need fewer random splits to isolate), and reconstruction-based (autoencoder reconstruction error, PCA residual).</li>
+            <li>It matters for fraud, intrusion detection, manufacturing defects, and — increasingly — for detecting distribution drift and out-of-distribution inputs on a deployed model.</li>
+            <li class="insight"><strong>The insight:</strong> anomaly detection is not classification with a rare class. You typically have no labeled anomalies, the anomalies are not drawn from a single coherent distribution, and next month's anomalies won't resemble last month's. That means offline evaluation is fundamentally hard: you're modeling normality and flagging deviation, so the operating point is set by how many alerts your reviewers can actually process, not by a threshold that optimizes a score.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Method</th><th>Assumes</th><th>Scales</th><th>Best when</th></tr>
+          <tr><td>Z-score / IQR</td><td>roughly known distribution</td><td>trivially</td><td>univariate, well-behaved</td></tr>
+          <tr><td>Isolation Forest</td><td>anomalies are few and different</td><td>very well</td><td>general-purpose default</td></tr>
+          <tr><td>LOF</td><td>local density is meaningful</td><td>moderate</td><td>clusters of varying density</td></tr>
+          <tr><td>One-Class SVM</td><td>a boundary encloses normal data</td><td>poorly (O(n²))</td><td>small, clean datasets</td></tr>
+          <tr><td>Autoencoder</td><td>normal data is reconstructible</td><td>well</td><td>images, high-dim signals</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How do you evaluate an anomaly detector with no labeled anomalies?"</div>
+          <div class="interview-weak">"I'd use accuracy on the flagged points once we know which were real."</div>
+          <div class="interview-strong">Without labels I'd use three complementary approaches. First, synthetic injection: perturb known-normal records in ways that mimic plausible anomalies and measure the detection rate — imperfect, since I'm testing against my own assumptions, but it gives a floor. Second, human-in-the-loop precision: sample the top-k flagged items, have analysts label them, and report precision@k, which is the number that matters operationally since reviewer capacity is the real constraint. Third, stability and coverage checks: does the flag rate stay roughly constant over time, and when it spikes is that a genuine event or a pipeline change? I'd also build the labeled set as I go — every analyst review is a label, so within a few months there's enough data to evaluate properly and possibly move to a supervised model for the anomaly types that recur. The trap to avoid is tuning the threshold to a fixed alert budget and then reporting that as accuracy.</div>
+          <div class="interview-followup">Follow-up: <strong>"When would you switch from unsupervised to supervised here?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="recsys">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Recommender Systems</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Collaborative filtering learns from interaction patterns (matrix factorization decomposes the user-item matrix into latent factors; two-tower neural models generalize this to arbitrary features); content-based filtering matches item attributes to a user profile; production systems are hybrid and staged — cheap candidate generation over millions of items, then an expensive ranker over hundreds.</li>
+            <li>It matters because retrieve-then-rerank is the same architecture as RAG, and recsys solved it a decade earlier — the ANN index, the two-tower encoder, and the cross-encoder reranker are literally the same components.</li>
+            <li class="insight"><strong>The insight:</strong> the hard problems are cold start and feedback loops, not the model. A recommender trained on click logs learns from items it previously showed, so it reinforces its own past choices and the training data stops representing user preference — it represents past model behavior. Fixing this requires deliberate exploration (epsilon-greedy, bandits) and logging propensities so you can debias offline evaluation, which is the part teams skip.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 130" xmlns="http://www.w3.org/2000/svg">
+            <rect x="16" y="42" width="96" height="42" rx="6" fill="none" stroke="#3d4a5c"/>
+            <text x="30" y="60" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">CATALOG</text>
+            <text x="30" y="76" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">10M items</text>
+            <rect x="146" y="42" width="112" height="42" rx="6" fill="none" stroke="#5b91bd"/>
+            <text x="158" y="60" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">RETRIEVAL</text>
+            <text x="158" y="76" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">ANN → 1000</text>
+            <rect x="292" y="42" width="106" height="42" rx="6" fill="none" stroke="#f9bd67"/>
+            <text x="304" y="60" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">RANKING</text>
+            <text x="304" y="76" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">model → 100</text>
+            <rect x="432" y="42" width="72" height="42" rx="6" fill="none" stroke="#58b58e"/>
+            <text x="442" y="60" font-family="JetBrains Mono" font-size="10" fill="#58b58e">POLICY</text>
+            <text x="442" y="76" font-family="JetBrains Mono" font-size="11" fill="#f0f4ff">→ 10</text>
+            <line x1="112" y1="63" x2="146" y2="63" stroke="#3d4a5c"/>
+            <line x1="258" y1="63" x2="292" y2="63" stroke="#3d4a5c"/>
+            <line x1="398" y1="63" x2="432" y2="63" stroke="#3d4a5c"/>
+            <text x="16" y="118" font-family="Inter" font-size="10" fill="#7b8fb0">Same shape as RAG: cheap recall first, expensive precision second, business rules last.</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How would you handle a brand-new user with no interaction history?"</div>
+          <div class="interview-weak">"Show them the most popular items until we have enough data."</div>
+          <div class="interview-strong">Popularity is the right fallback but it's the floor, not the plan. I'd layer three things. First, use whatever signal exists at signup — device, locale, referral source, and any onboarding preferences — through a content-based or feature-based model that doesn't need interaction history, which is exactly what a two-tower architecture gives you since the user tower consumes features rather than an ID embedding. Second, treat the first session as active exploration: deliberately diversify recommendations to gather information fast, since a contextual bandit framing makes the exploration/exploitation trade explicit rather than accidental. Third, transition smoothly — blend the content-based score with the collaborative score weighted by interaction count, so there's no discontinuity when the user crosses some threshold. I'd measure specifically on the new-user cohort, because aggregate metrics are dominated by established users and will hide cold-start failure entirely.</div>
+          <div class="interview-followup">Follow-up: <strong>"How do you evaluate a recommender offline without deploying it?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="time-series">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Time Series Forecasting</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A series decomposes into trend, seasonality, and residual; classical models (ARIMA, exponential smoothing/ETS) model these explicitly and require stationarity, usually achieved by differencing; modern practice often reframes forecasting as supervised regression with lag and rolling-window features fed to a GBM, or uses deep models (N-BEATS, Temporal Fusion Transformer) when there are many related series.</li>
+            <li>It matters for demand planning, capacity forecasting, and — directly relevant to ML infrastructure — traffic and cost prediction for autoscaling.</li>
+            <li class="insight"><strong>The insight:</strong> every ordinary cross-validation habit is wrong here. Random k-fold shuffles future data into the training set, so the model interpolates rather than extrapolates and reports a score it can never achieve in production. Use rolling-origin (walk-forward) validation, and always compare against the seasonal naive baseline — "the value from the same weekday last week" beats a surprising number of sophisticated models, and any model that can't beat it isn't earning its maintenance cost.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-failure tf-situation">Random k-fold CV</div><div>Leaks the future; offline score is unachievable in production</div>
+          <div class="tf-row-failure tf-situation">No naive baseline</div><div>You cannot tell whether the model adds anything over "last week's value"</div>
+          <div class="tf-row-tradeoff tf-situation">Long forecast horizons</div><div>Error compounds; recursive multi-step drifts, direct multi-step needs a model per horizon</div>
+          <div class="tf-row-failure tf-situation">MAPE on near-zero values</div><div>Denominator explodes; use MASE or WAPE instead</div>
+          <div class="tf-row-tradeoff tf-situation">Holidays and promotions</div><div>Must be modeled as explicit regressors or they read as unexplained spikes</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How do you validate a forecasting model?"</div>
+          <div class="interview-weak">"Standard 80/20 train-test split with cross-validation."</div>
+          <div class="interview-strong">Rolling-origin evaluation, sometimes called walk-forward. I train on data through time T, forecast the next h steps, score them, then advance T and repeat — which mirrors exactly how the model will be used and yields several fold scores so I can see variance across periods, not just an average. Random k-fold is disqualifying here because it trains on future points to predict past ones. I'd also fix the forecast horizon to the one the business actually needs, since accuracy at h=1 says almost nothing about h=30, and report the metric per horizon rather than pooled. For the metric, MASE or WAPE over MAPE, because MAPE is undefined at zero and asymmetric in a way that quietly biases models toward under-forecasting. And every result gets reported alongside the seasonal naive baseline — if the model doesn't beat it by a margin worth the operational complexity, the honest recommendation is to ship the baseline.</div>
+          <div class="interview-followup">Follow-up: <strong>"When would a GBM on lag features beat ARIMA?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="interpretability">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Interpretability: SHAP, LIME &amp; Calibration</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>SHAP assigns each feature a contribution to an individual prediction using Shapley values from cooperative game theory, giving locally accurate and consistent attributions; LIME fits a simple interpretable model in the neighborhood of one prediction; calibration is separate — it asks whether a predicted 0.7 actually corresponds to a 70% empirical rate, checked with a reliability diagram and fixed with Platt scaling or isotonic regression.</li>
+            <li>It matters because regulated domains require explanations, because attributions are how you find leakage and bugs, and because downstream decisions that use probabilities as costs need those probabilities to be true.</li>
+            <li class="insight"><strong>The insight:</strong> feature attribution is not causal. SHAP tells you what the model used, not what drives the outcome — with correlated features, attribution splits arbitrarily among them, and removing a "high-SHAP" feature may not degrade the model at all because a correlate absorbs its role. Presenting SHAP values as causal claims to a business stakeholder is one of the fastest ways to lose credibility when the intervention they inspire does nothing.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-failure tf-situation">Reading SHAP as causal</div><div>Interventions based on it fail; attribution ≠ effect</div>
+          <div class="tf-row-tradeoff tf-situation">Correlated features</div><div>Attribution splits arbitrarily; rankings are unstable across refits</div>
+          <div class="tf-row-failure tf-situation">Accuracy-tuned model used for expected cost</div><div>Uncalibrated probabilities make every downstream cost calculation wrong</div>
+          <div class="tf-row-tradeoff tf-situation">Isotonic vs Platt calibration</div><div>Isotonic is flexible but overfits small calibration sets; Platt is safer when data is scarce</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your churn model has great AUC, but the retention team says the discount offers it triggers don't work. What's your read?"</div>
+          <div class="interview-weak">"The model needs retraining on more recent data."</div>
+          <div class="interview-strong">Two distinct problems are likely, and neither is retraining. The first is calibration: AUC only measures ranking, so a model can order customers perfectly while its predicted probabilities are systematically off. If the team computes expected value of an offer using those probabilities, the whole budget allocation is wrong even though the ranking is right — I'd check a reliability diagram and fit isotonic regression on a held-out set if it's miscalibrated. The second and deeper problem is that predicting churn isn't the same as identifying who a discount would change. Some high-risk customers will leave regardless and some will stay regardless; spending on either is wasted. What they actually need is uplift modeling — estimating the treatment effect of the offer, which requires a randomized holdout to learn from. I'd propose running that holdout, because without it there's no data that can answer their question, no matter how good the churn model gets.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you set up the holdout to measure uplift?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — Unsupervised &amp; Applied ML</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — Unsupervised &amp; Applied ML</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>K-means</dt><dd>Minimizes within-cluster variance; assumes spherical clusters.</dd></div>
+        <div class="cheat-term"><dt>DBSCAN</dt><dd>Density-based; arbitrary shapes, explicit noise label.</dd></div>
+        <div class="cheat-term"><dt>Silhouette score</dt><dd>Fit to own cluster vs nearest other; has a real optimum.</dd></div>
+        <div class="cheat-term"><dt>PCA</dt><dd>Linear projection onto max-variance orthogonal directions.</dd></div>
+        <div class="cheat-term"><dt>UMAP / t-SNE</dt><dd>Nonlinear, local-structure-preserving; global distances not meaningful.</dd></div>
+        <div class="cheat-term"><dt>Bagging</dt><dd>Parallel bootstrap models averaged; reduces variance.</dd></div>
+        <div class="cheat-term"><dt>Boosting</dt><dd>Sequential fitting of residuals; reduces bias, can overfit.</dd></div>
+        <div class="cheat-term"><dt>Target encoding</dt><dd>Category → mean target; must be out-of-fold or it leaks.</dd></div>
+        <div class="cheat-term"><dt>SMOTE</dt><dd>Synthetic minority oversampling; breaks calibration.</dd></div>
+        <div class="cheat-term"><dt>PR-AUC</dt><dd>Preferred over ROC-AUC under heavy class imbalance.</dd></div>
+        <div class="cheat-term"><dt>Isolation Forest</dt><dd>Anomalies isolate in fewer random splits; scales well.</dd></div>
+        <div class="cheat-term"><dt>Cold start</dt><dd>No history for a new user or item; needs features or exploration.</dd></div>
+        <div class="cheat-term"><dt>Rolling-origin CV</dt><dd>Walk-forward validation; the only valid CV for time series.</dd></div>
+        <div class="cheat-term"><dt>MASE</dt><dd>Error scaled by the naive forecast; safe near zero.</dd></div>
+        <div class="cheat-term"><dt>SHAP</dt><dd>Shapley-value feature attribution; descriptive, not causal.</dd></div>
+        <div class="cheat-term"><dt>Calibration</dt><dd>Whether predicted 0.7 means an empirical 70%.</dd></div>
+        <div class="cheat-term"><dt>Uplift modeling</dt><dd>Estimates treatment effect, not outcome probability.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js?v=20260903a"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Why can k-means confidently produce a completely wrong clustering, and how would you detect that?', a: 'K-means minimizes within-cluster sum of squares, which implicitly assumes clusters are convex, roughly spherical, and similar in size and density. Given concentric rings or elongated manifolds it returns a low-inertia solution that cuts straight through the true structure — the objective is satisfied, the answer is wrong, and no internal metric complains. I would detect it by visualizing with UMAP, checking silhouette per cluster rather than the average since one bad cluster hides in the mean, and testing stability across bootstrap refits. If structure is non-convex I would switch to DBSCAN or spectral clustering rather than tuning k further.', level: 'Mid' },
+    { q: 'Explain why target encoding leaks and how to implement it safely.', a: 'Naive target encoding replaces a category with the mean of the target over all rows in that category — including the row being encoded. For a rare category, that feature is then almost the label itself, so the model learns to read the answer off the feature and validation looks excellent. In production the encoding is computed from training statistics with no access to the new row is label, and performance collapses. The fix is out-of-fold encoding: within each CV fold, compute category means using only the other folds, and apply smoothing toward the global mean weighted by category count so rare categories regress to the prior. The encoding map used at serving time must be the one fit on the full training set, and it must be versioned alongside the model.', level: 'Senior' },
+    { q: 'When is ROC-AUC the wrong metric, and what do you use instead?', a: 'Under heavy class imbalance. ROC plots true positive rate against false positive rate, and FPR has the large true-negative count in its denominator, so adding many false positives barely moves it — the curve stays flattering even when precision is terrible. With 0.3% positives, a model flagging 1% of traffic to catch half the fraud has a great-looking ROC and a precision around 15%. PR-AUC uses precision, which has the predicted-positive count in the denominator, so it degrades honestly. Beyond the metric, the decision that matters is the threshold, chosen against the actual cost of a false negative versus a false positive rather than any symmetric score.', level: 'Mid' },
+    { q: 'A stakeholder points at a SHAP summary plot and says "so if we increase feature X, retention goes up." How do you respond?', a: 'I would say the plot does not support that claim. SHAP explains what the model used to produce its predictions on the observed data distribution; it is a description of the model, not of the world. Two specific reasons it can mislead here: with correlated features, credit is split among them somewhat arbitrarily, so a high SHAP value may belong to a proxy rather than the driver; and the model was fit on observational data, so any confounder that influences both X and retention shows up as attribution without any causal path. Testing the claim requires an intervention — a randomized experiment on X, or a causal-inference design with explicit assumptions about confounding. I would offer to design that experiment, since it is the only thing that answers the question they are actually asking.', level: 'Senior' },
+    { q: 'You inherit a demand forecasting model with excellent reported accuracy that performs poorly in production. What are your first three checks?', a: 'First, the validation scheme: if it used random k-fold rather than rolling-origin, the model was trained on future data to predict the past and the reported number is meaningless — this alone explains most such gaps. Second, the baseline: I would compute seasonal naive on the same holdout, because many sophisticated forecasters fail to beat "same weekday last week" and nobody checked. Third, the metric and horizon: MAPE is undefined near zero and asymmetric, flattering under-forecasts, and accuracy at horizon 1 tells you nothing about the horizon 30 the business actually plans against. I would also check whether promotions and holidays are explicit regressors, since unmodeled they appear as unexplained variance the model absorbs into trend, and whether the production feature pipeline computes lags with the same cutoff as training.', level: 'Senior' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

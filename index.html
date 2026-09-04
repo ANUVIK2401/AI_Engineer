@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="A focused, visual learning path for AI engineering concepts, tradeoffs, and interview practice.">
 <title>AI Eng Prep — Learn, Recall, Explain</title>
-<link rel="stylesheet" href="shared/styles.css?v=20260831f">
+<link rel="stylesheet" href="shared/styles.css?v=20260903a">
 </head>
 <body class="home-page">
 <div class="app-shell">
@@ -20,7 +20,7 @@
         <a href="#quickfire-title">Recall</a>
       </nav>
       <div class="topbar-actions">
-        <div class="topbar-counter"><strong id="modules-complete-count">0</strong> / 8 modules complete</div>
+        <div class="topbar-counter"><strong id="modules-complete-count">0</strong> / 12 modules complete</div>
       </div>
     </header>
 
@@ -30,13 +30,13 @@
           <span class="section-kicker">Your learning map</span>
           <h2 id="knowledge-map-title">See the whole path at a glance</h2>
         </div>
-        <p>Eight connected systems, from first principles to reliable production AI.</p>
+        <p>Twelve connected systems, from first principles to production AI, classical ML, and training at scale.</p>
       </div>
-      <div class="knowledge-map-preview" id="knowledge-map-preview" aria-label="Eight-module knowledge map"></div>
+      <div class="knowledge-map-preview" id="knowledge-map-preview" aria-label="Twelve-module knowledge map"></div>
       <details class="knowledge-map-panel">
         <summary>
-          <span><span class="section-kicker">70 connected topics</span><strong>Open the detailed knowledge map</strong></span>
-          <span class="summary-action"><span id="knowledge-topic-count">70</span> topics <span aria-hidden="true">＋</span></span>
+          <span><span class="section-kicker">104 connected topics</span><strong>Open the detailed knowledge map</strong></span>
+          <span class="summary-action"><span id="knowledge-topic-count">104</span> topics <span aria-hidden="true">＋</span></span>
         </summary>
         <div class="mindmap-wrap"><svg id="mindmap" role="img" aria-label="Interactive map of all modules and topics"></svg></div>
         <div class="mindmap-legend">
@@ -72,7 +72,7 @@
           <div class="pulse-stats">
             <div><strong id="topics-read-count">0</strong><span>topics understood</span></div>
             <div><strong>487</strong><span>questions to practice</span></div>
-            <div><strong>8</strong><span>guided modules</span></div>
+            <div><strong>12</strong><span>guided modules</span></div>
           </div>
         </div>
         <div class="today-tip"><span aria-hidden="true">✦</span><p><strong>Best rhythm:</strong> learn one topic, explain it aloud, then test yourself.</p></div>
@@ -81,7 +81,7 @@
 
     <section class="home-section" aria-labelledby="modules-title">
       <div class="section-heading">
-        <div><span class="section-kicker">8-module path</span><h2 id="modules-title">Choose what to learn next</h2></div>
+        <div><span class="section-kicker">12-module path</span><h2 id="modules-title">Choose what to learn next</h2></div>
         <p>Start at Foundations or jump directly to the system you need to understand today.</p>
       </div>
       <div class="module-grid" id="module-grid"></div>
@@ -99,7 +99,7 @@
   </div>
 </div>
 
-<script src="shared/nav.js?v=20260831f"></script>
+<script src="shared/nav.js?v=20260903a"></script>
 <script>
   const MODULE_META = [
     { descriptor: 'Build first-principles intuition for the math underneath AI.', badge: 'START HERE', time: '45 min', bestFor: 'Best for building intuition', outcomes: ['Explain the hierarchy cleanly', 'Connect probability to LLMs', 'Reason from gradients, not buzzwords'] },
@@ -110,6 +110,10 @@
     { descriptor: 'Build safer tool-using systems with memory and control loops.', badge: null, time: '70 min', bestFor: 'Best for agent system thinking', outcomes: ['Describe the agent loop', 'Separate tools, memory, and guardrails', 'Prevent looping and unsafe behavior'] },
     { descriptor: 'Balance latency, throughput, memory, quality, and cost.', badge: 'TRADEOFFS', time: '65 min', bestFor: 'Best for serving and systems tradeoffs', outcomes: ['Name the bottleneck correctly', 'Compare batching and quantization', 'Tie infra decisions to user experience'] },
     { descriptor: 'Ship, monitor, evaluate, and improve models in production.', badge: null, time: '70 min', bestFor: 'Best for production readiness', outcomes: ['Explain the release loop', 'Detect drift and regressions', 'Talk through observability and rollback'] },
+    { descriptor: 'Know what transformers replaced and why BM25 survived.', badge: 'BREADTH', time: '60 min', bestFor: 'Best for NLP fundamentals', outcomes: ['Explain hybrid search from first principles', 'Trace n-grams to attention', 'Pick the right generation metric'] },
+    { descriptor: 'Handle unlabeled, imbalanced, and tabular problems.', badge: 'BREADTH', time: '60 min', bestFor: 'Best for non-LLM ML interviews', outcomes: ['Cluster without fooling yourself', 'Catch leakage before production', 'Set thresholds from cost'] },
+    { descriptor: 'Compare diffusion, GANs, VAEs, and vision architectures.', badge: null, time: '55 min', bestFor: 'Best for multimodal breadth', outcomes: ['Place each family on the trilemma', 'Explain latent diffusion', 'Predict where CLIP breaks'] },
+    { descriptor: 'Budget memory, precision, parallelism, and data quality.', badge: 'HIGH YIELD', time: '55 min', bestFor: 'Best for training-depth questions', outcomes: ['Compute a real memory budget', 'Diagnose a NaN loss properly', 'Choose parallelism from interconnect'] },
   ];
 
   const QUICKFIRE_BANK = [
@@ -227,6 +231,32 @@
       ['containerization', 'Containers'], ['observability', 'Observability'],
       ['cicd-ml', 'CI/CD for ML'], ['cloud-ai', 'Cloud AI'],
     ],
+    'classical-nlp': [
+      ['text-preprocessing', 'Preprocessing'], ['bow-tfidf', 'TF-IDF & BM25'],
+      ['word-embeddings', 'Word2Vec / GloVe'], ['language-models-ngram', 'N-grams & Perplexity'],
+      ['sequence-labeling', 'NER & CRFs'], ['seq2seq-attention', 'Seq2Seq & Attention'],
+      ['nlp-tasks', 'NLP Task Shapes'], ['nlp-metrics', 'BLEU / ROUGE'],
+      ['topic-modeling', 'Topic Modeling'],
+    ],
+    'unsupervised-ml': [
+      ['clustering', 'Clustering'], ['dimensionality-reduction', 'PCA / UMAP'],
+      ['ensembles-boosting', 'Bagging & Boosting'], ['feature-engineering', 'Feature Engineering'],
+      ['imbalanced-data', 'Imbalanced Data'], ['anomaly-detection', 'Anomaly Detection'],
+      ['recsys', 'Recommenders'], ['time-series', 'Time Series'],
+      ['interpretability', 'SHAP & Calibration'],
+    ],
+    'generative-vision': [
+      ['generative-families', 'Generative Trilemma'], ['vae', 'Autoencoders & VAEs'],
+      ['diffusion', 'Diffusion & Guidance'], ['gan', 'GANs & Mode Collapse'],
+      ['vision-architectures', 'CNNs vs ViTs'], ['multimodal-models', 'CLIP & VLMs'],
+      ['speech-audio', 'ASR & TTS'], ['distillation-compression', 'Distillation & MoE'],
+    ],
+    'training-scale': [
+      ['optimizers', 'Adam & AdamW'], ['lr-schedules', 'LR & Warmup'],
+      ['mixed-precision', 'bf16 & fp8'], ['distributed-training', 'ZeRO / FSDP'],
+      ['scaling-laws', 'Scaling Laws'], ['data-quality', 'Data & Contamination'],
+      ['long-context', 'Long Context'], ['training-debugging', 'Debugging Runs'],
+    ],
   };
 
   function esc(s) { return s.replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
@@ -313,8 +343,8 @@
     const W = 1240, ROW = 22, MOD_GAP = 34, PAD = 44;
     const CX = W / 2;
     const sides = [
-      { dir: -1, mods: NAV_MODULES.slice(0, 4) },
-      { dir: 1, mods: NAV_MODULES.slice(4) },
+      { dir: -1, mods: NAV_MODULES.slice(0, Math.ceil(NAV_MODULES.length / 2)) },
+      { dir: 1, mods: NAV_MODULES.slice(Math.ceil(NAV_MODULES.length / 2)) },
     ];
 
     const sideHeight = s => s.mods.reduce((h, m) => h + MINDMAP_TOPICS[m.slug].length * ROW, 0)

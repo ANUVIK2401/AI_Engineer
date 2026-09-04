@@ -1878,7 +1878,7 @@ body.focus-mode .study-navigator { position: sticky; top: 10px; z-index: 30; box
 .snapshot-detail-grid li + li { margin-top: 4px; }
 .study-topic-list::-webkit-scrollbar { display: none; }
 
-.card-summary-bar { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1px; margin: 0 0 18px; overflow: hidden; border: 1px solid var(--border); border-radius: 9px; background: var(--border); }
+.card-summary-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; margin: 0 0 18px; overflow: hidden; border: 1px solid var(--border); border-radius: 9px; background: var(--border); }
 .card-summary-item { padding: 12px; background: var(--bg-code); }
 .card-summary-item > span { display: block; margin-bottom: 5px; color: var(--accent); font: 8.5px var(--font-mono); letter-spacing: .08em; text-transform: uppercase; }
 .card-summary-item > strong { display: block; color: var(--text-secondary); font-size: 11px; font-weight: 500; line-height: 1.45; }
@@ -2100,4 +2100,152 @@ body.focus-mode .study-navigator { position: sticky; top: 10px; z-index: 30; box
   .knowledge-node { min-height: 68px; padding: 8px; }
   .knowledge-node-copy strong { font-size: 10px; }
   .qa-toolbar { top: 6px; }
+}
+
+/* ============================================================
+   Recall-first layer, topic filter, keyboard stepping
+   ============================================================ */
+
+/* The recall prompt is the first thing in a card. Everything explanatory
+   below it stays dimmed until the reader commits to an answer. */
+.card-recall {
+  margin: 0 0 16px;
+  padding: 14px 16px;
+  border: 1px solid rgba(217,88,102,.34);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  background: linear-gradient(135deg, rgba(114,31,45,.20), rgba(7,13,18,.92) 68%);
+}
+.card-recall-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+.card-recall-kicker {
+  color: var(--accent-soft);
+  font: 600 9px var(--font-mono);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.card-recall-q {
+  margin: 0;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+.card-recall-toggle {
+  min-height: 32px;
+  padding: 6px 12px;
+  border: 1px solid rgba(217,88,102,.40);
+  border-radius: 7px;
+  background: rgba(114,31,45,.26);
+  color: var(--text-primary);
+  font: 600 11px var(--font-display);
+  cursor: pointer;
+  transition: background 160ms ease, border-color 160ms ease;
+}
+.card-recall-toggle:hover { background: rgba(114,31,45,.44); border-color: var(--accent); }
+body:not(.recall-mode) .card-recall-toggle { display: none; }
+body:not(.recall-mode) .card-recall { background: rgba(114,31,45,.09); }
+body:not(.recall-mode) .card-recall-kicker::after { content: ' · turn on recall mode to self-test'; opacity: .62; }
+
+.study-nav-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.recall-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 44px;
+  padding: 8px 13px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(7,13,18,.72);
+  color: var(--text-muted);
+  font: 600 11px var(--font-display);
+  cursor: pointer;
+  transition: color 160ms ease, border-color 160ms ease, background 160ms ease;
+}
+.recall-toggle:hover { color: var(--text-primary); border-color: var(--border-bright); }
+.recall-toggle[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: rgba(114,31,45,.28);
+  color: var(--text-primary);
+}
+
+/* Hidden state: the explanation is present in the DOM and readable by
+   assistive tech, just visually softened so the eye does not shortcut to it. */
+.recall-mode .card:not(.is-revealed) .card-summary-bar,
+.recall-mode .card:not(.is-revealed) .card-core,
+.recall-mode .card:not(.is-revealed) .card-visual,
+.recall-mode .card:not(.is-revealed) .cmp-table,
+.recall-mode .card:not(.is-revealed) .tf-grid,
+.recall-mode .card:not(.is-revealed) .code-block,
+.recall-mode .card:not(.is-revealed) .interview-toggle {
+  filter: blur(5px);
+  opacity: .34;
+  pointer-events: none;
+  user-select: none;
+  transition: filter 220ms ease, opacity 220ms ease;
+}
+.card.is-revealed .card-summary-bar,
+.card.is-revealed .card-core,
+.card.is-revealed .card-visual,
+.card.is-revealed .cmp-table,
+.card.is-revealed .tf-grid,
+.card.is-revealed .code-block,
+.card.is-revealed .interview-toggle {
+  filter: none;
+  opacity: 1;
+}
+
+/* Topic filter */
+.study-filter-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; margin-bottom: 12px; }
+.study-filter { flex: 1 1 220px; min-width: 0; }
+.study-filter input {
+  width: 100%;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border-bright);
+  border-radius: 8px;
+  background: #080f15;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 13px;
+}
+.study-filter input::placeholder { color: var(--text-muted); }
+.study-filter-status { margin: 0; color: var(--text-muted); font: 10px var(--font-mono); letter-spacing: .04em; text-transform: uppercase; }
+
+.sr-only {
+  position: absolute;
+  width: 1px; height: 1px;
+  padding: 0; margin: -1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card:not(.is-revealed) .card-core,
+  .card:not(.is-revealed) .card-visual,
+  .card:not(.is-revealed) .card-summary-bar { transition: none; }
+}
+
+/* Print and focus-mode readers want the whole page, not a quiz. */
+@media print {
+  .card-recall { break-inside: avoid; }
+  .card-recall-toggle,
+  .study-filter-row { display: none; }
+  .card:not(.is-revealed) .card-core,
+  .card:not(.is-revealed) .card-visual,
+  .card:not(.is-revealed) .cmp-table,
+  .card:not(.is-revealed) .tf-grid,
+  .card:not(.is-revealed) .code-block,
+  .card:not(.is-revealed) .card-summary-bar,
+  .card:not(.is-revealed) .interview-toggle { filter: none; opacity: 1; }
 }

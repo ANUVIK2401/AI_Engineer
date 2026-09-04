@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>12 · Training &amp; Scale — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>12 · Training &amp; Scale</h1>
+      <div class="tag-row">
+        <span class="tag">8 topics</span>
+        <span class="tag">~55 min deep-read</span>
+        <span class="tag">Depth</span>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
+      </div>
+      <p class="why-line">Interviewers ask about this because training is where the money goes and where the subtle bugs live — optimizer state, precision, data quality, and context length are the levers that decide whether a run converges, and anyone who has actually trained a model can talk about them concretely.</p>
+    </div>
+
+    <div class="card" data-topic-id="optimizers">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Optimizers: SGD, Adam &amp; AdamW</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>SGD with momentum accumulates a velocity term to smooth noisy gradients; Adam adds per-parameter adaptive learning rates by tracking running estimates of the first moment (mean) and second moment (uncentered variance) of the gradient; AdamW fixes Adam's weight decay by decoupling it from the gradient update instead of folding it into the loss as L2.</li>
+            <li>They matter because optimizer choice determines whether a large model converges at all, and because Adam's optimizer state is a first-order term in your memory budget — not a detail.</li>
+            <li class="insight"><strong>The insight:</strong> Adam stores two extra fp32 tensors per parameter, so at fp32 the optimizer state is roughly 8 bytes per parameter on top of 4 for weights and 4 for gradients — meaning a 7B model needs about 112GB before a single activation is stored. That single fact is why ZeRO sharding, 8-bit optimizers, and LoRA exist, and why "the model fits in memory" is never the right calculation.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Component</th><th>Bytes / param (fp32 states)</th><th>7B model</th></tr>
+          <tr><td>Weights</td><td>4</td><td>28 GB</td></tr>
+          <tr><td>Gradients</td><td>4</td><td>28 GB</td></tr>
+          <tr><td>Adam m + v</td><td>8</td><td>56 GB</td></tr>
+          <tr><td><strong>Subtotal</strong></td><td><strong>16</strong></td><td><strong>112 GB</strong></td></tr>
+          <tr><td>Activations</td><td>batch- and depth-dependent</td><td>+ checkpointing trades compute</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why is AdamW the default for transformers rather than Adam or SGD?"</div>
+          <div class="interview-weak">"AdamW converges faster because it adapts the learning rate per parameter."</div>
+          <div class="interview-strong">Two separate things. Adam over SGD: transformer gradients vary enormously in scale across parameter groups — embeddings, attention projections, and layer norms have very different gradient magnitudes — so a single global learning rate either destabilizes some groups or starves others. Adam's per-parameter normalization by the second-moment estimate handles that automatically, which is what makes transformers trainable without extensive per-group tuning. AdamW over Adam is a distinct fix: in Adam, L2 regularization added to the loss gets divided by the same second-moment term as the gradient, so parameters with large gradients receive proportionally less decay — the regularization strength becomes an accident of gradient scale. AdamW decouples decay from the adaptive update and applies it directly to the weights, which restores the intended uniform regularization and empirically generalizes better. SGD with momentum still wins in some vision settings, where it often finds flatter minima, but for transformers the tuning cost is not worth it.</div>
+          <div class="interview-followup">Follow-up: <strong>"How much memory would an 8-bit optimizer save you here?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="lr-schedules">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Learning Rate Schedules &amp; Warmup</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Standard transformer practice is linear warmup over the first small percentage of steps followed by cosine decay to near zero; alternatives include step decay, inverse-square-root (the original transformer schedule), and one-cycle. Gradient clipping by global norm usually accompanies it.</li>
+            <li>It matters because learning rate is the single most impactful hyperparameter, and the schedule interacts with batch size, model size, and total step budget — a schedule tuned for one run is often wrong for another.</li>
+            <li class="insight"><strong>The insight:</strong> warmup exists because Adam's second-moment estimate is unreliable in the first few hundred steps. With few samples, the variance estimate is noisy and can be very small, so dividing by its square root produces enormous effective steps that can destroy the initialization before training starts. Warmup gives the moment estimates time to stabilize. That's why warmup matters more for Adam than SGD, and more for large batches where each step is a bigger commitment.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg">
+            <line x1="46" y1="118" x2="480" y2="118" stroke="#3d4a5c"/>
+            <line x1="46" y1="118" x2="46" y2="26" stroke="#3d4a5c"/>
+            <path d="M 46 118 L 118 36" fill="none" stroke="#58b58e" stroke-width="2"/>
+            <path d="M 118 36 C 240 40, 330 96, 470 114" fill="none" stroke="#5b91bd" stroke-width="2"/>
+            <line x1="118" y1="26" x2="118" y2="118" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+            <text x="52" y="140" font-family="JetBrains Mono" font-size="10" fill="#58b58e">warmup</text>
+            <text x="250" y="140" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">cosine decay</text>
+            <text x="128" y="34" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">peak LR</text>
+            <text x="14" y="30" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">LR</text>
+            <text x="330" y="46" font-family="Inter" font-size="10" fill="#7b8fb0">decay to ~0 lets the model</text>
+            <text x="330" y="60" font-family="Inter" font-size="10" fill="#7b8fb0">settle into a minimum</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your loss spikes to NaN 200 steps into a fine-tuning run. What do you check?"</div>
+          <div class="interview-weak">"Lower the learning rate and restart."</div>
+          <div class="interview-strong">Lowering the LR often works but I'd rather know why, since the same bug will come back at scale. In order of likelihood: first, is there warmup? A NaN in the first few hundred steps is the signature of Adam's second-moment estimate being tiny and noisy early, producing an enormous effective step — warmup is the direct fix. Second, precision: pure fp16 has a narrow dynamic range and overflows in attention logits or layer norm; the fix is bf16, which has fp32's exponent range, or fp16 with a loss scaler that backs off on overflow. Third, gradient clipping — clip by global norm at 1.0, which bounds the damage from a single bad batch. Fourth, the data itself: I'd find the exact batch by logging the step index and replaying it, because a malformed sample, an empty sequence, or a sequence of all-padding producing a zero-denominator in a masked mean is a very common and very silent cause. I'd also check for a zero-length attention mask row, which NaNs the softmax deterministically.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why does bf16 avoid the overflow that fp16 hits?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="mixed-precision">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Mixed Precision &amp; Numerical Stability</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>fp16 has 10 mantissa bits and 5 exponent bits — high precision, narrow range; bf16 has 7 mantissa and 8 exponent bits — same range as fp32, less precision. Mixed precision keeps an fp32 master copy of weights and optimizer state while running forward and backward in 16-bit, with loss scaling for fp16 to keep small gradients from flushing to zero.</li>
+            <li>It matters because 16-bit training roughly halves memory and doubles throughput on tensor-core hardware, which is the difference between a run being feasible and not.</li>
+            <li class="insight"><strong>The insight:</strong> range matters more than precision for training. Gradients span many orders of magnitude, so fp16 overflows at the top and underflows at the bottom — hence loss scaling, which is a workaround for insufficient exponent bits. bf16 has fp32's exponent range and simply doesn't need loss scaling, which is why it became the default on hardware that supports it despite having fewer mantissa bits.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Format</th><th>Exponent</th><th>Mantissa</th><th>Needs loss scaling</th><th>Use</th></tr>
+          <tr><td>fp32</td><td>8</td><td>23</td><td>no</td><td>master weights, reductions</td></tr>
+          <tr><td>fp16</td><td>5</td><td>10</td><td>yes</td><td>older GPUs, inference</td></tr>
+          <tr><td>bf16</td><td>8</td><td>7</td><td>no</td><td>default for training</td></tr>
+          <tr><td>fp8</td><td>4–5</td><td>2–3</td><td>per-tensor scaling</td><td>frontier training, inference</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why keep an fp32 master copy of weights if you're training in bf16?"</div>
+          <div class="interview-weak">"For safety, in case the 16-bit weights get corrupted."</div>
+          <div class="interview-strong">Because of update magnitude relative to representable precision. Late in training the weight updates are tiny — the learning rate has decayed and gradients are small — and bf16 has only 7 mantissa bits, roughly 2–3 decimal digits. When you add an update that is many orders of magnitude smaller than the weight, bf16 rounds it away entirely and the update is silently lost. Training appears to just stop improving, with no error. Keeping the master weights and optimizer moments in fp32 means updates accumulate at full precision, and you cast down to bf16 only for the forward and backward passes where the extra precision genuinely doesn't matter. This is also why the optimizer state dominates the memory budget and why 8-bit optimizers use block-wise quantization with careful outlier handling rather than naive casting — the same silent-rounding failure applies to the moment estimates.</div>
+          <div class="interview-followup">Follow-up: <strong>"Where does fp8 training put its scaling factors?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="distributed-training">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Distributed Training: DDP, ZeRO &amp; FSDP</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Data parallelism replicates the model on every GPU and all-reduces gradients; ZeRO/FSDP shards optimizer state (stage 1), gradients (stage 2), and parameters (stage 3) across devices, gathering each layer's weights just in time and freeing them after. Tensor parallelism splits individual matrices across GPUs; pipeline parallelism assigns different layers to different devices.</li>
+            <li>They matter because past a few billion parameters no single device holds the training state, and picking the wrong parallelism strategy wastes most of a cluster on communication.</li>
+            <li class="insight"><strong>The insight:</strong> each strategy trades memory for a different communication pattern, and the right choice follows the interconnect. Tensor parallelism communicates inside every layer, so it demands NVLink-class bandwidth and stays within a node. Pipeline parallelism communicates only at stage boundaries, so it tolerates slower links across nodes but introduces bubble overhead. FSDP sits between them. Real frontier runs combine all three — that's the "3D parallelism" you'll be asked about.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Strategy</th><th>Shards</th><th>Comm pattern</th><th>Use when</th></tr>
+          <tr><td>DDP</td><td>nothing (replicates)</td><td>gradient all-reduce per step</td><td>model fits on one GPU</td></tr>
+          <tr><td>ZeRO-1/2</td><td>optimizer state, gradients</td><td>all-reduce + scatter</td><td>near the memory limit</td></tr>
+          <tr><td>ZeRO-3 / FSDP</td><td>+ parameters</td><td>all-gather per layer</td><td>model exceeds one GPU</td></tr>
+          <tr><td>Tensor parallel</td><td>individual matrices</td><td>all-reduce inside each layer</td><td>intra-node, fast interconnect</td></tr>
+          <tr><td>Pipeline parallel</td><td>layers across stages</td><td>activations at boundaries</td><td>cross-node, slower links</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You have 8 A100s (80GB each) and want to fine-tune a 70B model. Is it possible?"</div>
+          <div class="interview-weak">"No — 70B needs 140GB in fp16, which exceeds a single GPU."</div>
+          <div class="interview-strong">Full fine-tuning, no; parameter-efficient fine-tuning, comfortably yes. Full fine-tuning needs roughly 16 bytes per parameter with Adam in mixed precision — about 1.1TB — against 640GB of aggregate VRAM, and that's before activations. Even ZeRO-3 sharding across 8 GPUs doesn't close a gap that size, and CPU offload would make it unusably slow. QLoRA is the practical route: quantize the base model to 4-bit, which puts the frozen weights at roughly 35GB and lets them shard easily, and train only low-rank adapters. Optimizer state now covers a tiny fraction of parameters, so the whole thing fits with room for a reasonable batch and sequence length. The tradeoffs to state honestly are that 4-bit quantization costs some quality, LoRA can't make distributional shifts that exceed the rank of the update, and inference then requires either keeping the adapter separate or merging it back. For most fine-tuning goals — style, format, domain adaptation — that's entirely sufficient, and I'd only argue for full fine-tuning if evaluation showed the adapter genuinely capping quality.</div>
+          <div class="interview-followup">Follow-up: <strong>"What kind of task would LoRA's low rank fail to capture?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="scaling-laws">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Scaling Laws &amp; Compute Budgets</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Loss falls as a power law in model parameters, dataset tokens, and compute. The Chinchilla result showed that for a fixed compute budget, earlier models were badly oversized relative to their data — the compute-optimal ratio is roughly 20 tokens per parameter, not the far lower ratios used before it.</li>
+            <li>They matter because they turn "how big should the model be" from a guess into an estimate, and because they let you predict a large run's loss from a ladder of small ones before spending the budget.</li>
+            <li class="insight"><strong>The insight:</strong> compute-optimal is not deployment-optimal. Chinchilla minimizes training loss per unit of training compute, but a deployed model's cost is dominated by inference over its lifetime. If you serve billions of tokens, it's rational to train a smaller model far past its compute-optimal token count — spending more training compute for a permanently cheaper model. That's exactly why modern open models are trained on token counts many times the Chinchilla ratio.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ L(N, D) \approx L_\infty + \frac{A}{N^{\alpha}} + \frac{B}{D^{\beta}} \qquad C \approx 6ND $$
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-tradeoff tf-situation">Compute-optimal (Chinchilla) sizing</div><div>Best loss per training FLOP; a larger, more expensive model to serve</div>
+          <div class="tf-row-tradeoff tf-situation">Over-training a small model</div><div>More training compute; permanently cheaper inference</div>
+          <div class="tf-row-failure tf-situation">Extrapolating a law past its fitted range</div><div>Power laws bend; data quality and repetition break the assumptions</div>
+          <div class="tf-row-failure tf-situation">Repeating data many epochs</div><div>Returns decay sharply; unique tokens are the real constraint</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You have a fixed training budget. Bigger model or more data?"</div>
+          <div class="interview-weak">"Bigger model — parameter count is what drives capability."</div>
+          <div class="interview-strong">For pure compute-optimality, Chinchilla says balance them at roughly 20 tokens per parameter, and the pre-Chinchilla instinct to maximize parameters was measurably wrong. But I'd push back on the framing, because the right answer depends on what happens after training. If this model will serve high volume, I'd deliberately train smaller and longer than compute-optimal — training compute is paid once and inference compute is paid forever, so a model that's 30% worse per training FLOP but half the size can be a large net win. If it's a research artifact or will serve little traffic, compute-optimal is right. Two caveats I'd raise regardless: the scaling law assumes unique high-quality tokens, and if I'd have to repeat data several epochs to reach the token target, returns fall off sharply and I should spend that budget on data curation instead. And the laws predict loss, not capabilities — the specific downstream behavior I care about may not track loss smoothly, so I'd validate with a ladder of small runs before committing.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you use small runs to predict a large run's loss?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="data-quality">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Training Data: Curation &amp; Contamination</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>The pretraining data pipeline is quality filtering (classifier or heuristic), deduplication (exact hashing plus near-duplicate MinHash/LSH), decontamination against evaluation sets, PII and toxicity filtering, and mixture weighting across domains. For fine-tuning, the same logic applies at much smaller scale with far higher per-example standards.</li>
+            <li>It matters because at fixed compute, data quality moves benchmarks more than architecture does — and because a contaminated eval set makes every subsequent decision unreliable.</li>
+            <li class="insight"><strong>The insight:</strong> deduplication is not a cleanliness nicety, it changes what the model learns. Duplicated documents get effectively upweighted, increasing memorization and verbatim regurgitation while wasting compute on repeated content — and near-duplicates are the majority of the problem, so exact hashing alone misses most of it. For instruction tuning, the well-replicated finding is that a few thousand carefully curated examples beat hundreds of thousands of scraped ones.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-failure tf-situation">Benchmark contamination</div><div>Eval scores measure memorization; every model comparison is invalid</div>
+          <div class="tf-row-failure tf-situation">Exact-hash dedup only</div><div>Near-duplicates dominate; memorization and waste persist</div>
+          <div class="tf-row-tradeoff tf-situation">Aggressive quality filtering</div><div>Higher average quality; can strip dialects and low-resource domains</div>
+          <div class="tf-row-failure tf-situation">Scaling instruction data by volume</div><div>Noisy examples teach noisy behavior; curation beats quantity</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your fine-tuned model scores 91% on your benchmark but users report it's worse than the base model. What happened?"</div>
+          <div class="interview-weak">"The benchmark must be too easy — I'd find a harder one."</div>
+          <div class="interview-strong">Two likely causes, and I'd check contamination first because it's cheap to test. If benchmark examples leaked into the fine-tuning set — directly, or through a synthetic-data generator that saw them — the score measures memorization, not capability. I'd run n-gram overlap between the training data and the eval set, and separately check whether the model reproduces eval items verbatim when prompted with a prefix, which is fairly conclusive. The second cause is catastrophic forgetting or alignment tax: fine-tuning on a narrow distribution degrades general capability and often instruction-following, so the model gets better at the benchmark's shape and worse at everything users actually do. The diagnostic is to evaluate on a held-out general benchmark the model was never tuned toward, plus a sample of real production prompts, and compare against the base model directly. Mitigations are mixing a fraction of general instruction data into the fine-tuning mixture, lowering the learning rate, using LoRA so the base weights are preserved, and early-stopping on the general eval rather than the task eval.</div>
+          <div class="interview-followup">Follow-up: <strong>"How do you detect contamination when you didn't build the training set?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="long-context">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Long Context: RoPE Scaling &amp; Efficient Attention</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Extending context requires two things: positional encodings that generalize beyond the trained length (RoPE with position interpolation, NTK-aware scaling, or YaRN) and attention that doesn't blow up quadratically. FlashAttention keeps exact attention but tiles the computation to avoid materializing the n×n matrix in HBM; sliding-window and sparse attention change the computation itself.</li>
+            <li>It matters because context length is a headline product feature, and because the difference between "supports 200k tokens" and "uses 200k tokens well" is where systems quietly fail.</li>
+            <li class="insight"><strong>The insight:</strong> FlashAttention is not an approximation — it computes exactly the same attention, just with an IO-aware algorithm that avoids writing the score matrix to slow memory. That distinction matters in interviews: people often lump it with sparse attention, but one is a memory-access optimization with identical outputs and the other is a modeling approximation with different outputs. Separately, long context degrades quality in the middle of the window ("lost in the middle"), so retrieval into a shorter context often beats stuffing everything in.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-tradeoff tf-situation">FlashAttention</div><div>Exact output, big memory/speed win; needs supported kernels and head dims</div>
+          <div class="tf-row-tradeoff tf-situation">Sliding-window attention</div><div>Linear cost; genuinely loses long-range dependencies</div>
+          <div class="tf-row-failure tf-situation">Naive RoPE extrapolation</div><div>Quality collapses past the trained length; needs interpolation or YaRN</div>
+          <div class="tf-row-failure tf-situation">Stuffing the full window</div><div>Lost-in-the-middle degradation, plus linear latency and cost growth</div>
+          <div class="tf-row-tradeoff tf-situation">Long context vs RAG</div><div>Simpler pipeline vs far lower cost and better attribution</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Models support 1M-token context now. Does that make RAG obsolete?"</div>
+          <div class="interview-weak">"Mostly yes — you can just put all the documents in the prompt."</div>
+          <div class="interview-strong">No, for three reasons that are independent of model capability. Cost and latency: prefill is linear in tokens, so putting a million tokens in every request is orders of magnitude more expensive than retrieving the few thousand that matter, and it adds seconds of time-to-first-token on every call. Quality: the lost-in-the-middle effect is well documented — retrieval accuracy dips for content in the middle of a long window, so more context does not monotonically improve answers and can actively hurt. Attribution and freshness: RAG returns which documents were used, which is what makes citation, permissions filtering, and auditability possible, and the index updates without touching the model. Where long context genuinely wins is when the task requires global reasoning over one coherent document — summarizing a whole contract, or tracing a change through a codebase — because chunking destroys exactly the cross-references those tasks need. The mature answer is that they compose: retrieve aggressively, then use the long window to hold a generous amount of retrieved context rather than a stingy top-3.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you measure lost-in-the-middle on your own workload?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="training-debugging">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Debugging a Training Run</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>The standard instrumentation is training and validation loss, gradient norm before clipping, learning rate, parameter update-to-weight ratio, activation statistics per layer, and throughput in tokens per second. The first diagnostic move is always to overfit a single batch — if the model can't drive loss to near zero on 8 examples, the bug is in the code, not the hyperparameters.</li>
+            <li>It matters because training failures are expensive and mostly silent: the loss curve looks plausible while something specific and fixable is wrong.</li>
+            <li class="insight"><strong>The insight:</strong> the update-to-weight ratio is the most underused signal available. Roughly 1e-3 per step is healthy — much smaller means the model is effectively frozen regardless of what the LR says, much larger means it's being destroyed. It catches problems the loss curve hides, like a learning rate that's fine globally but wrong for one parameter group, and it's a single scalar per group you can log for free.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Symptom</th><th>Most likely cause</th><th>First check</th></tr>
+          <tr><td>Loss flat from step 0</td><td>LR too low, or gradients not flowing</td><td>overfit one batch; check grad norms are non-zero</td></tr>
+          <tr><td>Loss NaN early</td><td>no warmup, fp16 overflow, bad batch</td><td>warmup, bf16, clip, log the offending step</td></tr>
+          <tr><td>Train falls, val rises</td><td>overfitting</td><td>more data, regularization, early stop</td></tr>
+          <tr><td>Both plateau high</td><td>underfitting or a data bug</td><td>capacity, LR, and inspect actual decoded batches</td></tr>
+          <tr><td>Loss drops then spikes</td><td>bad data shard, LR too high late</td><td>per-step loss vs data order</td></tr>
+          <tr><td>Val loss suspiciously low</td><td>leakage or contamination</td><td>overlap check between splits</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Training loss is decreasing normally but the model produces garbage at inference. What's wrong?"</div>
+          <div class="interview-weak">"It's underfitting — I'd train for more epochs."</div>
+          <div class="interview-strong">A decreasing training loss with broken generation almost always means a train/inference mismatch rather than a modeling problem, so I'd look at the seams between the two code paths. The usual suspects, in order: the tokenizer or chat template differs between training and inference — trained with one format, prompted with another, so the model never sees the format it's being asked to complete; the loss is being computed over the prompt tokens as well as the completion, when it should be masked to the completion only; padding side is wrong — right-padding at inference for a decoder means generation starts after pad tokens; special tokens like BOS or EOS added at training and not at inference or vice versa; or the model is being loaded without the adapter merged or with a dtype mismatch. The decisive test is to take one training example, run it through the exact inference path, and compare the tokenized input ids byte-for-byte with what the training dataloader produced. That comparison finds the bug almost every time and takes ten minutes.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why does masking the prompt tokens from the loss matter?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — Training &amp; Scale</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — Training &amp; Scale</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>AdamW</dt><dd>Adam with weight decay decoupled from the adaptive update.</dd></div>
+        <div class="cheat-term"><dt>Optimizer state</dt><dd>Adam's m and v; ~8 bytes/param at fp32, often the memory bottleneck.</dd></div>
+        <div class="cheat-term"><dt>Warmup</dt><dd>Ramps LR while Adam's moment estimates stabilize.</dd></div>
+        <div class="cheat-term"><dt>Gradient clipping</dt><dd>Caps global grad norm; bounds damage from one bad batch.</dd></div>
+        <div class="cheat-term"><dt>bf16</dt><dd>fp32 exponent range, fewer mantissa bits; no loss scaling needed.</dd></div>
+        <div class="cheat-term"><dt>Loss scaling</dt><dd>Scales loss up so small fp16 gradients don't underflow.</dd></div>
+        <div class="cheat-term"><dt>Master weights</dt><dd>fp32 copy so tiny updates aren't rounded away.</dd></div>
+        <div class="cheat-term"><dt>ZeRO / FSDP</dt><dd>Shards optimizer state, gradients, then parameters across ranks.</dd></div>
+        <div class="cheat-term"><dt>Tensor parallel</dt><dd>Splits matrices; needs fast intra-node interconnect.</dd></div>
+        <div class="cheat-term"><dt>Pipeline bubble</dt><dd>Idle stages while the pipeline fills and drains.</dd></div>
+        <div class="cheat-term"><dt>Activation checkpointing</dt><dd>Recompute activations in backward to save memory.</dd></div>
+        <div class="cheat-term"><dt>Chinchilla ratio</dt><dd>≈20 tokens per parameter for compute-optimal training.</dd></div>
+        <div class="cheat-term"><dt>C ≈ 6ND</dt><dd>Training FLOPs from parameters × tokens.</dd></div>
+        <div class="cheat-term"><dt>Decontamination</dt><dd>Removing eval data from training; without it scores are meaningless.</dd></div>
+        <div class="cheat-term"><dt>MinHash / LSH</dt><dd>Near-duplicate detection at corpus scale.</dd></div>
+        <div class="cheat-term"><dt>FlashAttention</dt><dd>Exact attention, IO-aware tiling; not an approximation.</dd></div>
+        <div class="cheat-term"><dt>YaRN / position interpolation</dt><dd>Rescales RoPE so context extends past the trained length.</dd></div>
+        <div class="cheat-term"><dt>Lost in the middle</dt><dd>Recall dips for content mid-window in long contexts.</dd></div>
+        <div class="cheat-term"><dt>Update-to-weight ratio</dt><dd>≈1e-3 is healthy; catches what the loss curve hides.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js?v=20260903a"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Walk me through the memory budget of fine-tuning a 7B model with AdamW in mixed precision.', a: 'Weights in fp32 master copy are 4 bytes per parameter, 28GB. Gradients are another 4 bytes, 28GB. AdamW keeps two moment estimates at fp32, 8 bytes, 56GB. That is 112GB of static state before a single activation, which is why a 7B model does not fine-tune on an 80GB card naively. Activations add on top and scale with batch size, sequence length, and depth — activation checkpointing trades roughly 30% extra compute to cut that term substantially. The standard mitigations are ZeRO or FSDP sharding of the optimizer state and gradients across ranks, 8-bit optimizers which quantize m and v block-wise, and LoRA, which removes the optimizer state for all but a tiny fraction of parameters and is why QLoRA fits a 70B model on a single node.', level: 'Senior' },
+    { q: 'Why does Adam need warmup when SGD largely does not?', a: 'Adam divides the gradient by the square root of a running second-moment estimate. At step one that estimate is initialized near zero and built from very few samples, so it is both noisy and potentially tiny — and dividing by a tiny noisy denominator produces enormous effective step sizes that can wreck the initialization before any learning happens. Bias correction helps but does not fix the noise. Warmup keeps the learning rate small while the estimates accumulate enough samples to be stable. SGD has no such denominator, so its step size is whatever the LR says and there is nothing to blow up. The effect is stronger at large batch sizes, where each step commits harder, which is why large-batch training uses proportionally longer warmup.', level: 'Mid' },
+    { q: 'Distinguish FlashAttention from sparse attention, and say when each is appropriate.', a: 'FlashAttention is an exact algorithm — it computes mathematically identical attention to the naive implementation, but tiles the computation so the n×n score matrix is never materialized in HBM, using online softmax to combine tiles. The win is memory and speed from reduced high-bandwidth-memory traffic, with zero modeling change, so it should be on by default wherever kernels support the head dimension. Sparse and sliding-window attention change the computation: each query attends to a subset of keys, so the output genuinely differs and long-range dependencies outside the window are lost. That is an appropriate trade when sequences are very long and the task is locally structured, but it is a modeling decision requiring evaluation, whereas FlashAttention is a free optimization.', level: 'Senior' },
+    { q: 'Your fine-tuned model scores well on your eval but users say it regressed. What are the two leading hypotheses?', a: 'First, contamination: eval examples leaked into the fine-tuning data, directly or through a synthetic generator that had seen them, so the score reflects memorization. I would test with n-gram overlap between training and eval sets and check whether the model completes eval items verbatim from a prefix. Second, catastrophic forgetting or alignment tax: narrow fine-tuning degraded general capability and instruction-following, so the model improved on the eval is specific shape while getting worse at real usage. The diagnostic is a held-out general benchmark plus a sample of real production prompts, compared head to head against the base model. Mitigations are mixing general instruction data into the fine-tuning set, lower learning rate, LoRA so base weights are preserved, and early stopping on the general eval rather than the task eval.', level: 'Senior' },
+    { q: 'A colleague proposes replacing your RAG system with a 1M-token context window. Argue the tradeoffs.', a: 'Long context wins where the task needs global coherence over one document — whole-contract summarization, tracing a change across a codebase — because chunking destroys exactly the cross-references those tasks depend on. It loses on three axes that do not improve with model quality. Cost and latency: prefill is linear in tokens, so a million-token prompt on every request is orders of magnitude more expensive and adds seconds to time-to-first-token. Quality: lost-in-the-middle means retrieval accuracy dips for mid-window content, so more context is not monotonically better. Attribution: RAG tells you which documents were used, which is what enables citations, per-user permission filtering, and audit, and the index refreshes without touching the model. The right architecture usually composes both — retrieve, then use the long window to hold generous retrieved context rather than a narrow top-3.', level: 'Senior' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

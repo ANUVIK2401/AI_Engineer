@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>09 · Classical NLP — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>09 · Classical NLP</h1>
+      <div class="tag-row">
+        <span class="tag">9 topics</span>
+        <span class="tag">~60 min deep-read</span>
+        <span class="tag">Pre-transformer</span>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
+      </div>
+      <p class="why-line">Interviewers ask about this to check whether you understand what transformers replaced and why — anyone can describe attention, but explaining why n-grams, TF-IDF, and seq2seq each hit a wall is what shows you understand the problem, not just the current solution.</p>
+    </div>
+
+    <div class="card" data-topic-id="text-preprocessing">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Text Preprocessing &amp; Normalization</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>The classical pipeline is normalize (lowercase, strip punctuation/accents) then tokenize into words, then optionally remove stopwords and reduce words to a root form — stemming chops suffixes with crude rules (Porter: "running" → "run", but "universities" → "univers"), lemmatization maps to a real dictionary form using part-of-speech context ("better" → "good").</li>
+            <li>It matters because bag-of-words and TF-IDF treat every distinct string as a separate dimension — without normalization "Running", "running", and "ran" become three unrelated features, fragmenting your signal across a sparse vocabulary and starving each variant of training examples.</li>
+            <li class="insight"><strong>The insight:</strong> almost every one of these steps is now actively harmful with transformers. Lowercasing destroys the case signal a subword model uses (US vs us), stopword removal deletes the function words attention relies on for syntax, and stemming corrupts the subword vocabulary the tokenizer was trained on. Preprocessing was a workaround for models that had no notion of context — knowing when <em>not</em> to preprocess is the modern skill.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Step</th><th>Classical ML</th><th>Transformer</th></tr>
+          <tr><td>Lowercasing</td><td>almost always</td><td>no — model is cased for a reason</td></tr>
+          <tr><td>Stopword removal</td><td>yes for BoW/TF-IDF</td><td>never — destroys syntax</td></tr>
+          <tr><td>Stemming / lemmatization</td><td>yes, reduces sparsity</td><td>no — breaks subword vocab</td></tr>
+          <tr><td>Unicode normalization</td><td>yes</td><td>yes — still useful</td></tr>
+          <tr><td>Whitespace / control chars</td><td>yes</td><td>yes — still useful</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You inherited a text classification pipeline that lowercases and removes stopwords before feeding a BERT model. What do you change?"</div>
+          <div class="interview-weak">"I'd keep it — preprocessing is standard practice for NLP and cleans the data."</div>
+          <div class="interview-strong">I'd remove both steps. BERT's WordPiece vocabulary was trained on cased text with stopwords present, so lowercasing pushes inputs off-distribution and forces more tokens to fragment into subword pieces the model rarely saw in that form. Stopword removal is worse — attention uses function words like "not", "but", and prepositions to establish relationships between spans, so stripping them can invert the meaning of a sentence the model is being asked to classify. The only preprocessing I'd keep is Unicode normalization and control-character stripping, which fix genuine encoding noise rather than removing linguistic signal. I'd validate by A/B-ing the raw-text pipeline against the preprocessed one on a held-out set; in my experience the gap is large enough to see immediately.</div>
+          <div class="interview-followup">Follow-up: <strong>"When would you still reach for stemming today?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="bow-tfidf">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Bag-of-Words, TF-IDF &amp; BM25</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Bag-of-words represents a document as raw term counts over a fixed vocabulary, discarding word order entirely; TF-IDF reweights each count by how rare the term is across the corpus so common words contribute less; BM25 is TF-IDF's production successor, adding term-frequency saturation (the 10th occurrence of a word adds far less than the 2nd) and document-length normalization.</li>
+            <li>They matter because they turn text into a sparse numeric vector that any classifier or inverted index can consume — and because BM25 is still the sparse half of every hybrid search system in production RAG today, not a historical footnote.</li>
+            <li class="insight"><strong>The insight:</strong> BM25's advantage over dense embeddings is precisely that it does <em>not</em> generalize. An exact match on a rare token — a product SKU, an error code, a surname — scores enormously because IDF is high and there is no semantic smoothing to dilute it. That is why hybrid retrieval beats pure dense: they fail on opposite inputs.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ \text{BM25}(q,d) = \sum_{t \in q} \text{IDF}(t)\cdot\frac{f(t,d)\,(k_1+1)}{f(t,d) + k_1\left(1-b+b\frac{|d|}{\text{avgdl}}\right)} $$
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-tradeoff tf-situation">Bag-of-words ignores order</div><div>"dog bites man" and "man bites dog" are identical vectors</div>
+          <div class="tf-row-tradeoff tf-situation">Sparse high-dimensional vectors</div><div>Vocabulary-sized dimensions; no notion that "car" and "automobile" relate</div>
+          <div class="tf-row-failure tf-situation">Unseen vocabulary at inference</div><div>Out-of-vocabulary terms are silently dropped — zero signal, no error</div>
+          <div class="tf-row-tradeoff tf-situation">BM25 <em>k₁</em> and <em>b</em> tuning</div><div>Defaults (1.2–2.0, 0.75) are corpus-dependent; wrong <em>b</em> biases toward long or short docs</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your semantic search system works well in testing but users complain they can't find documents by part number. Why, and what do you do?"</div>
+          <div class="interview-weak">"The embedding model isn't good enough — I'd fine-tune it on our data."</div>
+          <div class="interview-strong">This is the canonical failure mode of pure dense retrieval. A part number like "XR-4471-B" is either out-of-distribution for the embedding model or fragments into meaningless subword tokens, so its vector lands in a region uncorrelated with the actual document — semantic similarity is the wrong notion of relevance for an identifier that carries no semantics. The fix is hybrid retrieval: run BM25 alongside the dense index and fuse the rankings, typically with Reciprocal Rank Fusion since it needs no score calibration between the two systems. BM25 handles the exact-match case beautifully because a rare token has very high IDF, so a document containing it dominates the sparse ranking. Fine-tuning the embedder is a far more expensive path to a worse version of the same result, because you'd be asking a semantic model to memorize arbitrary identifiers.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you weight the two rankings when fusing?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="word-embeddings">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Word2Vec, GloVe &amp; FastText</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Word2Vec learns dense word vectors by predicting context from a word (skip-gram) or a word from its context (CBOW), trained efficiently with negative sampling; GloVe instead factorizes a global word co-occurrence matrix; FastText represents each word as a sum of character n-gram vectors, so it can embed words it never saw in training.</li>
+            <li>They matter because they were the first practical proof that distributional semantics works at scale — "a word is characterized by the company it keeps" turned into a trainable objective, producing the famous king − man + woman ≈ queen vector arithmetic.</li>
+            <li class="insight"><strong>The insight:</strong> these are <em>static</em> embeddings — one fixed vector per word, forever. "Bank" gets a single vector that is the blurred average of the river sense and the financial sense, and no amount of training data fixes it. That single limitation is the entire motivation for contextual embeddings and, ultimately, for transformers.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Model</th><th>Trained on</th><th>Handles OOV?</th><th>Key property</th></tr>
+          <tr><td>Word2Vec</td><td>local context windows</td><td>no</td><td>fast, strong analogies</td></tr>
+          <tr><td>GloVe</td><td>global co-occurrence counts</td><td>no</td><td>uses corpus-wide statistics</td></tr>
+          <tr><td>FastText</td><td>character n-grams</td><td>yes</td><td>good for morphology-rich languages</td></tr>
+          <tr><td>BERT / modern</td><td>masked language modeling</td><td>yes (subword)</td><td>contextual — vector varies by sentence</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"What is the fundamental limitation of Word2Vec that BERT solves?"</div>
+          <div class="interview-weak">"Word2Vec is older and BERT is a transformer, so it's more accurate."</div>
+          <div class="interview-strong">Word2Vec produces one static vector per word type, independent of usage. Polysemous words therefore get a single embedding that averages all their senses — "bank" sits somewhere between finance and rivers and is a good representation of neither. BERT computes a contextual embedding: the same token gets a different vector in every sentence, because self-attention conditions each token's representation on the surrounding tokens. That's also why you can't build a static lookup table from BERT the way you can from Word2Vec — there's no single vector to store. The practical consequence is that Word2Vec-style embeddings plateau on any task requiring disambiguation, while contextual models keep improving with more context.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why does FastText handle misspellings better than Word2Vec?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="language-models-ngram">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>N-gram Language Models &amp; Perplexity</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>An n-gram model estimates the probability of the next word from the previous n−1 words by counting occurrences in a corpus, with smoothing (Laplace, Kneser-Ney) to assign non-zero probability to unseen sequences; perplexity is the exponentiated average negative log-likelihood — intuitively, the effective number of equally-likely choices the model is deciding between at each step.</li>
+            <li>They matter because they define the objective every modern LLM still optimizes: predict the next token given the previous ones. GPT differs from a trigram model in capacity and context length, not in the fundamental training objective.</li>
+            <li class="insight"><strong>The insight:</strong> n-grams fail because the parameter count grows as vocabulary^n while the data to estimate it does not — with a 50k vocabulary, a 5-gram model has 50,000⁵ possible contexts and almost all of them are never observed. Neural LMs solve this by sharing parameters across similar contexts via dense representations, which is the real reason they generalize.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ \text{PPL}(W) = \exp\left(-\frac{1}{N}\sum_{i=1}^{N}\log P(w_i \mid w_{<i})\right) $$
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-tradeoff tf-situation">Larger n</div><div>More context but exponentially sparser counts; needs aggressive smoothing</div>
+          <div class="tf-row-failure tf-situation">Comparing perplexity across tokenizers</div><div>Meaningless — different token counts change the per-token normalization</div>
+          <div class="tf-row-failure tf-situation">Optimizing perplexity alone</div><div>Low perplexity does not mean helpful, factual, or safe output</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Model A has perplexity 12 and Model B has perplexity 18. Which is better?"</div>
+          <div class="interview-weak">"Model A — lower perplexity always means a better language model."</div>
+          <div class="interview-strong">Only if they share the same tokenizer and the same evaluation corpus. Perplexity is normalized per token, so a model with a larger vocabulary encodes the same text in fewer tokens and will report lower perplexity for identical underlying quality — the comparison is an artifact of tokenization, not modeling. Even holding that constant, perplexity measures distributional fit to the eval set, which correlates with but doesn't determine downstream usefulness: an instruction-tuned model typically has <em>worse</em> raw perplexity on generic web text than its base model while being far more useful, because alignment training shifts the distribution away from the pretraining corpus. I'd only trust perplexity as a training-progress signal within one model family, and use task-level evals for any cross-model claim.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why does instruction tuning often increase perplexity?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="sequence-labeling">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Sequence Labeling: POS, NER &amp; CRFs</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Sequence labeling assigns a tag to every token — part-of-speech tags, or entity spans in BIO encoding (B-PER, I-PER, O). Classical solutions used Hidden Markov Models and then Conditional Random Fields, which score the whole tag sequence jointly rather than each token independently.</li>
+            <li>It matters because span extraction is still how you get structured data out of unstructured text, and NER remains the backbone of document parsing, PII redaction, and entity-linking in RAG pipelines.</li>
+            <li class="insight"><strong>The insight:</strong> the reason CRFs beat per-token classifiers is that tag sequences have hard constraints — an I-PER can never directly follow an O tag. A softmax over each token independently can emit that illegal sequence; a CRF's transition matrix assigns it near-zero probability. This is why production NER models still bolt a CRF layer on top of BERT: the transformer supplies the features, the CRF enforces sequence validity.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg">
+            <text x="20" y="34" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">TOKENS</text>
+            <text x="120" y="34" font-family="JetBrains Mono" font-size="12" fill="#f0f4ff">Ada</text>
+            <text x="185" y="34" font-family="JetBrains Mono" font-size="12" fill="#f0f4ff">Lovelace</text>
+            <text x="290" y="34" font-family="JetBrains Mono" font-size="12" fill="#f0f4ff">joined</text>
+            <text x="370" y="34" font-family="JetBrains Mono" font-size="12" fill="#f0f4ff">Acme</text>
+            <text x="20" y="74" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">BIO TAGS</text>
+            <text x="120" y="74" font-family="JetBrains Mono" font-size="12" fill="#e5484d">B-PER</text>
+            <text x="185" y="74" font-family="JetBrains Mono" font-size="12" fill="#e5484d">I-PER</text>
+            <text x="290" y="74" font-family="JetBrains Mono" font-size="12" fill="#7b8fb0">O</text>
+            <text x="370" y="74" font-family="JetBrains Mono" font-size="12" fill="#10b981">B-ORG</text>
+            <line x1="115" y1="86" x2="240" y2="86" stroke="#e5484d" stroke-width="2"/>
+            <line x1="365" y1="86" x2="420" y2="86" stroke="#10b981" stroke-width="2"/>
+            <text x="115" y="106" font-family="Inter" font-size="10" fill="#7b8fb0">one PERSON span</text>
+            <text x="345" y="106" font-family="Inter" font-size="10" fill="#7b8fb0">one ORG span</text>
+            <text x="20" y="136" font-family="Inter" font-size="10" fill="#7b8fb0">CRF blocks illegal transitions such as O → I-PER; a per-token softmax cannot.</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Would you use an LLM or a fine-tuned NER model to extract entities from 10 million documents?"</div>
+          <div class="interview-weak">"An LLM — it's more accurate and I don't need labeled training data."</div>
+          <div class="interview-strong">A fine-tuned encoder like BERT-base with a token-classification head, almost certainly. At 10 million documents the cost difference is three or four orders of magnitude, and a small encoder runs at thousands of documents per second on one GPU versus an LLM's sequential decoding. Accuracy usually favors the fine-tuned model too on a fixed entity schema, because it's trained on exactly your label distribution rather than being prompted toward it. Crucially the encoder returns character offsets natively, whereas an LLM returns text you then have to align back to the source — a real and underrated source of extraction bugs. The place I'd use an LLM is bootstrapping: prompt it to label a few thousand examples, have humans correct them, then distill into the encoder that actually runs in production.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you handle a new entity type appearing after deployment?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="seq2seq-attention">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Seq2Seq &amp; the Original Attention</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Seq2seq encodes an input sequence with an RNN into a single fixed-size context vector, which a decoder RNN then unrolls into the output; Bahdanau attention (2014) replaced that single vector by letting the decoder compute a weighted sum over <em>all</em> encoder hidden states at every output step.</li>
+            <li>It matters because this is where attention was actually invented — three years before "Attention Is All You Need", which removed the recurrence and kept only the attention.</li>
+            <li class="insight"><strong>The insight:</strong> the fixed context vector is an information bottleneck. Compressing a 50-word sentence into one 512-dim vector loses detail irrecoverably, and translation quality degraded sharply with sentence length. Attention fixed it by giving the decoder direct access to every encoder state — so the real lesson of the transformer paper is that once you have attention, recurrence is the part you can afford to delete.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 190" xmlns="http://www.w3.org/2000/svg">
+            <text x="16" y="24" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">VANILLA SEQ2SEQ — one bottleneck vector</text>
+            <rect x="20" y="34" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
+            <rect x="76" y="34" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
+            <rect x="132" y="34" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
+            <rect x="196" y="34" width="34" height="26" rx="4" fill="#721f2d" stroke="#e5484d"/>
+            <text x="203" y="52" font-family="JetBrains Mono" font-size="10" fill="#f0f4ff">ctx</text>
+            <rect x="248" y="34" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
+            <rect x="304" y="34" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
+            <line x1="178" y1="47" x2="196" y2="47" stroke="#e5484d"/>
+            <line x1="230" y1="47" x2="248" y2="47" stroke="#e5484d"/>
+            <text x="366" y="52" font-family="Inter" font-size="10" fill="#e5484d">all meaning squeezed here</text>
+            <text x="16" y="104" font-family="JetBrains Mono" font-size="11" fill="#7b8fb0">WITH ATTENTION — decoder reads every state</text>
+            <rect x="20" y="114" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
+            <rect x="76" y="114" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
+            <rect x="132" y="114" width="46" height="26" rx="4" fill="none" stroke="#3d4a5c"/>
+            <rect x="270" y="114" width="52" height="26" rx="4" fill="none" stroke="#58b58e"/>
+            <text x="279" y="132" font-family="JetBrains Mono" font-size="10" fill="#58b58e">dec t</text>
+            <line x1="43" y1="140" x2="270" y2="130" stroke="#58b58e" stroke-dasharray="3,3"/>
+            <line x1="99" y1="140" x2="270" y2="130" stroke="#58b58e" stroke-dasharray="3,3"/>
+            <line x1="155" y1="140" x2="270" y2="130" stroke="#58b58e" stroke-dasharray="3,3"/>
+            <text x="336" y="132" font-family="Inter" font-size="10" fill="#58b58e">weighted sum, recomputed per step</text>
+            <text x="16" y="176" font-family="Inter" font-size="10" fill="#7b8fb0">Attention removed the bottleneck; the transformer then removed the recurrence.</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why did transformers replace RNNs if attention was already added to seq2seq models?"</div>
+          <div class="interview-weak">"Transformers are bigger and were trained on more data."</div>
+          <div class="interview-strong">Parallelism during training. An RNN must process token t before token t+1 because the hidden state is a sequential dependency, so training time scales with sequence length and no amount of GPU adds throughput within a sequence. Self-attention computes all pairwise interactions in one matrix multiplication, so an entire sequence trains in parallel — that's what made it economically possible to train on internet-scale corpora. Secondarily, the path length between any two tokens becomes O(1) instead of O(n), so gradients between distant tokens don't attenuate through many recurrent steps. The cost is O(n²) attention memory, which is exactly why long-context research exists. So the tradeoff is compute-per-layer for parallelism, and on modern hardware that trade is overwhelmingly worth it.</div>
+          <div class="interview-followup">Follow-up: <strong>"At what sequence length does the O(n²) cost start dominating?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="nlp-tasks">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Core NLP Task Taxonomy</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>NLP tasks fall into a handful of shapes: sequence classification (sentiment, intent, topic), token classification (NER, POS), sequence-to-sequence (translation, summarization), span extraction (extractive QA), sentence-pair scoring (entailment, semantic similarity), and open-ended generation.</li>
+            <li>It matters because the task shape determines the architecture, the loss, the metric, and the failure modes — recognizing which shape a vague business request actually is, is most of the work in scoping an NLP project.</li>
+            <li class="insight"><strong>The insight:</strong> LLMs collapsed all of these into one interface — text in, text out — which is convenient and hides the structure. But the evaluation didn't collapse: an extractive QA system can be checked against source offsets, while a generative one requires groundedness evaluation. Choosing generation when extraction would do buys you a hallucination surface you didn't need.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Task shape</th><th>Classic architecture</th><th>Metric</th></tr>
+          <tr><td>Sequence classification</td><td>encoder + pooling head</td><td>F1, accuracy, AUC</td></tr>
+          <tr><td>Token classification</td><td>encoder + per-token head (+CRF)</td><td>span-level F1</td></tr>
+          <tr><td>Span extraction (QA)</td><td>encoder + start/end pointers</td><td>exact match, token F1</td></tr>
+          <tr><td>Seq2seq</td><td>encoder-decoder</td><td>BLEU, ROUGE, chrF</td></tr>
+          <tr><td>Sentence-pair</td><td>cross-encoder</td><td>accuracy, Spearman</td></tr>
+          <tr><td>Open generation</td><td>decoder-only</td><td>human / LLM-as-judge</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"A product manager asks for a system that 'answers customer questions from our docs.' How do you scope it?"</div>
+          <div class="interview-weak">"I'd build a RAG chatbot over the docs with GPT-4."</div>
+          <div class="interview-strong">First I'd separate two very different task shapes hiding in that request. If the answers are literally present as spans in the docs, extractive QA is safer: it returns a verifiable offset into a source document, so it structurally cannot hallucinate and it's cheap to evaluate with exact-match against annotated spans. If answers require synthesizing across several documents, generation is genuinely necessary and RAG is right — but I've now taken on groundedness evaluation, citation checking, and a refusal policy for unanswerable questions. I'd also ask what happens when the docs don't contain the answer, because that single question determines whether we need abstention behavior, which is usually the hardest part to get right and the part nobody scopes upfront.</div>
+          <div class="interview-followup">Follow-up: <strong>"How do you evaluate whether the system correctly refuses?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="nlp-metrics">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>BLEU, ROUGE, METEOR &amp; BERTScore</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>BLEU measures n-gram precision of a candidate against reference translations with a brevity penalty; ROUGE measures n-gram recall (ROUGE-N) or longest common subsequence (ROUGE-L) and is the summarization standard; METEOR adds stemming and synonym matching; BERTScore compares contextual embeddings instead of surface strings, so paraphrases score highly.</li>
+            <li>They matter because generation has no single correct output, so you need a proxy — and every one of these proxies is measuring surface overlap with a reference someone happened to write, not correctness.</li>
+            <li class="insight"><strong>The insight:</strong> the choice of precision versus recall isn't arbitrary. BLEU is precision-oriented because a translation must not add content that isn't in the source; ROUGE is recall-oriented because a summary must not omit the important content. When someone reports "ROUGE" for a translation task, they've usually picked the metric without thinking about which error the task actually punishes.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-failure tf-situation">A correct paraphrase</div><div>Scores near zero on BLEU/ROUGE — no n-gram overlap despite being right</div>
+          <div class="tf-row-failure tf-situation">A fluent but false statement</div><div>Scores well if it reuses reference wording — factuality is unmeasured</div>
+          <div class="tf-row-tradeoff tf-situation">BERTScore</div><div>Handles paraphrase but inherits the encoder's biases and costs a forward pass</div>
+          <div class="tf-row-failure tf-situation">Single reference</div><div>Penalizes every valid alternative phrasing the annotator didn't choose</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your summarization model's ROUGE score dropped after a change, but users say the summaries got better. What's going on?"</div>
+          <div class="interview-weak">"The evaluation set must be wrong — I'd regenerate the references."</div>
+          <div class="interview-strong">Most likely the model became more abstractive. ROUGE rewards lexical overlap with the reference, so a model that copies phrases verbatim scores well while one that genuinely compresses and rewords scores worse — even when the rewording is more readable and equally faithful. This is a known, well-documented pathology, and it's why ROUGE improvements alone are weak evidence. I'd confirm by measuring extractiveness (what fraction of summary n-grams appear verbatim in the source) before and after; if that dropped alongside ROUGE, the metric is the problem, not the model. Then I'd move the evaluation to something that tracks what users care about: BERTScore or an LLM-as-judge rubric for faithfulness and coverage, validated once against human ratings so I know the judge correlates with real preference before I trust it.</div>
+          <div class="interview-followup">Follow-up: <strong>"How would you validate an LLM-as-judge before trusting it?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="topic-modeling">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Topic Modeling &amp; Text Clustering</h3></div>
+        <span class="badge">[GOOD TO KNOW]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>LDA models each document as a mixture of latent topics and each topic as a distribution over words, fit by variational inference or Gibbs sampling; the modern replacement is embed-then-cluster (BERTopic: sentence embeddings → UMAP dimensionality reduction → HDBSCAN clustering → c-TF-IDF to name each cluster).</li>
+            <li>It matters because unlabeled text arrives constantly — support tickets, reviews, survey responses — and topic modeling is how you find structure before you know what the labels should be.</li>
+            <li class="insight"><strong>The insight:</strong> topic models have no ground truth, so evaluation is the hard part. Perplexity on held-out documents actually correlates <em>negatively</em> with human judgments of topic quality, a well-replicated result. Use coherence measures (NPMI, C_v) and, honestly, human inspection — and treat the number of topics as a decision you make, not one the data reveals.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th></th><th>LDA</th><th>BERTopic / embed+cluster</th></tr>
+          <tr><td>Text representation</td><td>bag-of-words</td><td>contextual embeddings</td></tr>
+          <tr><td>Short documents</td><td>poor — too few counts</td><td>good</td></tr>
+          <tr><td>Topic count</td><td>must be chosen upfront</td><td>discovered by HDBSCAN</td></tr>
+          <tr><td>Outliers</td><td>forced into a topic</td><td>explicitly labeled noise</td></tr>
+          <tr><td>Cost</td><td>cheap, CPU</td><td>embedding pass required</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You have 500,000 unlabeled support tickets. How do you find out what customers are complaining about?"</div>
+          <div class="interview-weak">"Run LDA with 20 topics and read the top words for each."</div>
+          <div class="interview-strong">I'd embed the tickets with a sentence-transformer, reduce with UMAP, and cluster with HDBSCAN — the BERTopic pattern. Support tickets are short and full of product-specific jargon, which is exactly where LDA's bag-of-words assumption is weakest: too few word counts per document to estimate a topic mixture reliably. HDBSCAN also lets tickets be outliers rather than forcing every one into a topic, which matters because a large fraction of real tickets are genuinely one-offs. I'd name each cluster with c-TF-IDF for the distinguishing terms and then have an LLM draft a human-readable label per cluster, verified by sampling ten real tickets from each. The output I'd actually hand the business is cluster size trending over time, since "what are people complaining about" almost always means "what's growing", not "what's biggest".</div>
+          <div class="interview-followup">Follow-up: <strong>"How do you pick the number of clusters if HDBSCAN gives you 300?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — Classical NLP</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — Classical NLP</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>Stemming</dt><dd>Rule-based suffix chopping; fast, produces non-words.</dd></div>
+        <div class="cheat-term"><dt>Lemmatization</dt><dd>Dictionary + POS-aware reduction to a real base form.</dd></div>
+        <div class="cheat-term"><dt>TF-IDF</dt><dd>Term frequency weighted by inverse document frequency.</dd></div>
+        <div class="cheat-term"><dt>BM25</dt><dd>TF-IDF with saturation and length normalization; sparse retrieval standard.</dd></div>
+        <div class="cheat-term"><dt>Word2Vec</dt><dd>Static word embeddings from local context prediction.</dd></div>
+        <div class="cheat-term"><dt>FastText</dt><dd>Word vectors as sums of character n-grams; handles OOV.</dd></div>
+        <div class="cheat-term"><dt>Perplexity</dt><dd>exp of mean negative log-likelihood; tokenizer-dependent.</dd></div>
+        <div class="cheat-term"><dt>BIO tagging</dt><dd>Begin/Inside/Outside encoding for entity spans.</dd></div>
+        <div class="cheat-term"><dt>CRF</dt><dd>Scores whole tag sequences; blocks illegal transitions.</dd></div>
+        <div class="cheat-term"><dt>Bahdanau attention</dt><dd>2014 additive attention over encoder states; removed the bottleneck.</dd></div>
+        <div class="cheat-term"><dt>BLEU</dt><dd>N-gram precision + brevity penalty; translation.</dd></div>
+        <div class="cheat-term"><dt>ROUGE</dt><dd>N-gram recall / LCS; summarization.</dd></div>
+        <div class="cheat-term"><dt>BERTScore</dt><dd>Embedding-based similarity; credits paraphrase.</dd></div>
+        <div class="cheat-term"><dt>LDA</dt><dd>Documents as mixtures of latent word-distribution topics.</dd></div>
+        <div class="cheat-term"><dt>c-TF-IDF</dt><dd>TF-IDF over concatenated clusters to name topics.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js?v=20260903a"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Why is BM25 still used in production RAG systems when dense embeddings exist?', a: 'BM25 and dense retrieval fail on opposite inputs, so they compose well. Dense embeddings generalize semantically but blur rare tokens — product codes, error strings, names, and acronyms land in near-arbitrary regions of the vector space. BM25 does the reverse: it has no semantic generalization at all, but an exact match on a high-IDF term produces an overwhelming score. Hybrid retrieval fuses both rankings, usually with Reciprocal Rank Fusion since it requires no score calibration between two systems on incomparable scales.', level: 'Mid' },
+    { q: 'Explain the information bottleneck in vanilla seq2seq and how attention resolved it.', a: 'A vanilla seq2seq encoder compresses the entire input into one fixed-size context vector that the decoder unrolls. Information capacity is constant regardless of input length, so translation quality degraded sharply as sentences got longer — detail was irrecoverably lost at the compression step. Bahdanau attention gave the decoder a weighted view over all encoder hidden states, recomputed at every output step, so no single vector had to carry everything. The transformer took the next step: once attention provides direct access between positions, the recurrence contributes little and can be dropped entirely in favor of full parallelism.', level: 'Mid' },
+    { q: 'A colleague reports their new summarizer improved ROUGE-L from 0.31 to 0.38. What do you ask before believing it?', a: 'Whether extractiveness changed. ROUGE rewards lexical overlap with references, so a model that copies source sentences verbatim scores higher than one that genuinely abstracts, independent of quality — a jump can indicate the model became more extractive rather than better. I would also ask about reference count (single-reference ROUGE penalizes valid alternate phrasings), whether the eval set overlaps training data, and whether any human or LLM-judge faithfulness check was run, since ROUGE measures nothing about factual correctness. A fluent, well-worded, entirely fabricated summary can score well.', level: 'Senior' },
+    { q: 'Why do static embeddings like Word2Vec fail on polysemous words, and what specifically changed with contextual models?', a: 'Word2Vec learns one vector per word type by aggregating over all its training contexts, so a polysemous word gets a single embedding that is roughly a frequency-weighted average of its senses — "bank" sits between finance and rivers and represents neither well. There is no mechanism to condition on usage because the model has no access to the sentence at lookup time. Contextual models compute the representation as a function of the surrounding tokens via self-attention, so the same token id produces a different vector in each sentence. The practical consequence is that you cannot cache a contextual embedding as a static lookup table, which is precisely the property that makes disambiguation possible.', level: 'Mid' },
+    { q: 'You need to extract 12 fixed entity types from 50 million legal documents under a fixed budget. Walk me through your approach.', a: 'I would fine-tune an encoder such as DeBERTa or a domain-adapted legal BERT with a token-classification head, and use an LLM only to bootstrap labels. Concretely: prompt a strong LLM to annotate roughly 5,000 documents, have domain experts correct a stratified sample of those to establish label quality, train the encoder, and measure span-level F1 per entity type — aggregate F1 hides that one rare entity type is failing. At 50 million documents an encoder runs orders of magnitude cheaper and faster than LLM inference, and it returns character offsets natively rather than free text I would have to realign to the source, which is a common silent source of extraction errors. I would add a CRF or constrained decoding layer so illegal BIO transitions cannot be emitted, and route low-confidence spans to human review rather than accepting them.', level: 'Senior' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

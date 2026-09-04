@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>11 · Generative Models &amp; Vision — AI Eng Prep</title>
+<link rel="stylesheet" href="../shared/styles.css?v=20260903a">
+<script async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+</head>
+<body>
+<div class="app-shell">
+  <div class="main">
+
+    <div class="module-header">
+      <a href="../index.html" class="back-link">← Back to modules</a>
+      <h1>11 · Generative Models &amp; Vision</h1>
+      <div class="tag-row">
+        <span class="tag">8 topics</span>
+        <span class="tag">~55 min deep-read</span>
+        <span class="tag">Beyond text</span>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="module-progress-row">
+        <span class="mono" id="module-progress-counter"></span>
+        <div class="module-progress-track"><div id="module-progress-bar"></div></div>
+      </div>
+      <p class="why-line">Interviewers ask about this to see whether "generative AI" means only LLMs to you — diffusion, VAEs, GANs, and vision transformers are different answers to the same question of how to model a distribution, and knowing why each one won or lost its niche is what separates breadth from buzzwords.</p>
+    </div>
+
+    <div class="card" data-topic-id="generative-families">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>The Four Generative Families</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Autoregressive models factorize the joint distribution into a product of conditionals and sample one element at a time (GPT); VAEs learn a latent space by maximizing a variational lower bound on likelihood; GANs train a generator against a discriminator in a minimax game with no explicit likelihood at all; diffusion models learn to reverse a gradual noising process, generating by iterative denoising.</li>
+            <li>They matter because each makes a different trade among sample quality, mode coverage, sampling speed, and whether you can evaluate likelihood — and the winner depends entirely on which of those the application needs.</li>
+            <li class="insight"><strong>The insight:</strong> there's a recurring trilemma — high sample quality, broad mode coverage, and fast sampling; pick two. GANs gave quality and speed but drop modes. Diffusion gives quality and coverage but needs many sequential denoising steps. Autoregressive models give coverage and exact likelihood but sample sequentially. Every recent advance (consistency models, distilled diffusion, speculative decoding) is an attempt to buy back the third corner.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th></th><th>Autoregressive</th><th>VAE</th><th>GAN</th><th>Diffusion</th></tr>
+          <tr><td>Likelihood</td><td>exact</td><td>lower bound</td><td>none</td><td>bound / tractable</td></tr>
+          <tr><td>Sample quality</td><td>high</td><td>blurry</td><td>very high</td><td>very high</td></tr>
+          <tr><td>Mode coverage</td><td>excellent</td><td>good</td><td>poor (collapse)</td><td>excellent</td></tr>
+          <tr><td>Sampling speed</td><td>slow (sequential)</td><td>fast (one pass)</td><td>fast (one pass)</td><td>slow (many steps)</td></tr>
+          <tr><td>Training stability</td><td>stable</td><td>stable</td><td>notoriously unstable</td><td>stable</td></tr>
+          <tr><td>Latent space</td><td>none explicit</td><td>smooth, usable</td><td>unstructured</td><td>noise schedule</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why did diffusion models displace GANs for image generation?"</div>
+          <div class="interview-weak">"Diffusion models are newer and produce higher quality images."</div>
+          <div class="interview-strong">Primarily training stability and mode coverage. A GAN is a minimax game between two networks, and that equilibrium is genuinely hard to reach — training diverges, oscillates, or collapses onto a subset of modes, and there's no loss value that reliably tells you it's working, so practitioners tuned by looking at samples. Diffusion replaces the adversarial game with a simple regression objective: predict the noise added at a known timestep. That's a stable, well-conditioned supervised problem that scales predictably with compute and data, which is the property that actually matters for pushing to frontier scale. It also covers modes far better because it's trained to model the whole distribution rather than to fool a discriminator, which only needs one convincing mode. The cost is inference: diffusion needs many sequential denoising steps versus a GAN's single forward pass, which is why distillation and consistency models exist. So GANs didn't lose on peak quality, they lost on trainability at scale.</div>
+          <div class="interview-followup">Follow-up: <strong>"Where would you still choose a GAN today?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="vae">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Autoencoders &amp; VAEs</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A plain autoencoder compresses input to a bottleneck and reconstructs it, learning a compact code; a VAE makes that code probabilistic — the encoder outputs a mean and variance, you sample from it (using the reparameterization trick so gradients flow), and a KL term pulls the latent distribution toward a standard normal.</li>
+            <li>They matter for representation learning, anomaly detection via reconstruction error, and — most importantly today — as the latent-space compressor inside latent diffusion models like Stable Diffusion.</li>
+            <li class="insight"><strong>The insight:</strong> the KL term is what makes a VAE generative rather than just a compressor. Without it the latent space is full of holes — points between two valid codes decode to garbage, so you can't sample. The KL forces the latents to fill a known, continuous distribution you can actually draw from. The cost is the classic blurriness: the reconstruction loss is typically a Gaussian likelihood, so the optimal output under uncertainty is an average of plausible images, which looks blurry.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          $$ \mathcal{L}_{\text{VAE}} = \underbrace{\mathbb{E}_{q(z|x)}[\log p(x|z)]}_{\text{reconstruction}} - \underbrace{D_{KL}\big(q(z|x)\,\|\,p(z)\big)}_{\text{regularizer}} $$
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-tradeoff tf-situation">Higher KL weight (β-VAE)</div><div>More disentangled, samplable latents; worse reconstruction</div>
+          <div class="tf-row-failure tf-situation">Posterior collapse</div><div>Decoder ignores z entirely, KL → 0; the latent becomes useless</div>
+          <div class="tf-row-tradeoff tf-situation">Gaussian reconstruction loss</div><div>Stable training, but blurry outputs by construction</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Why does Stable Diffusion run diffusion in a latent space instead of pixel space?"</div>
+          <div class="interview-weak">"It's faster because the images are smaller."</div>
+          <div class="interview-strong">Faster, yes, but the reason it works is that most pixel-level detail is perceptually irrelevant and expensive to model. A VAE compresses a 512×512×3 image to roughly 64×64×4 latents — around a 48× reduction in elements — and because every denoising step runs over that tensor, and diffusion needs dozens of steps, the saving compounds multiplicatively across the whole sampling loop. The deeper point is a division of labor: the VAE handles high-frequency perceptual detail, which it's good at and which doesn't need a generative model, while diffusion focuses its capacity on semantic structure and composition, which is the hard part. The tradeoff is that the VAE becomes a quality ceiling — anything it cannot reconstruct, the diffusion model cannot generate, which is exactly why fine text and small faces were historically weak spots and why later versions improved the autoencoder specifically.</div>
+          <div class="interview-followup">Follow-up: <strong>"What is posterior collapse and how do you fix it?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="diffusion">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Diffusion Models &amp; Guidance</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>The forward process adds Gaussian noise to data over T steps until it's pure noise; a network is trained to predict the noise added at a randomly sampled timestep, and generation runs that process backward from noise. Classifier-free guidance conditions the model on a prompt and also trains it unconditionally, then at sampling time extrapolates away from the unconditional prediction to sharpen prompt adherence.</li>
+            <li>They matter because diffusion is the backbone of image, video, and audio generation, and increasingly of protein and molecule design — anywhere the output is continuous and high-dimensional.</li>
+            <li class="insight"><strong>The insight:</strong> the guidance scale is a fidelity/diversity dial, not a quality dial. Raising it pushes samples further toward the prompt and away from the unconditional distribution, which improves prompt adherence up to a point and then produces oversaturated, low-diversity, artifact-heavy outputs — the model is extrapolating outside the region it learned. It's the same shape of tradeoff as temperature in an LLM.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 150" xmlns="http://www.w3.org/2000/svg">
+            <text x="16" y="22" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">FORWARD — fixed, adds noise (no learning)</text>
+            <rect x="20" y="32" width="52" height="34" rx="4" fill="none" stroke="#58b58e"/>
+            <text x="34" y="53" font-family="JetBrains Mono" font-size="10" fill="#58b58e">x₀</text>
+            <rect x="140" y="32" width="52" height="34" rx="4" fill="none" stroke="#7b8fb0"/>
+            <text x="152" y="53" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">x_t</text>
+            <rect x="260" y="32" width="52" height="34" rx="4" fill="none" stroke="#e5484d"/>
+            <text x="272" y="53" font-family="JetBrains Mono" font-size="10" fill="#e5484d">x_T</text>
+            <line x1="72" y1="49" x2="140" y2="49" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+            <line x1="192" y1="49" x2="260" y2="49" stroke="#3d4a5c" stroke-dasharray="3,3"/>
+            <text x="326" y="53" font-family="Inter" font-size="10" fill="#7b8fb0">pure Gaussian noise</text>
+            <text x="16" y="98" font-family="JetBrains Mono" font-size="10" fill="#7b8fb0">REVERSE — learned, predicts the noise to remove</text>
+            <line x1="260" y1="118" x2="192" y2="118" stroke="#5b91bd" stroke-width="2"/>
+            <line x1="140" y1="118" x2="72" y2="118" stroke="#5b91bd" stroke-width="2"/>
+            <text x="80" y="140" font-family="Inter" font-size="10" fill="#5b91bd">εθ(x_t, t, prompt) — one network, all timesteps, conditioned on t</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Image generation takes 4 seconds per image and you need it under 500ms. What do you do?"</div>
+          <div class="interview-weak">"Use a bigger GPU and reduce the image resolution."</div>
+          <div class="interview-strong">Sampling steps dominate, so I'd attack step count first since the relationship is close to linear. Swapping the sampler from a naive DDPM loop to DPM-Solver++ or a similar higher-order ODE solver typically drops 50 steps to 20 with little visible loss — that's free. Beyond that, step distillation is the real answer: a latent consistency model or an adversarially distilled variant like SDXL-Turbo generates in 1–4 steps by training a student to jump multiple steps of the teacher's trajectory. That's a one-time training cost for a persistent 10× win, and it's what production image APIs actually run. Then the ordinary serving levers: fp16 or int8 weights, a compiled or fused UNet via TensorRT, and continuous batching so the GPU isn't idle between requests. I'd only reduce resolution last, since that's a visible product regression rather than an engineering win, and I'd hold a human-preference eval at each step because these accelerations trade quality in ways FID doesn't capture well.</div>
+          <div class="interview-followup">Follow-up: <strong>"What quality does step distillation actually cost you?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="gan">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>GANs &amp; Mode Collapse</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>A generator maps noise to samples while a discriminator learns to distinguish real from generated, and they train adversarially — at the theoretical equilibrium the generator matches the data distribution and the discriminator is at chance. Mode collapse is the failure where the generator finds a few outputs that reliably fool the discriminator and stops producing anything else.</li>
+            <li>They matter because GANs remain the right choice where single-pass generation is required — real-time super-resolution, style transfer, on-device image enhancement — and because the adversarial loss survives as a component inside diffusion distillation.</li>
+            <li class="insight"><strong>The insight:</strong> there's no loss curve to read. Generator and discriminator losses move against each other, so a decreasing generator loss can mean the discriminator got worse rather than the samples got better. That's why GAN evaluation depends on sample-distribution metrics like FID, and why "just train longer" is unreliable advice — you can train past the good checkpoint without any number telling you.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-failure tf-situation">Mode collapse</div><div>Generator emits a few outputs; FID is bad, samples look fine individually</div>
+          <div class="tf-row-failure tf-situation">Discriminator wins too fast</div><div>Vanishing generator gradients; training stalls dead</div>
+          <div class="tf-row-tradeoff tf-situation">WGAN-GP / spectral norm</div><div>Much more stable, meaningful loss; slower per step</div>
+          <div class="tf-row-failure tf-situation">Reading generator loss as progress</div><div>It's relative to an opponent that is also changing — not a quality signal</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Your GAN produces beautiful faces but they all look like the same three people. What's happening?"</div>
+          <div class="interview-weak">"It needs more training data and more epochs."</div>
+          <div class="interview-strong">That's mode collapse. The generator has found a small set of outputs the discriminator can't reject and has no incentive to explore further — the adversarial objective rewards fooling the discriminator, not covering the data distribution, so a generator that produces one perfect face forever is a local optimum of exactly what we asked for. Fixes work at three levels. Loss level: switch to WGAN-GP or add spectral normalization so the discriminator provides useful gradients everywhere instead of saturating. Architecture level: minibatch discrimination lets the discriminator see batch-level statistics, so a batch of near-identical samples becomes detectable as fake, which directly penalizes collapse. Training level: unrolled GANs or two-timescale update rules stabilize the equilibrium. I'd also confirm the diagnosis with FID and recall-oriented precision/recall-for-distributions metrics rather than eyeballing, since individually-good samples are exactly what collapse looks like. And if the application permits it, the honest answer in 2026 is often to use diffusion instead.</div>
+          <div class="interview-followup">Follow-up: <strong>"Why is FID sensitive to mode collapse when human inspection isn't?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="vision-architectures">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Vision: CNNs, ViTs &amp; Detection</h3></div>
+        <span class="badge badge-faq">[FREQUENTLY ASKED]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>CNNs build translation-equivariant features through local convolutions and pooling, with ResNet's skip connections making deep stacks trainable; Vision Transformers split the image into patches, embed them as tokens, and apply standard self-attention; detection heads (YOLO single-stage, Faster R-CNN two-stage, DETR set-based) sit on top of either backbone.</li>
+            <li>It matters because vision is where transfer learning was proven, and because most real CV work is fine-tuning a pretrained backbone rather than designing architecture.</li>
+            <li class="insight"><strong>The insight:</strong> CNNs bake in the inductive biases of locality and translation equivariance, which is prior knowledge you get for free. ViTs have almost none of that, so they underperform CNNs on small datasets and overtake them given enough data — the crossover is roughly tens of millions of images, or any amount if you start from a pretrained ViT. This is the general lesson of the scaling era: architectural priors help when data is scarce and become a ceiling when it isn't.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th></th><th>CNN</th><th>Vision Transformer</th></tr>
+          <tr><td>Inductive bias</td><td>locality, translation equivariance</td><td>almost none</td></tr>
+          <tr><td>Small data</td><td>strong</td><td>weak without pretraining</td></tr>
+          <tr><td>Large data</td><td>plateaus earlier</td><td>keeps scaling</td></tr>
+          <tr><td>Receptive field</td><td>grows with depth</td><td>global from layer 1</td></tr>
+          <tr><td>Compute</td><td>O(n) in pixels</td><td>O(n²) in patches</td></tr>
+          <tr><td>Best default</td><td>small/medium datasets</td><td>fine-tune a pretrained one</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You have 4,000 labeled images for a defect detection task. Architecture?"</div>
+          <div class="interview-weak">"A Vision Transformer, since transformers are state of the art."</div>
+          <div class="interview-strong">4,000 images is small, so the decision is dominated by transfer learning rather than architecture. I'd fine-tune a pretrained backbone — either a ResNet/EfficientNet or a pretrained ViT, since pretraining supplies the data-hungry part and largely erases the CNN-versus-ViT gap at this scale. Training a ViT from scratch here would fail badly because it has no built-in locality prior to compensate for scarce data. Practically: freeze early layers initially, use aggressive augmentation matched to the real variation (lighting, rotation, scale — not augmentations that could destroy the defect signal), and stratify the split by production batch rather than randomly, because random splits on manufacturing images leak near-duplicate frames across train and test and inflate the score. Given that defects are usually rare, I'd also weight the loss and evaluate with PR-AUC plus a per-defect-type breakdown. If labels are the bottleneck, self-supervised pretraining on the unlabeled production images before fine-tuning is usually the highest-return move available.</div>
+          <div class="interview-followup">Follow-up: <strong>"Which augmentations would be actively harmful here?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="multimodal-models">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Multimodal Models &amp; CLIP</h3></div>
+        <span class="badge badge-critical">[CRITICAL]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>CLIP trains an image encoder and a text encoder jointly with a contrastive loss over image-caption pairs, pulling matched pairs together and pushing mismatched ones apart in a shared embedding space; vision-language models (LLaVA, GPT-4V-style) instead project image features into an LLM's token space so the language model can attend over them directly.</li>
+            <li>They matter because a shared embedding space enables zero-shot classification, text-to-image search, and the image conditioning inside diffusion models — and because VLMs are how documents, charts, and screenshots enter agent pipelines.</li>
+            <li class="insight"><strong>The insight:</strong> contrastive training gives you alignment, not compositional understanding. CLIP reliably matches "a photo of a dog" to dog images, but struggles to distinguish "the red cube on the blue sphere" from "the blue cube on the red sphere" — the training objective only requires distinguishing a caption from other captions in the batch, which rarely requires parsing spatial relations. Knowing what the objective does and doesn't force is how you predict where a model breaks.</li>
+          </ul>
+        </div>
+        <div class="tf-grid">
+          <div class="tf-head">Situation</div><div class="tf-head">What it costs you</div>
+          <div class="tf-row-failure tf-situation">Compositional / relational prompts</div><div>Contrastive objective never required parsing them; attribute binding fails</div>
+          <div class="tf-row-tradeoff tf-situation">Zero-shot classification</div><div>No labels needed, but accuracy is sensitive to prompt wording</div>
+          <div class="tf-row-failure tf-situation">Counting objects</div><div>Weak — captions rarely supervise exact counts</div>
+          <div class="tf-row-tradeoff tf-situation">VLM over high-res documents</div><div>Reads text and layout, but image tokens dominate context and cost</div>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"How would you build image search over 10 million product photos with no labels?"</div>
+          <div class="interview-weak">"Fine-tune a classifier on product categories and search by predicted category."</div>
+          <div class="interview-strong">I'd embed every image with CLIP once, index the vectors in an ANN store, and embed the text query with CLIP's text tower at search time — the shared space means text queries retrieve images directly with no labels anywhere in the pipeline. That gets a strong system running in days. Then the refinements that actually matter in production: hybrid retrieval, because users search by SKU and brand name where BM25 over the product metadata beats any embedding; a reranking pass over the top candidates using a cross-modal reranker for precision at the top of the page; and evaluation built from click logs, since I have no labeled relevance set and click-through on the current system gives me one for free, with the caveat that it's biased toward what I already show. If the domain is narrow — say, textiles — generic CLIP will underperform, and I'd fine-tune with a contrastive objective on whatever weak pairs exist, like product titles paired with their images. That's usually a large win and costs no manual labeling.</div>
+          <div class="interview-followup">Follow-up: <strong>"How do you evaluate retrieval quality with only click data?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="speech-audio">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Speech: ASR, TTS &amp; Audio</h3></div>
+        <span class="badge">[GOOD TO KNOW]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>ASR converts audio to text — classically an acoustic model plus a pronunciation lexicon and language model, now end-to-end encoder-decoder (Whisper) or CTC-based (wav2vec 2.0) models over mel-spectrogram or learned audio features; TTS goes the other way, usually text → acoustic features → neural vocoder; word error rate (WER) is the standard ASR metric.</li>
+            <li>It matters because voice agents are a major LLM deployment surface, and the latency budget for a natural conversation is brutally tight — roughly 300ms end-to-end before a person perceives a pause.</li>
+            <li class="insight"><strong>The insight:</strong> in a voice agent, the LLM is rarely the bottleneck people expect. The dominant latency is endpointing — deciding the user has finished speaking — because waiting for silence adds hundreds of milliseconds by construction, and cutting too early truncates the user. Streaming ASR, semantic endpointing, and speculative LLM prefill on partial transcripts are where real voice latency is won.</li>
+          </ul>
+        </div>
+        <div class="card-visual">
+          <svg viewBox="0 0 520 120" xmlns="http://www.w3.org/2000/svg">
+            <rect x="14" y="40" width="74" height="36" rx="5" fill="none" stroke="#5b91bd"/>
+            <text x="26" y="63" font-family="JetBrains Mono" font-size="10" fill="#5b91bd">STREAM ASR</text>
+            <rect x="112" y="40" width="86" height="36" rx="5" fill="none" stroke="#f9bd67"/>
+            <text x="122" y="57" font-family="JetBrains Mono" font-size="10" fill="#f9bd67">ENDPOINT</text>
+            <text x="122" y="70" font-family="JetBrains Mono" font-size="9" fill="#7b8fb0">~200-400ms</text>
+            <rect x="222" y="40" width="70" height="36" rx="5" fill="none" stroke="#e5484d"/>
+            <text x="238" y="63" font-family="JetBrains Mono" font-size="10" fill="#e5484d">LLM TTFT</text>
+            <rect x="316" y="40" width="86" height="36" rx="5" fill="none" stroke="#58b58e"/>
+            <text x="330" y="63" font-family="JetBrains Mono" font-size="10" fill="#58b58e">STREAM TTS</text>
+            <line x1="88" y1="58" x2="112" y2="58" stroke="#3d4a5c"/>
+            <line x1="198" y1="58" x2="222" y2="58" stroke="#3d4a5c"/>
+            <line x1="292" y1="58" x2="316" y2="58" stroke="#3d4a5c"/>
+            <text x="418" y="63" font-family="Inter" font-size="10" fill="#7b8fb0">budget ≈ 300ms</text>
+            <text x="14" y="106" font-family="Inter" font-size="10" fill="#7b8fb0">Endpointing, not model inference, is usually the largest single contributor.</text>
+          </svg>
+        </div>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"Users say your voice assistant feels sluggish. Where do you look?"</div>
+          <div class="interview-weak">"I'd use a smaller, faster LLM."</div>
+          <div class="interview-strong">I'd instrument the full pipeline before changing anything, because the intuition that the LLM dominates is usually wrong. The measurable segments are: audio capture and network, streaming ASR partial-to-final latency, endpointing delay, LLM time-to-first-token, TTS time-to-first-audio, and playback buffering. In most voice stacks endpointing is the largest single term — waiting for a fixed silence window to conclude the user stopped talking directly adds that window to every turn. Fixes there: semantic endpointing that uses the partial transcript to detect a complete utterance rather than waiting on silence alone, and speculatively starting LLM prefill on the partial transcript so the model is already warm when the final arrives. Then streaming everything: TTS should start speaking on the first sentence rather than waiting for full generation, which changes perceived latency far more than total latency. Swapping to a smaller LLM is a real lever but I'd only spend the quality for it after the pipeline changes, which are usually larger and cost nothing in output quality.</div>
+          <div class="interview-followup">Follow-up: <strong>"How does streaming TTS change perceived versus actual latency?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" data-topic-id="distillation-compression">
+      <div class="card-header">
+        <div class="card-header-left"><span class="card-read-dot"></span><h3>Distillation, Pruning &amp; MoE</h3></div>
+        <span class="badge badge-tradeoff">[TRADEOFF]</span>
+      </div>
+      <div class="card-body">
+        <div class="card-core">
+          <ul>
+            <li>Knowledge distillation trains a small student to match a large teacher's output distribution (soft targets carry more information than hard labels); pruning removes weights — unstructured pruning gives high sparsity but needs special kernels to actually speed anything up, structured pruning removes whole heads or channels and gives real wall-clock gains; Mixture-of-Experts routes each token to a small subset of expert FFNs, so parameter count and compute per token decouple.</li>
+            <li>They matter because serving cost is the dominant line item in production LLM systems, and each of these buys a different point on the quality/cost curve.</li>
+            <li class="insight"><strong>The insight:</strong> MoE changes what "model size" means. A 400B-parameter MoE with 40B active per token has the memory footprint of the former and the compute cost of the latter — so it needs the VRAM of a huge model while running at the speed of a small one. That's why MoE is a datacenter win and often an edge-deployment non-starter, and why "parameters" alone stopped being a meaningful comparison.</li>
+          </ul>
+        </div>
+        <table class="cmp-table">
+          <tr><th>Technique</th><th>Buys you</th><th>Costs you</th></tr>
+          <tr><td>Distillation</td><td>2–10× smaller, task-specific quality</td><td>training run + teacher inference over a corpus</td></tr>
+          <tr><td>Structured pruning</td><td>real latency wins on stock kernels</td><td>quality drop; usually needs recovery fine-tuning</td></tr>
+          <tr><td>Unstructured pruning</td><td>high sparsity on paper</td><td>no speedup without sparse kernel support</td></tr>
+          <tr><td>Quantization</td><td>2–4× memory, minimal effort</td><td>small quality loss; outlier channels need care</td></tr>
+          <tr><td>MoE</td><td>capacity without proportional compute</td><td>full memory footprint; routing and load-balance complexity</td></tr>
+        </table>
+        <div class="interview-toggle"><span class="chevron">▸</span> How this shows up in interviews</div>
+        <div class="interview-content">
+          <div class="interview-q">"You're spending $40k/month on GPT-class API calls for one classification task. How do you cut it?"</div>
+          <div class="interview-weak">"Switch to a cheaper model and add caching."</div>
+          <div class="interview-strong">For a single well-defined classification task, distillation is the highest-leverage move and usually delivers a 50–100× cost reduction. Concretely: log the production traffic, use the large model to label a few hundred thousand of those real inputs — which matters, because distilling on real traffic distribution beats distilling on a synthetic set — then fine-tune a small encoder or a 1–8B model on those soft labels. Task-specific students routinely match teacher accuracy on narrow tasks because they only need one slice of the teacher's capability. Before that, two cheaper checks: prompt caching if there's a large shared prefix, which is nearly free, and a confidence-based cascade where the small model handles the easy majority and escalates only uncertain cases to the large one — that alone often removes 80–90% of calls while capping any quality regression. I'd hold out a labeled eval set first so I can prove the quality delta rather than discovering it from customer complaints, and I'd keep the escalation path in place permanently as a safety valve.</div>
+          <div class="interview-followup">Follow-up: <strong>"How do you set the confidence threshold for the cascade?"</strong></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section-label">Interview Simulator — Generative Models &amp; Vision</div>
+    <div id="sim-container"></div>
+
+    <div class="section-label">Cheat Sheet</div>
+    <details class="collapsible">
+      <summary>All key terms — Generative Models &amp; Vision</summary>
+      <dl class="cheat-sheet-grid">
+        <div class="cheat-term"><dt>Generative trilemma</dt><dd>Quality, mode coverage, fast sampling — pick two.</dd></div>
+        <div class="cheat-term"><dt>Reparameterization trick</dt><dd>Sample as μ + σ·ε so gradients flow through sampling.</dd></div>
+        <div class="cheat-term"><dt>Posterior collapse</dt><dd>VAE decoder ignores the latent; KL term goes to zero.</dd></div>
+        <div class="cheat-term"><dt>Latent diffusion</dt><dd>Diffusion run in VAE latent space, not pixels.</dd></div>
+        <div class="cheat-term"><dt>Classifier-free guidance</dt><dd>Extrapolate from unconditional toward conditional prediction.</dd></div>
+        <div class="cheat-term"><dt>Guidance scale</dt><dd>Prompt fidelity vs diversity dial; too high = artifacts.</dd></div>
+        <div class="cheat-term"><dt>Mode collapse</dt><dd>GAN generator emits few outputs; fools discriminator, misses distribution.</dd></div>
+        <div class="cheat-term"><dt>FID</dt><dd>Distance between real and generated feature distributions.</dd></div>
+        <div class="cheat-term"><dt>ViT patch embedding</dt><dd>Image split into patches treated as tokens.</dd></div>
+        <div class="cheat-term"><dt>Inductive bias</dt><dd>Built-in assumption; helps with little data, caps with lots.</dd></div>
+        <div class="cheat-term"><dt>CLIP</dt><dd>Contrastively aligned image and text encoders in one space.</dd></div>
+        <div class="cheat-term"><dt>Attribute binding</dt><dd>Which adjective belongs to which object; a known CLIP weakness.</dd></div>
+        <div class="cheat-term"><dt>WER</dt><dd>Word error rate: (S+D+I)/N against the reference transcript.</dd></div>
+        <div class="cheat-term"><dt>Endpointing</dt><dd>Deciding the speaker finished; usually the top voice latency term.</dd></div>
+        <div class="cheat-term"><dt>Soft targets</dt><dd>Teacher's full distribution; richer signal than hard labels.</dd></div>
+        <div class="cheat-term"><dt>Structured pruning</dt><dd>Removes whole heads/channels; real speedup on stock kernels.</dd></div>
+        <div class="cheat-term"><dt>Active parameters</dt><dd>MoE compute per token; decoupled from total parameters.</dd></div>
+      </dl>
+    </details>
+
+  </div>
+</div>
+
+<script src="../shared/nav.js?v=20260903a"></script>
+<script>
+  const SIM_QUESTIONS = [
+    { q: 'Explain the generative trilemma and place diffusion, GANs, and autoregressive models on it.', a: 'The trilemma is that high sample quality, broad mode coverage, and fast sampling are hard to get simultaneously. GANs deliver quality and single-pass speed but drop modes, because the adversarial objective only requires fooling a discriminator, which one convincing mode can do. Diffusion delivers quality and coverage — it is trained to model the whole distribution with a stable regression objective — but pays with many sequential denoising steps. Autoregressive models give exact likelihood and excellent coverage but sample token by token. Every major recent result is an attempt to buy the missing corner: consistency and distillation models give diffusion fast sampling, speculative decoding gives autoregressive models parallelism.', level: 'Senior' },
+    { q: 'Why does a Vision Transformer underperform a CNN on 5,000 images but outperform it on 300 million?', a: 'Inductive bias. A CNN hard-codes locality and translation equivariance into its architecture, which is correct prior knowledge about images supplied for free rather than learned from data — so with little data it starts far ahead. A ViT has almost no spatial prior; self-attention over patches must learn that nearby patches are related, and learning that costs data. Given enough data the ViT surpasses the CNN precisely because it was not constrained by an approximate prior, and it keeps improving where the CNN plateaus. The practical corollary is that with a small dataset you should fine-tune a pretrained ViT rather than train one, since pretraining supplies the data-hungry part.', level: 'Mid' },
+    { q: 'Your text-to-image model ignores half the prompt. Walk me through diagnosis.', a: 'First I would separate prompt-adherence failure from capability failure by testing simplified prompts: if one object with one attribute renders correctly but two objects with swapped attributes do not, this is attribute binding, a known contrastive-training weakness rather than a bug — the text encoder was never forced to parse relations. Second, guidance scale: too low and the model drifts toward the unconditional distribution; too high and it oversaturates and can drop detail. I would sweep it. Third, the text encoder itself — a weak or truncated encoder loses tail tokens, and the prompt may simply be exceeding the token limit and being silently cut, which is worth checking before anything sophisticated. Mitigations in production are regional or compositional conditioning, structured prompting with per-region control, or ControlNet-style layout conditioning when the spatial arrangement matters.', level: 'Senior' },
+    { q: 'When is knowledge distillation the right cost-reduction move, and when is it not?', a: 'It is right when the task is narrow and stable, and you have or can generate real in-distribution traffic to distill on — a classifier, an extractor, a router. A student only has to reproduce one slice of the teacher, so it can match teacher accuracy at a fraction of the size, and cost drops one to two orders of magnitude. It is wrong when the task surface is broad or shifting, because you are freezing a snapshot of capability that will not generalize to new request types, and every capability change requires a retraining cycle. It is also wrong as a first move: prompt caching and a confidence-based cascade to a small model deliver most of the savings with far less engineering and no quality cliff, so I would exhaust those before committing to a training pipeline and its maintenance.', level: 'Senior' },
+    { q: 'What does it mean that a Mixture-of-Experts model has 400B total and 40B active parameters, and what breaks if you ignore the distinction?', a: 'Total parameters determine memory: every expert must be resident or reachable, so you need VRAM for all 400B regardless of routing. Active parameters determine FLOPs per token: each token routes to a small subset of experts, so compute matches a 40B dense model. Ignoring the distinction breaks capacity planning in both directions — you under-provision memory if you size from active parameters, and you over-estimate latency if you size from total. It also complicates serving: expert-parallel sharding puts different experts on different devices, so throughput now depends on routing balance, and a skewed token distribution makes a few devices the bottleneck while others idle. That is why MoE serving needs load-balancing losses during training and capacity factors at inference.', level: 'Senior' },
+  ];
+
+  const container = document.getElementById('sim-container');
+  container.innerHTML = SIM_QUESTIONS.map(item => `
+    <div class="sim-card">
+      <div class="sim-q-row">
+        <div class="sim-q-text">${item.q} <span class="badge badge-level badge-level-${item.level.toLowerCase()}">[${item.level}]</span></div>
+        <button class="sim-show-btn">Show Answer</button>
+      </div>
+      <div class="sim-answer">${item.a}</div>
+    </div>
+  `).join('');
+</script>
+</body>
+</html>

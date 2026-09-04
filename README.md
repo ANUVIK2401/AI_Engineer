@@ -2,7 +2,7 @@
 
 **→ [Open the site: anuvik2401.github.io/AI_Engineer](https://anuvik2401.github.io/AI_Engineer/)**
 
-A self-contained interview prep tool for AI / LLM engineering roles. **487 questions with in-depth answers** across 14 topics, plus 8 concept modules covering the underlying fundamentals.
+A self-contained interview prep tool for AI / LLM engineering roles. **487 questions with in-depth answers** across 14 topics, plus 12 concept modules (104 topics) covering AI, ML, NLP, deep learning, generative models, and training at scale.
 
 No build step, no dependencies — static HTML, CSS, and vanilla JS. Progress and bookmarks are stored in your browser's `localStorage`.
 
@@ -41,6 +41,10 @@ No build step, no dependencies — static HTML, CSS, and vanilla JS. Progress an
 | 06 | Agents & LangChain | 10 | [Open](https://anuvik2401.github.io/AI_Engineer/pages/06-agents-langchain.html) |
 | 07 | Inference Optimization | 9 | [Open](https://anuvik2401.github.io/AI_Engineer/pages/07-inference-optimization.html) |
 | 08 | MLOps & Production | 10 | [Open](https://anuvik2401.github.io/AI_Engineer/pages/08-mlops-production.html) |
+| 09 | Classical NLP | 9 | [Open](https://anuvik2401.github.io/AI_Engineer/pages/09-classical-nlp.html) |
+| 10 | Unsupervised & Applied ML | 9 | [Open](https://anuvik2401.github.io/AI_Engineer/pages/10-unsupervised-ml.html) |
+| 11 | Generative Models & Vision | 8 | [Open](https://anuvik2401.github.io/AI_Engineer/pages/11-generative-vision.html) |
+| 12 | Training & Scale | 8 | [Open](https://anuvik2401.github.io/AI_Engineer/pages/12-training-scale.html) |
 
 ---
 
@@ -64,6 +68,9 @@ Short on time before an interview? These carry the most weight:
 - **Bookmarks** — star any question; pinned to the [hub page](https://anuvik2401.github.io/AI_Engineer/interview.html) for one-click return
 - **Progress tracking** — mark questions reviewed; progress bars per topic and overall
 - **Deep links** — every question has a stable anchor (`…/03-rag.html#q12`) that opens it expanded
+- **Recall mode** — hides each topic's explanation behind the question it answers, so you retrieve before you read; topics you have marked read stay open
+- **Topic filter** — filter the 104 concept topics within a module (press `/` to jump to the box)
+- **Keyboard stepping** — `j` / `k` move between topic cards
 - **Responsive** — works on desktop and mobile
 - All state is local to your browser. Nothing is uploaded.
 
